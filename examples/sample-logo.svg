@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="168" height="36" viewBox="0 0 168 36">
+  <circle cx="18" cy="18" r="13" fill="none" stroke="#f4ac1d" stroke-width="2.5"/>
+  <path d="M18 8 L24.5 14 L18 28 L11.5 14 Z" fill="#f4ac1d"/>
+  <text x="40" y="16" font-family="Georgia, 'Times New Roman', serif" font-size="13" font-weight="700" fill="#fbfaf6">INSTITUTO</text>
+  <text x="40" y="29" font-family="Arial, sans-serif" font-size="9" letter-spacing="1.5" fill="#9aa3bd">NOESIS · EDU</text>
+</svg>

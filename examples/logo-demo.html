@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>noesis · co-branding institucional</title>
+<style>
+  body{margin:0;background:#fbfbfd;color:#1F2547;font:16px/1.65 -apple-system,system-ui,sans-serif}
+  .page{max-width:820px;margin:0 auto;padding:56px 24px 96px}
+  h1{font-size:24px;margin:0 0 6px}
+  p.lead{color:#6E7896;margin:0 0 24px}
+  .note{margin-top:24px;padding:16px 18px;background:#F6F2E8;border:1px solid #E8E2D2;border-radius:8px;font-size:14px;line-height:1.6}
+  code{background:#1F2547;color:#FBFAF6;padding:2px 6px;border-radius:4px;font:13px ui-monospace,monospace}
+  pre{background:#1F2547;color:#FBFAF6;padding:14px 16px;border-radius:8px;overflow:auto;font:13px/1.5 ui-monospace,monospace}
+</style>
+</head><body><div class="page">
+<h1>Co-branding institucional</h1>
+<p class="lead">El logo de la institución va en la esquina inferior izquierda. El wordmark «noesis.» permanece a la derecha.</p>
+
+<!-- El logo se declara en el embed con el atributo `logo` (una vez por página). -->
+<noesis-scene src="../scenes/12-expansion-joule.json" lang="es"
+  logo="../examples/sample-logo.svg" logo-height="28"></noesis-scene>
+
+<div class="note">
+  <strong>Cómo se agrega.</strong> Solo el atributo <code>logo</code> en el embed:
+  <pre>&lt;noesis-scene src="..." logo="https://mi-institucion.edu/logo.svg"
+              logo-height="28" logo-opacity="0.9"&gt;&lt;/noesis-scene&gt;</pre>
+  El logo entra también en la grabación de video. Usa un <code>.svg</code>/<code>.png</code> con CORS o un data URI, y con contraste propio (un logo blanco se pierde en escenas de fondo claro).
+</div>
+</div>
+<script type="module" src="../engine/noesis-engine.js?v=63"></script></body></html>

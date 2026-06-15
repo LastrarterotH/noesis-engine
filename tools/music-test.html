@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>noesis · audición de moods musicales</title>
+<style>
+  body { margin: 0; background: #1F2547; color: #FBFAF6; font: 16px/1.6 'Plus Jakarta Sans', system-ui, sans-serif; }
+  .page { max-width: 640px; margin: 0 auto; padding: 48px 24px; }
+  h1 { font-size: 20px; font-weight: 700; }
+  h1 span { color: #F4AC1D; }
+  p { color: #c9cede; font-size: 14px; }
+  .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 24px; }
+  button {
+    padding: 14px 16px; font: 600 15px 'Plus Jakarta Sans', system-ui, sans-serif;
+    background: rgba(251,250,246,0.06); color: #FBFAF6;
+    border: 1px solid rgba(244,172,29,0.35); border-radius: 8px; cursor: pointer;
+    text-align: left; transition: background 0.15s ease;
+  }
+  button small { display: block; font-weight: 400; font-size: 12px; color: #9aa3bd; margin-top: 3px; }
+  button:hover { background: rgba(244,172,29,0.12); }
+  button.active { background: #F4AC1D; color: #1F2547; }
+  button.active small { color: #1F2547; }
+  .stop { margin-top: 16px; width: 100%; text-align: center; border-color: rgba(196,74,62,0.6); }
+</style>
+</head><body><div class="page">
+<h1>noesis<span>.</span> audición de moods</h1>
+<p>Herramienta interna: un click arranca el mood (y detiene el anterior). Cada uno debe sentirse vivo a los 30 segundos: acordes que avanzan, arpegio que respira, pulso si corresponde. Si algo suena a drone plano, es un bug de composición.</p>
+<div class="grid" id="grid"></div>
+<button class="stop" id="stop">■ Detener</button>
+<script type="module">
+  import { createAmbientMusic, audioUnlock } from '../engine/audio.js?v=63';
+  const MOODS = [
+    ['cosmic', 'espacial, sin latido'],
+    ['melancholic', 'tristeza serena, latido lento'],
+    ['pastoral', 'campo y mañana, saltarín'],
+    ['epic', 'gesta grave, pulso marcado'],
+    ['ancient', 'modal, tambor lejano'],
+    ['pedagogical', 'neutro y discreto'],
+    ['electronic', 'sintético con groove'],
+    ['warm', 'cálida que crece (la referencia)'],
+  ];
+  const grid = document.getElementById('grid');
+  let current = null;
+  let activeBtn = null;
+  for (const [mood, desc] of MOODS) {
+    const b = document.createElement('button');
+    b.innerHTML = `${mood}<small>${desc}</small>`;
+    b.addEventListener('click', () => {
+      audioUnlock();
+      if (current) current.stop(0.8);
+      if (activeBtn) activeBtn.classList.remove('active');
+      current = createAmbientMusic(mood);
+      activeBtn = b;
+      b.classList.add('active');
+    });
+    grid.appendChild(b);
+  }
+  document.getElementById('stop').addEventListener('click', () => {
+    if (current) { current.stop(1.2); current = null; }
+    if (activeBtn) { activeBtn.classList.remove('active'); activeBtn = null; }
+  });
+</script>
+</div></body></html>

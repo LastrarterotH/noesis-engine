@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>noesis preview</title>
+<style>
+  html, body { margin: 0; padding: 0; background: #000; overflow: hidden; }
+  #root, noesis-scene { display: block; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script>
+  const params = new URLSearchParams(location.search);
+  const scene = params.get('s') || '01-transformers';
+  const w = parseInt(params.get('w') || '800', 10);
+  const h = parseInt(params.get('h') || '440', 10);
+  const logo = params.get('logo') || '';
+  // Size root + viewport so the screenshot matches the canvas exactly,
+  // and synchronously mount the component so virtual-time-budget starts
+  // ticking immediately (no fetch round-trip delay).
+  document.documentElement.style.width = w + 'px';
+  document.documentElement.style.height = h + 'px';
+  document.body.style.width = w + 'px';
+  document.body.style.height = h + 'px';
+  const root = document.getElementById('root');
+  root.style.width = w + 'px';
+  root.style.height = h + 'px';
+  root.innerHTML = `<noesis-scene src="../scenes/${scene}.json" lang="es" layout="bare" mute autoplay${logo ? ` logo="${logo}"` : ''}></noesis-scene>`;
+  const style = document.createElement('style');
+  style.textContent = `noesis-scene { width: ${w}px; height: ${h}px; }`;
+  document.head.appendChild(style);
+</script>
+<script type="module" src="../engine/noesis-engine.js?v=17"></script>
+</body>
+</html>

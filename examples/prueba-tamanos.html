@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>noesis · prueba de tamaños naturales</title>
+<style>body{margin:0;background:#fbfbfd;color:#1F2547;font:16px/1.65 -apple-system,system-ui,sans-serif}.page{max-width:860px;margin:0 auto;padding:56px 24px 96px}</style>
+</head><body><div class="page">
+<noesis-scene lang="es"><script type="application/json">{
+  "meta": { "id": "prueba-tamanos", "number": 0, "version": "0.1", "lang": ["es"] },
+  "hint": { "es": "todos los props sin scale · tamaños naturales del motor" },
+  "hintDuration": 5,
+  "canvas": { "w": 800, "h": 450, "bg": "#4f8a4f", "floor": "grass", "sky": "day", "horizon": 0.42, "safeArea": 20 },
+  "walls": [],
+  "zones": [],
+  "labels": [],
+  "props": [
+    { "type": "sun", "x": 706, "y": 78 },
+    { "type": "cloud", "x": 170, "y": 88 },
+    { "type": "bird", "x": 400, "y": 120 },
+    { "type": "flower", "x": 60, "y": 386 },
+    { "type": "mushroom", "x": 108, "y": 386 },
+    { "type": "rock", "x": 170, "y": 386 },
+    { "type": "bush", "x": 246, "y": 386 },
+    { "type": "bench", "x": 330, "y": 386 },
+    { "type": "fountain", "x": 420, "y": 388 },
+    { "type": "tree", "x": 564, "y": 390 },
+    { "type": "streetlamp", "x": 648, "y": 388 },
+    { "type": "building", "x": 738, "y": 392 }
+  ],
+  "entities": [
+    { "type": "learner", "id": "ref", "x": 492, "y": 380, "scale": 5, "hero": true, "body": "#d8a878", "name": "Referencia", "behavior": null }
+  ]
+}
+</script></noesis-scene>
+</div><script type="module" src="../engine/noesis-engine.js?v=63-test"></script></body></html>

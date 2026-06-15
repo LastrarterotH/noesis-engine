@@ -1,19 +1,9 @@
 # noesis — Mecánicas didácticas (catálogo)
 
-> Documento vivo. Nació el 2026-06-13 como plan de rediseño pedagógico; hoy es la
-> referencia del **catálogo de mecánicas**, el vocabulario de FORMAS didácticas
-> que organiza cada escena. El principio mecánica-primero (§0-§2) es la columna
-> del proyecto.
->
-> **Dos cosas quedaron atrás.** (1) La capa de PRESENTACIÓN self-serve que el plan
-> original proponía (constructor, playground, galería como "rampa única" para un
-> docente solo) se descartó con el pivote a motor nativo de Claude: noesis se usa
-> a través de la skill, no por un docente improvisando. Ver `docs/noesis-vision.md`.
-> (2) **El repertorio se reinició el 2026-06-14:** se borraron las escenas 02-12
-> para reconstruirlas deliberadamente bajo la modalidad nueva. Queda solo
-> `01-netflix-prize` como vara de calidad. Por eso este documento ya NO cita
-> ejemplos canónicos por archivo: describe las mecánicas, y cada ejemplo se
-> reconstruye cuando se autora la escena.
+> El **catálogo de mecánicas**: el vocabulario de FORMAS didácticas que organiza
+> cada escena. El principio mecánica-primero (§0-§2) es la columna del proyecto.
+> El documento describe las mecánicas; cada ejemplo se construye al autorar la
+> escena (la vara de calidad es `scenes/01-netflix-prize`).
 
 ## 0. El principio
 
@@ -34,7 +24,7 @@ concepto de viva voz es un PowerPoint muerto, aunque sea válida.
 - **El motor** (engine/): estable, completo, sin cambios salvo lo que pida una mecánica nueva.
 - **El validador** (validate.js): se autoderiva del motor; se mantiene.
 - **Las formas** (`engine/forms.js`): el motor sabe expandir una mecánica declarada a su guion primitivo.
-- **Las reglas ganadas en los 9 tests BYOA**, que son restricciones/checklist de autoría: body como array, ambient al nivel superior, focus-off con `"off": true`, sin signos de exclamación, la fórmula de tiempos, mostrar-no-narrar, skybound, personajes-vs-props, escala de gráficos. Es oro aprendido a sangre; se arrastra, no se reaprende.
+- **El checklist de autoría**: restricciones que mantienen el nivel: body como array, ambient al nivel superior, focus-off con `"off": true`, sin signos de exclamación, la fórmula de tiempos, mostrar-no-narrar, skybound, personajes-vs-props, escala de gráficos.
 
 ## 2. El catálogo de mecánicas
 
@@ -42,9 +32,9 @@ El vocabulario de FORMAS DIDÁCTICAS, distinto del vocabulario del motor. Cada
 mecánica: qué es, cuándo, cómo se encarna en el motor, qué conceptos sirve, y la
 trampa (cómo NO caer en el cabezón parlante).
 
-**Estado:** catálogo en 9 mecánicas (1 a 9). El repertorio se reinició el
-2026-06-14 (ver nota arriba); los ejemplos por mecánica se reconstruyen al
-autorar cada escena. La transformación en sitio (9) entró tras construir su
+**Estado:** catálogo en 9 mecánicas (1 a 9); los ejemplos por mecánica se
+construyen al autorar cada escena. La transformación en sitio (9) entró tras
+construir su
 primitiva de morph (el prop `field`); el ensamblaje y la propagación quedan
 diferidos por solape (§2b).
 
@@ -79,7 +69,7 @@ construyó su primitiva de "morph" (el prop `field`), no antes.
 
 8. **La cadena (el dominó)** (una acción dispara la siguiente). Varios cuerpos que se gatillan en secuencia: A actúa, B reacciona, C reacciona. Motor: pasos ordenados con `waitFor`, donde la acción de un cuerpo (un `walk` que llega, un `mood`, un `particles`) precede y motiva la reacción del siguiente; opcional un "disparador" que recorre la fila con `path`. El prop `domino` se inclina con `tween "id.fall"`, una tras otra. Sirve: causa y efecto, reacciones en cadena, reflejos, consecuencias, propagación de un impulso. Trampa: narrar la cadena en vez de ver cada eslabón dispararse; la caída visible ES la mecánica, no un blob que se asusta.
 
-9. **La transformación en sitio** (un cuerpo que cambia su sustancia sin moverse). Un campo de partículas pasa del ORDEN al DESORDEN ante los ojos. Motor: el prop `field` (con `color`/`color2`, mitad y mitad para dos especies) y su `disorder` (0..1) animado con `tween "id.disorder"`. Sirve: entropía, mezcla, difusión, cambio de fase, oxidación, irreversibilidad (la flecha del tiempo). Trampa: narrar el cambio, o ponerle una barra; el desorden se ve en las partículas, no en un HUD. Es el caso que originó el rediseño (la entropía que salía como PowerPoint muerto).
+9. **La transformación en sitio** (un cuerpo que cambia su sustancia sin moverse). Un campo de partículas pasa del ORDEN al DESORDEN ante los ojos. Motor: el prop `field` (con `color`/`color2`, mitad y mitad para dos especies) y su `disorder` (0..1) animado con `tween "id.disorder"`. Sirve: entropía, mezcla, difusión, cambio de fase, oxidación, irreversibilidad (la flecha del tiempo). Trampa: narrar el cambio, o ponerle una barra; el desorden se ve en las partículas, no en un HUD.
 
 ## 2b. Mecánicas diferidas (por solape, no entran por ahora)
 

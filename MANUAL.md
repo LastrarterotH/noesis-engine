@@ -228,4 +228,3 @@ bash tools/webm-to-mp4.sh archivo.webm
 
 - **`README.md`** vista general del proyecto y catálogo de escenas publicadas.
 - **`CLAUDE.md`** convenciones completas de autoría: voz, paleta, reglas visuales, toolkit de diagramas y gráficos, tweens, movimiento por camino, coordenadas y anclas.
-- **`CHANGELOG.md`** historial de cambios del motor.

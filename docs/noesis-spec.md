@@ -1,18 +1,12 @@
-# noesis · especificación completa del motor (para construir una UI)
+# noesis · especificación completa del motor
 
 Documento de referencia exhaustivo de cómo funciona noesis-engine. Verificado
 contra el código en `engine/` (la versión de imports que se cita abajo es
-ilustrativa; el motor está hoy en `?v=63`).
-
-> **Nota (2026-06-14):** construir un editor visual de escenas (la motivación
-> original de este documento) ya no es un objetivo del proyecto. noesis es un
-> motor nativo de Claude (ver `noesis-vision.md`); este texto se conserva como
-> referencia exhaustiva del MOTOR, útil con independencia de cómo se autoreen
-> las escenas.
+ilustrativa).
 
 > Fuente de verdad operativa: `CLAUDE.md` (reglas de marca, voz, estándar de
 > calidad) y `.claude/commands/noesis-scene.md` (referencia de API en prosa).
-> Este documento las unifica y las orienta a construir una UI.
+> Este documento las unifica como referencia técnica del motor.
 
 ---
 

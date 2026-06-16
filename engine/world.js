@@ -2,27 +2,27 @@
 // World class: simulation state + tick + draw orchestration.
 // Owns entities, camera, scripts, fx, bubbles, labels, ambient, audio handles.
 
-import { mulberry32, ease, colorAlpha, mixColors, drawRichText, measureRichText } from './util.js?v=63';
-import { compileHooks } from './hooks.js?v=63';
-import { createAmbientSound } from './audio.js?v=63';
-import { SKY_PRESETS } from './sky-presets.js?v=63';
-import { computeSolidBox, drawProp } from './prop-draw.js?v=63';
-import { PROP_NATURAL_SCALE, PROP_SPRITES } from './prop-sprites.js?v=63';
-import { Draw } from './draw.js?v=63';
-import { initCamera, tickCamera } from './camera.js?v=63';
-import { makeAmbientParticle, tickAmbient, drawAmbient } from './ambient.js?v=63';
+import { mulberry32, ease, colorAlpha, mixColors, drawRichText, measureRichText } from './util.js?v=65';
+import { compileHooks } from './hooks.js?v=65';
+import { createAmbientSound } from './audio.js?v=65';
+import { SKY_PRESETS } from './sky-presets.js?v=65';
+import { computeSolidBox, drawProp } from './prop-draw.js?v=65';
+import { PROP_NATURAL_SCALE, PROP_SPRITES } from './prop-sprites.js?v=65';
+import { Draw } from './draw.js?v=65';
+import { initCamera, tickCamera } from './camera.js?v=65';
+import { makeAmbientParticle, tickAmbient, drawAmbient } from './ambient.js?v=65';
 import {
   runScript as _runScript, stopScripts as _stopScripts, tickScripts,
   evalScriptExpr, processScript, execScriptStep,
-} from './scripts.js?v=63';
-import { compileForm } from './forms.js?v=63';
-import { drawFloor } from './floor.js?v=63';
-import { tickAnimatedProps } from './animated-props.js?v=63';
-import { initLearner, touchLearner, tickLearner } from './learner.js?v=63';
-import { handleClick, togglePropInteraction } from './interaction.js?v=63';
+} from './scripts.js?v=65';
+import { compileForm } from './forms.js?v=65';
+import { drawFloor } from './floor.js?v=65';
+import { tickAnimatedProps } from './animated-props.js?v=65';
+import { initLearner, touchLearner, tickLearner } from './learner.js?v=65';
+import { handleClick, togglePropInteraction } from './interaction.js?v=65';
 import {
   createFxApi, spawnBubble, spawnParticles, tickFx, positionBubbles, drawFx,
-} from './fx.js?v=63';
+} from './fx.js?v=65';
 
 // Props que emiten luz solos cuando hay `ambient.darkness` (opt-out con
 // `light: false` en el prop). `dy` ubica la fuente en celdas del sprite
@@ -581,6 +581,9 @@ export class World {
     // during the black moment between sets.
     this._tickTransition();
     this._drawTransitionScrim(ctx);
+    // Saturación: dessatura TODO el mundo ya dibujado (gris ↔ color) sin tocar
+    // el HUD/captions/watermark, que se pintan después. `ambient.saturation` 0..1.
+    this._drawSaturation(ctx);
     // Capa declarativa (captions + meters), en espacio-pantalla, bajo el watermark.
     this._drawDeclarative(ctx);
     // Logo institucional opcional (esquina inferior izquierda), bajo el watermark.
@@ -873,6 +876,41 @@ export class World {
     ctx.drawImage(lc, 0, 0, this.W, this.H);
     ctx.imageSmoothingEnabled = prevSmooth;
     ctx.restore();
+  }
+
+  // `ambient.saturation` (0..1): 1 = color pleno (default, sin costo), 0 =
+  // escala de grises. A diferencia de `_drawLighting`, no compone un velo: re-
+  // procesa los píxeles ya dibujados con ctx.filter = 'saturate()'. Toma un
+  // snapshot del frame en un canvas offscreen (a resolución de dispositivo, sin
+  // perder el supersampleo), limpia el backing store y lo redibuja saturado.
+  // Se anima con `tween "ambient.saturation"` y el reset lo restaura solo
+  // (world._ambient se reconstruye de config.ambient). Es la primitiva de la
+  // mecánica "el color como información que los hechos no contienen".
+  _drawSaturation(ctx) {
+    const amb = this._ambient;
+    const sat = (amb && amb.saturation != null) ? amb.saturation : 1;
+    if (sat >= 0.999) return;
+    const cv = this.canvas;                        // el elemento real (backing store)
+    const dw = cv && cv.width, dh = cv && cv.height;
+    if (!(dw > 0 && dh > 0)) return;
+    if (!this._satCanvas) {
+      try { this._satCanvas = document.createElement('canvas'); } catch { return; }
+    }
+    const sc = this._satCanvas;
+    if (sc.width !== dw || sc.height !== dh) { sc.width = dw; sc.height = dh; }
+    const c = sc.getContext('2d');
+    if (!c) return;
+    if (c.setTransform) c.setTransform(1, 0, 0, 1, 0, 0);
+    c.globalCompositeOperation = 'source-over';
+    c.clearRect(0, 0, dw, dh);
+    c.drawImage(cv, 0, 0);                          // snapshot del frame en color
+    ctx.save();
+    ctx.setTransform(1, 0, 0, 1, 0, 0);            // trabajar en píxeles de dispositivo
+    ctx.clearRect(0, 0, dw, dh);
+    ctx.filter = 'saturate(' + Math.max(0, Math.min(1, sat)).toFixed(3) + ')';
+    ctx.drawImage(sc, 0, 0);
+    ctx.filter = 'none';
+    ctx.restore();                                 // restaura el supersample transform
   }
 
   _runDeclarativeScript() {

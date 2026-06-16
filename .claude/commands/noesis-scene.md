@@ -296,9 +296,12 @@ Position rules:
 "ambient": {
   "tint": "day|dawn|dusk|night|golden|cool" | { "color": "#xxx", "alpha": 0.3 },
   "particles": "rain|snow|petals|leaves|fireflies|stars",
+  "saturation": 0,
   "intensity": 1
 }
 ```
+
+- `saturation` (0..1, default 1): satura TODO el mundo dibujado. `0` = escala de grises, `1` = color pleno; el HUD (captions, watermark) queda siempre en color. Animar con `{ "tween": "ambient.saturation", "to": 1, "duration": 2.4, "easing": "easeInOutCubic" }` para un viraje gris→color en un momento. Es la mecánica del color como experiencia que los hechos no contienen (ver escena 02). No la dejes a medio camino de forma permanente: el valor está en el viraje.
 
 ### Walls and zones
 

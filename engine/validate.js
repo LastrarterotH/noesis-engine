@@ -10,10 +10,10 @@
 // hooks) o se escanean del código fuente del motor (buildVocab recibe un
 // lector de fuentes), así el validador no se desincroniza al crecer el motor.
 
-import { PROP_SPRITES } from './prop-sprites.js?v=63';
-import { SKY_PRESETS } from './sky-presets.js?v=63';
-import { HOOK_NAMES, HOOK_ARGS } from './hooks.js?v=63';
-import { compileForm, FORM_TYPES } from './forms.js?v=63';
+import { PROP_SPRITES } from './prop-sprites.js?v=65';
+import { SKY_PRESETS } from './sky-presets.js?v=65';
+import { HOOK_NAMES, HOOK_ARGS } from './hooks.js?v=65';
+import { compileForm, FORM_TYPES } from './forms.js?v=65';
 
 // Fuentes del motor que buildVocab escanea con regex (enums de despachos
 // if/else que no se exportan como datos).
@@ -312,6 +312,9 @@ export function createValidator(vocab) {
     if (a.darknessColor != null && !/^#/.test(a.darknessColor)) {
       ctx.err('ambient.darknessColor', `"${a.darknessColor}" debe ser hex (#rrggbb): el motor degrada su alpha para el scrim de noche.`);
     }
+    if (a.saturation != null && (typeof a.saturation !== 'number' || a.saturation < 0 || a.saturation > 1)) {
+      ctx.err('ambient.saturation', 'la saturación es un número 0..1 (0 = escala de grises, 1 = color pleno). Se anima con tween "ambient.saturation".');
+    }
     if (a.particles != null && !PARTICLE_KINDS.includes(a.particles)) {
       ctx.err('ambient.particles', `"${a.particles}" no es un tipo de partícula. Usa uno de: ${list(PARTICLE_KINDS)}.`);
     }
@@ -477,7 +480,7 @@ export function createValidator(vocab) {
         const id = s.tween.slice(0, s.tween.indexOf('.'));
         if (id === 'ambient') {
           const key = s.tween.slice(s.tween.indexOf('.') + 1);
-          if (key !== 'darkness') ctx.warn(`${p}.tween`, `"ambient.${key}" no es una clave animable documentada del ambiente; la conocida es "ambient.darkness".`);
+          if (key !== 'darkness' && key !== 'saturation') ctx.warn(`${p}.tween`, `"ambient.${key}" no es una clave animable documentada del ambiente; las conocidas son "ambient.darkness" y "ambient.saturation".`);
         } else if (!scope.entityIds.has(id) && !(scope.propIds && scope.propIds.has(id))) {
           const msg = `"${id}" no es el id de ninguna entidad ni prop declarado (${list(scope.entityIds) || 'ninguna'}), ni el prefijo "ambient".`;
           if (scope.hasHooks) ctx.warn(`${p}.tween`, msg);

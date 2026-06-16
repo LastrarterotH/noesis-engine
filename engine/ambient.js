@@ -5,7 +5,7 @@
 // world._ambientParticles, world._ambientSpawnAccum); World owns the state and
 // exposes _makeAmbientParticle / _tickAmbient / _drawAmbient as thin wrappers.
 
-import { mixColors } from './util.js?v=63';
+import { mixColors } from './util.js?v=65';
 
 export function makeAmbientParticle(world, kind, anywhere = false) {
   const r = world.rng();

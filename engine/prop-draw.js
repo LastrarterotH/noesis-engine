@@ -2,8 +2,8 @@
 // Per-prop draw functions + dispatch (drawProp). Animated/bespoke props
 // have their own renderer; static props fall through to PROP_SPRITES.
 
-import { PROP_SPRITES } from './prop-sprites.js?v=65';
-import { mixColors } from './util.js?v=65';
+import { PROP_SPRITES } from './prop-sprites.js?v=70';
+import { mixColors } from './util.js?v=70';
 
 // Compute a default collision box for a solid prop: the bottom 60% of the
 // sprite, centered on prop.x. Authors can override with `solidBox: {x,y,w,h}`
@@ -1049,7 +1049,249 @@ export function drawField(ctx, prop) {
   }
 }
 
+// Cat: gato bespoke dibujado con formas suaves (curvas, no píxeles) para que
+// tenga carácter. Tres poses, (x, y) es la base (el piso bajo el gato).
+//  - 'walk': de perfil, sobre cuatro patas, cola en alto, ojos abiertos.
+//  - 'curl': enroscado durmiendo, ojos cerrados, respiración suave.
+//  - 'fall': tendido de lado, patas estiradas, quieto.
+// `color` recolorea el pelaje (sombra, luz, panza y rayas se derivan de él);
+// `dir` espeja en horizontal; `alpha` (0..1) lo vuelve fantasma, para la doble
+// exposición de la superposición. Toda la geometría está en unidades de `s`,
+// con la y hacia arriba en negativo desde la base.
+export function drawCat(ctx, prop) {
+  const pose = prop.pose || 'walk';
+  const s = prop.scale || 3;
+  const dir = prop.dir == null ? 1 : prop.dir;
+  const fur = prop.color || '#8893a8';
+  const furD = mixColors(fur, '#000000', 0.46);
+  const furM = mixColors(fur, '#000000', 0.22);
+  const furL = mixColors(fur, '#ffffff', 0.34);
+  const belly = mixColors(fur, '#ffffff', 0.58);
+  const stripe = mixColors(fur, '#000000', 0.30);
+  const earIn = '#e0a3ab', nose = '#c4727d', eyeC = furD;
+  const eyeOpen = '#8ec07c', pupil = '#1b2230';
+  const whisker = 'rgba(246,248,252,0.66)';
+  const t = prop._t || 0;
+  const breath = pose === 'curl' ? (Math.sin(t * 1.4) * 0.5 + 0.5) : 0;
+  const TAU = Math.PI * 2;
+  const E = (x, y, rx, ry, c) => { ctx.fillStyle = c; ctx.beginPath(); ctx.ellipse(x * s, y * s, rx * s, ry * s, 0, 0, TAU); ctx.fill(); };
+  const tri = (ax, ay, bx, by, cx2, cy2, c) => { ctx.fillStyle = c; ctx.beginPath(); ctx.moveTo(ax * s, ay * s); ctx.lineTo(bx * s, by * s); ctx.lineTo(cx2 * s, cy2 * s); ctx.closePath(); ctx.fill(); };
+  const line = (x1, y1, x2, y2, c, w) => { ctx.strokeStyle = c; ctx.lineWidth = Math.max(0.6, w * s); ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(x1 * s, y1 * s); ctx.lineTo(x2 * s, y2 * s); ctx.stroke(); };
+  const curve = (x1, y1, cx1, cy1, x2, y2, c, w) => { ctx.strokeStyle = c; ctx.lineWidth = Math.max(0.6, w * s); ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(x1 * s, y1 * s); ctx.quadraticCurveTo(cx1 * s, cy1 * s, x2 * s, y2 * s); ctx.stroke(); };
+  // Ojo cerrado feliz: un arco que abre hacia abajo (forma de U suave).
+  const shut = (x, y, r, c, w) => { ctx.strokeStyle = c; ctx.lineWidth = Math.max(0.6, w * s); ctx.lineCap = 'round'; ctx.beginPath(); ctx.arc(x * s, y * s, r * s, Math.PI * 0.16, Math.PI * 0.84); ctx.stroke(); };
+
+  ctx.save();
+  ctx.globalAlpha *= Math.max(0, Math.min(1, prop.alpha == null ? 1 : prop.alpha));
+  // Sombra de contacto en el piso.
+  const shW = pose === 'walk' ? 5.0 : (pose === 'fall' ? 6.4 : 5.6);
+  ctx.fillStyle = 'rgba(8,10,22,0.26)';
+  ctx.beginPath();
+  ctx.ellipse(prop.x, prop.y - s * 0.2, shW * s, s * 0.95, 0, 0, TAU);
+  ctx.fill();
+
+  ctx.translate(prop.x, prop.y);
+  ctx.scale(dir, 1);
+
+  if (pose === 'curl') {
+    const bo = breath * 0.28, br = breath * 0.12;
+    // Silueta oscura de fondo (da el contorno).
+    E(0.3, -2.7, 5.7, 3.2, furD);
+    E(-3.2, -4.0, 2.95, 2.75, furD);
+    // Cola enroscando por el frente.
+    curve(4.8, -3.0, 6.9, -0.1, -3.0, -0.9, furD, 2.3);
+    curve(4.8, -3.0, 6.4, -0.3, -2.8, -1.0, fur, 1.4);
+    line(5.6, -2.2, 5.2, -3.0, stripe, 0.5); line(6.0, -1.0, 5.4, -1.4, stripe, 0.5);
+    // Cuerpo (con respiración: el lomo sube y se expande apenas).
+    E(0.3, -2.5, 5.4, 2.9, furM);
+    E(0.1, -2.95 - bo, 5.2, 2.6 + br, fur);
+    E(-0.6, -3.7 - bo, 3.8, 1.6, furL);
+    E(0.4, -1.6, 4.3, 1.4, belly);
+    // Rayas atigradas sobre el lomo.
+    for (const k of [-2.4, -1.0, 0.4, 1.8]) curve(k, -5.0 - bo, k + 0.2, -4.4 - bo, k + 0.1, -3.9 - bo, stripe, 0.5);
+    // Cabeza.
+    E(-3.2, -4.0, 2.6, 2.4, fur);
+    E(-3.8, -4.6, 1.5, 1.1, furL);
+    // Orejas.
+    tri(-4.9, -5.4, -4.3, -6.9, -3.4, -5.6, furD); tri(-4.8, -5.4, -4.3, -6.7, -3.5, -5.6, fur); tri(-4.5, -5.7, -4.25, -6.3, -3.85, -5.75, earIn);
+    tri(-3.0, -5.6, -2.4, -7.0, -1.6, -5.5, furD); tri(-2.95, -5.6, -2.4, -6.8, -1.7, -5.5, fur); tri(-2.7, -5.8, -2.45, -6.4, -2.05, -5.75, earIn);
+    // Ojos cerrados, nariz, boca.
+    shut(-3.85, -4.05, 0.6, eyeC, 0.34); shut(-2.5, -4.05, 0.6, eyeC, 0.34);
+    tri(-3.45, -3.35, -2.95, -3.35, -3.2, -2.95, nose);
+    curve(-3.2, -2.95, -3.55, -2.65, -3.85, -2.85, eyeC, 0.24); curve(-3.2, -2.95, -2.85, -2.65, -2.55, -2.85, eyeC, 0.24);
+    // Bigotes.
+    line(-2.95, -3.2, -0.7, -3.7, whisker, 0.16); line(-2.95, -3.0, -0.8, -3.0, whisker, 0.16);
+    line(-3.5, -3.2, -5.7, -3.7, whisker, 0.16); line(-3.5, -3.0, -5.7, -3.1, whisker, 0.16);
+    // Patita recogida al frente.
+    E(-1.4, -0.9, 1.3, 0.7, furM); E(-1.4, -1.0, 1.2, 0.55, furL);
+  } else if (pose === 'fall') {
+    // Tendido de lado, cabeza a la izquierda, patas y cola estiradas. Quieto.
+    curve(4.8, -1.6, 7.3, -1.4, 8.7, -0.5, furD, 1.8); curve(4.8, -1.6, 7.0, -1.4, 8.4, -0.6, fur, 1.05);
+    // Patas estiradas hacia el frente.
+    line(0.0, -1.5, 1.3, -0.2, furM, 0.95); E(1.3, -0.2, 0.5, 0.3, furM);
+    line(1.2, -1.6, 3.2, -0.2, furM, 0.95); E(3.2, -0.2, 0.55, 0.32, furM);
+    line(2.2, -1.5, 4.4, -0.3, fur, 1.0); E(4.4, -0.3, 0.6, 0.34, furM);
+    // Cuerpo largo y bajo.
+    E(0.4, -1.7, 5.4, 1.85, furD);
+    E(0.4, -1.7, 5.2, 1.65, fur);
+    E(0.2, -2.3, 3.6, 0.85, furM);
+    E(0.6, -1.05, 4.2, 0.9, belly);
+    for (const k of [-1.6, -0.2, 1.2, 2.6]) line(k, -3.0, k + 0.1, -2.3, stripe, 0.42);
+    // Cabeza apoyada.
+    E(-4.4, -1.5, 2.1, 1.95, furD);
+    E(-4.4, -1.5, 1.9, 1.75, fur);
+    E(-4.85, -2.0, 1.05, 0.8, furL);
+    tri(-5.6, -2.7, -5.25, -4.0, -4.45, -2.85, furD); tri(-5.5, -2.7, -5.25, -3.8, -4.55, -2.85, fur); tri(-5.25, -2.95, -5.1, -3.5, -4.8, -2.95, earIn);
+    tri(-3.9, -2.85, -3.35, -3.8, -2.95, -2.65, furD); tri(-3.85, -2.85, -3.4, -3.6, -3.05, -2.65, fur);
+    shut(-5.0, -1.45, 0.5, eyeC, 0.3); shut(-3.75, -1.4, 0.46, eyeC, 0.3);
+    tri(-6.15, -1.15, -5.7, -1.15, -5.95, -0.8, nose);
+    line(-5.6, -1.25, -7.5, -1.05, whisker, 0.15); line(-5.6, -1.05, -7.5, -0.7, whisker, 0.15);
+  } else {
+    // 'walk': de perfil, mirando a la derecha (dir lo espeja).
+    // Cola en alto, curvada (gato contento).
+    curve(-4.0, -2.6, -6.7, -4.9, -4.7, -6.3, furD, 2.0); curve(-4.0, -2.6, -6.4, -4.8, -4.6, -6.1, fur, 1.2);
+    line(-5.7, -5.2, -5.1, -5.5, stripe, 0.42); line(-6.1, -4.0, -5.5, -4.2, stripe, 0.42);
+    // Patas traseras (más lejos, en sombra).
+    line(-2.6, -1.8, -2.9, -0.2, furM, 1.0); E(-2.9, -0.2, 0.7, 0.4, furM);
+    line(2.4, -1.8, 2.7, -0.2, furM, 1.0); E(2.7, -0.2, 0.7, 0.4, furM);
+    // Cuerpo.
+    E(0, -3.2, 4.6, 2.4, furD);
+    E(0, -3.2, 4.4, 2.2, fur);
+    E(-0.3, -3.9, 3.4, 1.3, furL);
+    E(0.2, -2.4, 3.8, 1.3, belly);
+    for (const k of [-2.0, -0.6, 0.8]) line(k, -5.2, k + 0.1, -4.4, stripe, 0.45);
+    // Patas delanteras (en primer plano).
+    line(-1.4, -1.7, -1.2, -0.1, fur, 1.15); E(-1.2, -0.1, 0.8, 0.45, furM);
+    line(3.2, -1.7, 3.4, -0.1, fur, 1.15); E(3.4, -0.1, 0.8, 0.45, furM);
+    // Cabeza.
+    E(4.6, -4.0, 2.4, 2.2, furD);
+    E(4.6, -4.0, 2.2, 2.0, fur);
+    E(4.2, -4.5, 1.3, 0.95, furL);
+    tri(3.0, -5.4, 3.2, -6.9, 4.1, -5.6, furD); tri(3.1, -5.4, 3.25, -6.7, 4.0, -5.6, fur); tri(3.4, -5.65, 3.5, -6.3, 3.85, -5.7, earIn);
+    tri(5.0, -5.5, 5.6, -6.8, 6.0, -5.4, furD); tri(5.05, -5.5, 5.55, -6.6, 5.9, -5.4, fur); tri(5.35, -5.6, 5.6, -6.2, 5.8, -5.5, earIn);
+    // Hocico, ojo abierto, nariz, bigotes.
+    E(5.7, -3.3, 1.5, 1.1, furL);
+    E(5.3, -4.2, 0.55, 0.7, '#fbfdff'); E(5.5, -4.2, 0.34, 0.6, eyeOpen); E(5.62, -4.2, 0.15, 0.42, pupil);
+    tri(6.5, -3.5, 6.95, -3.5, 6.72, -3.05, nose);
+    curve(6.72, -3.05, 6.4, -2.8, 6.0, -2.95, eyeC, 0.2);
+    line(6.4, -3.5, 8.7, -4.0, whisker, 0.16); line(6.5, -3.3, 8.8, -3.3, whisker, 0.16); line(6.4, -3.1, 8.6, -2.7, whisker, 0.16);
+  }
+  ctx.restore();
+}
+
+// Vault: caja fuerte metálica vista de frente, en dos capas que el z-index
+// intercala con los gatos. `face: 'back'` dibuja la cavidad (manta, cuencos y,
+// en penumbra al fondo, el mecanismo: contador, frasco de veneno y martillo);
+// `face: 'front'` dibuja el marco metálico (siempre opaco) y, sobre él, la
+// puerta y el volante. La puerta se dibuja con opacidad 1 - `glass`: con glass
+// alto la cara se vuelve translúcida (corte de rayos X) y se ven los gatos del
+// fondo. `wheel` (radianes) gira el volante. `color` tiñe el metal.
+export function drawVault(ctx, prop) {
+  const s = prop.scale || 3.5;
+  const cx = Math.round(prop.x);
+  const cy = Math.round(prop.y);            // piso (donde apoyan las ruedas)
+  const lift = prop.lift || 0;              // celdas que la caja sube sobre el piso (mesa con ruedas)
+  const by = Math.round(cy - lift * s);     // base de la caja
+  const face = prop.face || 'front';
+  const metal = prop.color || '#6E7896';
+  // La geometría de la caja se ancla a `by`; la mesa va de `by` al piso `cy`.
+  const px = (gx, gy, gw, gh, c) => { ctx.fillStyle = c; ctx.fillRect(cx + gx * s, by + gy * s, Math.ceil(gw * s) + 1, Math.ceil(gh * s) + 1); };
+
+  if (face === 'back') {
+    // Mesa con ruedas que sostiene la caja en alto (solo si lift > 0).
+    if (lift > 0) {
+      const TAU = Math.PI * 2;
+      const tw = 17;
+      const top = by + 1.4 * s;
+      const legBot = cy - 1.9 * s;
+      const legX = [-tw / 2 + 2.2, tw / 2 - 2.2];
+      // Tablero.
+      ctx.fillStyle = '#2f2615'; ctx.fillRect(cx - (tw / 2) * s, top + 1.8 * s, tw * s, 0.7 * s);
+      ctx.fillStyle = '#4a3a24'; ctx.fillRect(cx - (tw / 2) * s, top, tw * s, 2.0 * s);
+      ctx.fillStyle = '#6a533a'; ctx.fillRect(cx - (tw / 2) * s, top, tw * s, 0.6 * s);
+      // Patas y travesaño.
+      for (const lx of legX) {
+        ctx.fillStyle = '#39414f'; ctx.fillRect(cx + lx * s - 0.5 * s, top + 2 * s, 1.0 * s, legBot - (top + 2 * s));
+        ctx.fillStyle = '#262d3a'; ctx.fillRect(cx + lx * s + 0.2 * s, top + 2 * s, 0.32 * s, legBot - (top + 2 * s));
+      }
+      ctx.fillStyle = '#39414f'; ctx.fillRect(cx + legX[0] * s, (top + legBot) / 2, (legX[1] - legX[0]) * s, 0.7 * s);
+      // Ruedas.
+      for (const lx of legX) {
+        const wxx = cx + lx * s, wyy = cy - 1.0 * s;
+        ctx.fillStyle = '#1c2230'; ctx.beginPath(); ctx.arc(wxx, wyy, 1.4 * s, 0, TAU); ctx.fill();
+        ctx.fillStyle = '#39414f'; ctx.beginPath(); ctx.arc(wxx, wyy, 0.7 * s, 0, TAU); ctx.fill();
+        ctx.fillStyle = '#5a6478'; ctx.beginPath(); ctx.arc(wxx, wyy, 0.28 * s, 0, TAU); ctx.fill();
+      }
+    }
+    const cavity = '#0a0d1a';
+    // Cavidad y pared trasera (un punto más clara arriba para dar profundidad).
+    px(-7, -16, 14, 13, cavity);
+    px(-7, -16, 14, 2, '#141a30');
+    // Mecanismo siniestro al fondo, en penumbra (presente, no protagonista).
+    px(-6, -15, 3, 2, '#39414f');           // contador Geiger
+    px(-5, -14, 1, 1, '#caa23a');           // su lucecita, apagada
+    px(-1, -15, 2, 3, '#2c4738');           // frasco de veneno (vidrio)
+    px(-1, -13, 2, 1, '#3f6f4f');           // veneno
+    px(3, -15, 1, 3, '#5a4733');            // mango del martillo
+    px(2, -13, 3, 1, '#5a6378');            // cabeza del martillo
+    // Cojín / manta al fondo de la caja.
+    px(-6, -5, 12, 2, '#6e5536');
+    px(-6, -5, 12, 1, '#8a6f48');
+    px(-6, -3, 12, 1, '#4a3a24');
+    // Dos cuencos: agua (izquierda) y comida (derecha).
+    px(-6, -4, 3, 1, '#566072'); px(-5, -4, 1, 1, '#3f8fb0');
+    px(3, -4, 3, 1, '#566072'); px(4, -4, 1, 1, '#6e4a28');
+    return;
+  }
+
+  // face === 'front'
+  const mTop = mixColors(metal, '#ffffff', 0.32);
+  const mMid = mixColors(metal, '#ffffff', 0.12);
+  const mDark = mixColors(metal, '#000000', 0.34);
+  const mDeep = mixColors(metal, '#000000', 0.55);
+  const glass = Math.max(0, Math.min(1, prop.glass || 0));
+  const doorA = 1 - glass;
+
+  // Puerta + volante: opacidad 1 - glass (se vuelve translúcida en rayos X).
+  ctx.save();
+  ctx.globalAlpha *= Math.max(0, doorA);
+  const dBody = mixColors(metal, '#000000', 0.12);
+  px(-7, -16, 14, 13, dBody);
+  px(-7, -16, 14, 1, mTop);                 // luz superior de la puerta
+  px(-7, -4, 14, 1, mDeep);                 // sombra inferior
+  // Vetas horizontales del metal cepillado.
+  for (let gy = -14; gy <= -6; gy += 3) px(-6, gy, 12, 0.3, mDark);
+  // Junta vertical central (doble hoja).
+  ctx.fillStyle = mDeep;
+  ctx.fillRect(cx - s * 0.2, by - 16 * s, Math.max(1, s * 0.4), 12 * s);
+  // Volante central, girable.
+  const wheel = prop.wheel || 0;
+  ctx.save();
+  ctx.translate(cx, by - 9.5 * s);
+  ctx.rotate(wheel);
+  ctx.lineCap = 'round';
+  ctx.strokeStyle = mDeep; ctx.lineWidth = Math.max(2, s * 0.8);
+  ctx.beginPath(); ctx.arc(0, 0, 4.2 * s, 0, Math.PI * 2); ctx.stroke();
+  ctx.strokeStyle = mTop; ctx.lineWidth = Math.max(1, s * 0.4);
+  ctx.beginPath(); ctx.arc(0, 0, 4.2 * s, -1.1, 1.2); ctx.stroke();
+  ctx.strokeStyle = mMid; ctx.lineWidth = Math.max(2, s * 0.6);
+  for (let k = 0; k < 4; k++) { const a = k * Math.PI / 2; ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(Math.cos(a) * 3.9 * s, Math.sin(a) * 3.9 * s); ctx.stroke(); }
+  ctx.fillStyle = '#F4AC1D'; ctx.beginPath(); ctx.arc(0, 0, 1.2 * s, 0, Math.PI * 2); ctx.fill();
+  ctx.restore();
+  ctx.restore();
+
+  // Marco metálico exterior, siempre opaco (la silueta de la caja persiste).
+  px(-11, -19, 22, 3, metal); px(-11, -19, 22, 1, mTop); px(-11, -17, 22, 1, mDark);   // dintel
+  px(-11, -2, 22, 2, metal); px(-11, -2, 22, 1, mMid); px(-11, 0, 22, 1, mDeep);        // base
+  px(-11, -19, 4, 21, metal); px(-11, -19, 1, 21, mTop); px(-8, -19, 1, 21, mDark);     // jamba izq
+  px(7, -19, 4, 21, metal); px(7, -19, 1, 21, mMid); px(10, -19, 1, 21, mDeep);         // jamba der
+  // Remaches en las esquinas.
+  for (const [rx, ry] of [[-10, -18], [9, -18], [-10, -1], [9, -1]]) px(rx, ry, 1, 1, mDeep);
+}
+
 export function drawProp(ctx, prop) {
+  if (prop.type === 'cat') return drawCat(ctx, prop);
+  if (prop.type === 'vault') return drawVault(ctx, prop);
   if (prop.type === 'pond') return drawPond(ctx, prop);
   if (prop.type === 'field') return drawField(ctx, prop);
   if (prop.type === 'domino') return drawDomino(ctx, prop);

@@ -1,0 +1,156 @@
+{
+  "meta": { "id": "04-tpack", "number": 4, "version": "0.3", "lang": ["es"], "music": "pedagogical" },
+  "text": {
+    "es": {
+      "title": "TPACK: enseñar es integrar tres saberes",
+      "body": [
+        "Conocer a fondo una disciplina no garantiza saber enseñarla. Dominar grandes metodologías no sirve si se explica mal el contenido. Y manejar muchas aplicaciones no mejora el aprendizaje si no se sabe qué se quiere enseñar ni cómo aprenden las personas. Cada saber, por separado, se queda corto.",
+        "El modelo <strong>TPACK</strong> (Mishra y Koehler, 2006) describe el conocimiento que necesita un docente para enseñar con tecnología. No es un modelo tecnológico: es un modelo del conocimiento profesional docente. Parte de tres saberes, <strong>Contenido</strong> (CK), <strong>Pedagogía</strong> (PK) y <strong>Tecnología</strong> (TK), y sostiene que lo decisivo no es dominar cada uno, sino cómo se integran.",
+        "De ahí salen las intersecciones. El <strong>Conocimiento Pedagógico del Contenido</strong> (PCK), que ya había descrito Lee Shulman en 1986, es saber cómo enseñar un contenido específico: no se enseña igual la poesía que las ecuaciones diferenciales. El <strong>Conocimiento Tecnológico del Contenido</strong> (TCK) es cómo una tecnología cambia la forma de representar una disciplina. El <strong>Conocimiento Tecnológico Pedagógico</strong> (TPK) es cómo una herramienta habilita o limita ciertas estrategias.",
+        "En el centro está el <strong>TPACK</strong>: decidir didácticamente con contenido, pedagogía y tecnología funcionando como un solo sistema. Un simulador para enseñar movimiento parabólico por indagación no está ahí por moderno, sino porque deja experimentar variables difíciles de observar en el aula. La tecnología entra cuando tiene una razón didáctica.",
+        "Por eso el error más común al integrar tecnología es empezar preguntando qué herramienta usar. La pregunta correcta llega antes: qué quiero que aprendan mis estudiantes, y qué papel puede jugar la tecnología para hacerlo posible."
+      ],
+      "references": [
+        { "authors": "Mishra, P., Koehler, M. J.", "year": 2006, "title": "Technological Pedagogical Content Knowledge: A Framework for Teacher Knowledge", "journal": "Teachers College Record", "volume": "108(6)", "pages": "1017-1054" },
+        { "authors": "Shulman, L. S.", "year": 1986, "title": "Those Who Understand: Knowledge Growth in Teaching", "journal": "Educational Researcher", "volume": "15(2)", "pages": "4-14" },
+        { "authors": "Koehler, M. J., Mishra, P.", "year": 2009, "title": "What Is Technological Pedagogical Content Knowledge?", "journal": "Contemporary Issues in Technology and Teacher Education", "volume": "9(1)", "pages": "60-70" }
+      ]
+    }
+  },
+  "hint": { "es": "ningún saber, solo, alcanza para enseñar" },
+  "hintDuration": 4,
+  "canvas": {
+    "w": 900, "h": 540, "bg": "#171c2e", "floor": "wood", "sky": "#222842", "horizon": 0.52, "safeArea": 20,
+    "layers": [
+      {
+        "top": 0, "bottom": 0.52, "parallax": 0.05,
+        "gradient": [ { "at": 0, "color": "#272d4c" }, { "at": 1, "color": "#1c2138" } ],
+        "shapes": [
+          { "kind": "rect", "x": 0.0, "y": 0.49, "w": 1.0, "h": 0.012, "color": "#343b5e" },
+          { "kind": "rect", "x": 0.0, "y": 0.502, "w": 1.0, "h": 0.018, "color": "#232a44" }
+        ]
+      }
+    ]
+  },
+  "ambient": { "darkness": 0.12, "darknessColor": "#0a0e1e" },
+  "walls": [],
+  "zones": [],
+  "labels": [],
+  "props": [
+    { "type": "blackboard", "x": 112, "y": 468, "scale": 2.3 },
+    { "type": "lamp", "x": 840, "y": 470 },
+    { "type": "bookshelf", "x": 56, "y": 468 }
+  ],
+  "entities": [
+    { "type": "learner", "id": "experta", "x": 230, "y": 436, "scale": 5, "hero": true, "body": "#6e7896", "name": "Experta", "accessory": "glasses", "behavior": null },
+    { "type": "learner", "id": "didacta", "x": 230, "y": 436, "scale": 5, "hero": true, "body": "#caa078", "name": "Didacta", "accessory": "headband", "behavior": null, "_alpha": 0 },
+    { "type": "learner", "id": "tecno", "x": 230, "y": 436, "scale": 5, "hero": true, "body": "#4f8a5e", "name": "Tecnólogo", "accessory": "glasses", "behavior": null, "_alpha": 0 },
+    { "type": "learner", "id": "est1", "x": 556, "y": 436, "scale": 5, "hero": true, "body": "#d8a878", "behavior": null, "greets": false },
+    { "type": "learner", "id": "est2", "x": 662, "y": 440, "scale": 5, "hero": true, "body": "#caa078", "behavior": null, "greets": false },
+    { "type": "learner", "id": "est3", "x": 768, "y": 432, "scale": 5, "hero": true, "body": "#e0b088", "behavior": null, "greets": false }
+  ],
+  "script": [
+    { "wait": 0.8 },
+    { "caption": "TPACK: ENSEÑAR ES INTEGRAR TRES SABERES", "style": "title" },
+    { "wait": 3.0 },
+    { "caption": "", "style": "title" },
+    { "caption": "Imaginemos a una profesora que sabe muchísimo de su materia." },
+    { "wait": 4.4 },
+    { "say": "experta", "text": "Puedo explicar la Revolución Francesa con todas sus fuentes.", "duration": 3.6 },
+    { "tween": "ck", "to": 1, "duration": 0.8, "easing": "easeOutBack" },
+    { "tone": 392, "dur": 0.12 },
+    { "wait": 4.4 },
+    { "caption": "Pero en el aula, sus estudiantes se aburren." },
+    { "mood": "est1", "value": "sad", "duration": 8 },
+    { "mood": "est2", "value": "sad", "duration": 8 },
+    { "mood": "est3", "value": "sad", "duration": 8 },
+    { "wait": 4.4 },
+    { "caption": "¿Basta con dominar la materia?" },
+    { "wait": 4.2 },
+
+    { "caption": "" },
+    { "vanish": "experta", "duration": 0.6 },
+    { "appear": "didacta", "duration": 0.6 },
+    { "mood": "est1", "value": "happy", "duration": 8 },
+    { "mood": "est2", "value": "happy", "duration": 8 },
+    { "mood": "est3", "value": "happy", "duration": 8 },
+    { "caption": "Otra domina las mejores estrategias: proyectos, debates, trabajo en equipo." },
+    { "wait": 5.0 },
+    { "say": "didacta", "text": "Aprenden haciendo, y se entusiasman.", "duration": 3.0 },
+    { "tween": "pk", "to": 1, "duration": 0.8, "easing": "easeOutBack" },
+    { "tone": 440, "dur": 0.12 },
+    { "wait": 4.2 },
+    { "caption": "Pero al explicar la Revolución confunde las fechas y los hechos." },
+    { "mood": "didacta", "value": "confused", "duration": 3.5 },
+    { "wait": 4.6 },
+    { "caption": "¿Basta con la mejor metodología?" },
+    { "wait": 4.2 },
+
+    { "caption": "" },
+    { "vanish": "didacta", "duration": 0.6 },
+    { "appear": "tecno", "duration": 0.6 },
+    { "caption": "Un tercero domina veinte aplicaciones." },
+    { "wait": 3.8 },
+    { "say": "tecno", "text": "Genially, Canva, Kahoot, Moodle, IA.", "duration": 3.2 },
+    { "tween": "tk", "to": 1, "duration": 0.8, "easing": "easeOutBack" },
+    { "tone": 523, "dur": 0.12 },
+    { "wait": 4.0 },
+    { "caption": "Pero no tiene claro qué enseñar ni cómo aprenden sus estudiantes." },
+    { "mood": "tecno", "value": "confused", "duration": 4.5 },
+    { "wonder": "tecno" },
+    { "wait": 4.6 },
+    { "caption": "¿La tecnología, sola, mejora el aprendizaje?" },
+    { "wait": 4.4 },
+
+    { "caption": "Cada saber, por separado, se queda corto." },
+    { "vanish": "tecno", "duration": 1.0 },
+    { "vanish": "est1", "duration": 1.0 },
+    { "vanish": "est2", "duration": 1.0 },
+    { "vanish": "est3", "duration": 1.0 },
+    { "wait": 3.6 },
+    { "caption": "Aquí aparece TPACK (Mishra y Koehler): no un modelo de tecnología, sino de conocimiento docente." },
+    { "wait": 5.6 },
+    { "caption": "Tres saberes que, por separado, ninguno alcanza: contenido, pedagogía y tecnología." },
+    { "wait": 5.2 },
+
+    { "caption": "Contenido más pedagogía: cómo enseñar ESTE contenido. Shulman lo llamó PCK." },
+    { "tween": "pck", "to": 1, "duration": 0.7 },
+    { "tone": 392, "dur": 0.14 },
+    { "wait": 5.8 },
+    { "caption": "Contenido más tecnología: cómo una herramienta cambia la disciplina. Es el TCK." },
+    { "tween": "tck", "to": 1, "duration": 0.7 },
+    { "tone": 466, "dur": 0.14 },
+    { "wait": 5.8 },
+    { "caption": "Pedagogía más tecnología: cómo una herramienta cambia el enseñar. Es el TPK." },
+    { "tween": "tpk", "to": 1, "duration": 0.7 },
+    { "tone": 523, "dur": 0.14 },
+    { "wait": 5.8 },
+
+    { "caption": "Y en el centro, los tres como un solo sistema: TPACK." },
+    { "tween": "core", "to": 1, "duration": 1.0, "easing": "easeOutCubic" },
+    { "tone": 587, "dur": 0.3 },
+    { "tone": 698, "dur": 0.4 },
+    { "wait": 5.0 },
+    { "caption": "Ejemplo: enseñar movimiento parabólico (contenido), por indagación (pedagogía), con un simulador (tecnología)." },
+    { "wait": 6.4 },
+    { "caption": "El simulador no está por moderno: deja experimentar variables que no se ven en el aula." },
+    { "wait": 5.8 },
+
+    { "caption": "Y todo ocurre dentro de un contexto: la institución, el aula, los estudiantes, los recursos." },
+    { "tween": "ctx", "to": 1, "duration": 1.2, "easing": "easeOutCubic" },
+    { "tone": 330, "dur": 0.3 },
+    { "wait": 6.0 },
+
+    { "caption": "El error común es empezar preguntando: ¿qué herramienta voy a usar?" },
+    { "wait": 5.2 },
+    { "caption": "La pregunta correcta llega antes: ¿qué quiero que aprendan, y qué papel puede jugar la tecnología?" },
+    { "wait": 6.2 }
+  ],
+  "hooks": {
+    "onInit": "const s = world.state; s.ck = 0; s.pk = 0; s.tk = 0; s.pck = 0; s.tck = 0; s.tpk = 0; s.core = 0; s.ctx = 0;",
+    "onStep": "",
+    "onDraw": "const s = world.state;\nconst A = function (v) { return Math.max(0, Math.min(1, v || 0)); };\nconst PJS = ' \"Plus Jakarta Sans\", ui-sans-serif, system-ui';\nconst ls = world.entities.filter(function (e) { return e.type === 'learner'; });\nls.sort(function (a, b) { return (a.y || 0) - (b.y || 0); });\nfor (const e of ls) world.draw.learner(e);\nconst cx = 450, cy = 240, R = 115, o = 71;\nconst C = { x: cx, y: cy - o }, P = { x: cx - 61.5, y: cy + 35.5 }, T = { x: cx + 61.5, y: cy + 35.5 };\nconst amber = '#F4AC1D', green = '#4f8a5e', blue = '#5b8def';\nconst circ = function (c, col, a) {\n  if (a < 0.01) return;\n  ctx.save();\n  ctx.globalAlpha = a * 0.26;\n  ctx.fillStyle = col;\n  ctx.beginPath(); ctx.arc(c.x, c.y, R, 0, Math.PI * 2); ctx.fill();\n  ctx.globalAlpha = Math.min(1, a * 0.95);\n  ctx.lineWidth = 2.4; ctx.strokeStyle = col;\n  ctx.beginPath(); ctx.arc(c.x, c.y, R, 0, Math.PI * 2); ctx.stroke();\n  ctx.restore();\n};\nconst chip = function (x, y, txt, a, big) {\n  if (a < 0.01) return;\n  ctx.save();\n  ctx.globalAlpha = a;\n  ctx.font = (big ? '700 15px' : '700 12px') + PJS;\n  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';\n  const w = ctx.measureText(txt).width + (big ? 24 : 14), h = big ? 26 : 19;\n  world.draw.rrect(x - w / 2, y - h / 2, w, h, h / 2);\n  ctx.fillStyle = big ? '#1F2547' : 'rgba(18,23,42,0.92)'; ctx.fill();\n  world.draw.rrect(x - w / 2, y - h / 2, w, h, h / 2);\n  ctx.lineWidth = 1; ctx.strokeStyle = big ? '#F4AC1D' : 'rgba(232,226,210,0.30)'; ctx.stroke();\n  ctx.fillStyle = '#FBFAF6'; ctx.fillText(txt, x, y + 0.5);\n  ctx.restore();\n};\nconst tag = function (x, y, l1, l2, ax, ay, lx, ly, a) {\n  if (a < 0.01) return;\n  ctx.save(); ctx.globalAlpha = a;\n  world.draw.arrow(ax, ay, lx, ly, { color: 'rgba(154,163,189,0.92)', width: 1.6, head: 7 });\n  ctx.font = '600 12px' + PJS; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';\n  const w = Math.max(ctx.measureText(l1).width, ctx.measureText(l2).width) + 18, h = 36;\n  world.draw.rrect(x - w / 2, y - h / 2, w, h, 8);\n  ctx.fillStyle = 'rgba(18,23,42,0.94)'; ctx.fill();\n  world.draw.rrect(x - w / 2, y - h / 2, w, h, 8);\n  ctx.lineWidth = 1; ctx.strokeStyle = 'rgba(232,226,210,0.30)'; ctx.stroke();\n  ctx.fillStyle = '#e8e2d2';\n  ctx.fillText(l1, x, y - 8); ctx.fillText(l2, x, y + 8);\n  ctx.restore();\n};\nif (A(s.core) > 0.01) {\n  const aa = A(s.core);\n  const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, 82);\n  g.addColorStop(0, 'rgba(244,172,29,' + (0.34 * aa).toFixed(2) + ')');\n  g.addColorStop(1, 'rgba(244,172,29,0)');\n  ctx.save(); ctx.fillStyle = g; ctx.beginPath(); ctx.arc(cx, cy, 82, 0, Math.PI * 2); ctx.fill(); ctx.restore();\n}\nif (A(s.ctx) > 0.01) {\n  ctx.save();\n  ctx.globalAlpha = A(s.ctx) * 0.9;\n  ctx.setLineDash([6, 7]); ctx.lineWidth = 2; ctx.strokeStyle = 'rgba(154,163,189,0.85)';\n  ctx.beginPath(); ctx.ellipse(cx, cy - 18, 208, 194, 0, 0, Math.PI * 2); ctx.stroke();\n  ctx.setLineDash([]); ctx.restore();\n  chip(cx, cy - 212, 'CONTEXTOS', A(s.ctx));\n}\ncirc(C, amber, A(s.ck));\ncirc(P, green, A(s.pk));\ncirc(T, blue, A(s.tk));\ntag(152, 176, 'Conocimiento Pedagógico', 'del Contenido', 236, 184, 388, 206, A(s.pck));\ntag(748, 176, 'Conocimiento Tecnológico', 'del Contenido', 664, 184, 512, 206, A(s.tck));\ntag(450, 442, 'Conocimiento Tecnológico', 'Pedagógico', 450, 424, 450, 328, A(s.tpk));\nchip(cx, C.y - R * 0.52, 'CONTENIDO', A(s.ck));\nchip(P.x - 52, P.y + R * 0.46, 'PEDAGOGÍA', A(s.pk));\nchip(T.x + 52, T.y + R * 0.46, 'TECNOLOGÍA', A(s.tk));\nchip(cx - 58, cy - 34, 'PCK', A(s.pck));\nchip(cx + 58, cy - 34, 'TCK', A(s.tck));\nchip(cx, cy + 68, 'TPK', A(s.tpk));\nchip(cx, cy, 'TPACK', A(s.core), true);",
+    "onClick": "",
+    "onReset": ""
+  }
+}

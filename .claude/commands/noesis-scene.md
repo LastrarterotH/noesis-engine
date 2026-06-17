@@ -254,6 +254,8 @@ If `behavior` is set, engine auto-applies velocity, bounces off canvas edges, se
 
 **Conceptual / morph**: `field` (campo de partículas orden→desorden: `w`, `h`, `cols`, `rows`, `color`/`color2`, y `disorder` 0..1 animable con `tween "id.disorder"`; opcionales `homeFrac` = el orden ocupa solo esa fracción izquierda y el desorden esparce por todo, para un gas confinado que se expande, y `jitter` = tembleque base de gas). Para entropía, mezcla, difusión, cambio de fase, expansión libre. El desorden se ve en las partículas: no le pongas una barra.
 
+**Personajes / escena (bespoke, dibujados en vivo)**: `cat` (gato con formas suaves, no pixel: `pose` `walk`/`curl`/`fall`, `color` recolorea el pelaje entero, `dir` espeja, `alpha` 0..1 lo vuelve fantasma para doble exposición, respira en `curl`) y `vault` (caja fuerte de frente en dos capas que el z-index intercala con otros props: `face` `back`/`front`, `glass` 0..1 vuelve la cara translúcida para ver el interior, `wheel` en radianes gira el volante, `lift` en celdas la eleva sobre una mesa con ruedas, `color` tiñe el metal).
+
 **Notación paso a paso**: declara `labels` con `"hidden": true` y revélalos en el guion con `{ "showLabel": "id" }` / `{ "hideLabel": "id" }`, para construir un panel de fórmulas a un lado mientras la animación corre (con la notación `_`/`^`: `ΔS = nR ln(V_f / V_i) > 0`).
 
 **Tamaño natural**: un prop SIN `scale` toma su default por tipo (`PROP_NATURAL_SCALE` en `prop-sprites.js`), proporcionado contra un learner hero a scale 5 (flor pequeña, mesa a la cintura, árbol al doble de la persona). Omite `scale` salvo intención deliberada (protagonismo, lejanía).
@@ -342,6 +344,12 @@ Toda escena con botón "Ver nuevamente" debe insertar al menos 3 segundos extra 
 ### Wordmark "noesis." del engine
 
 El engine estampa "noesis." en la esquina inferior derecha de cada lienzo (ver `world.js: _drawWatermark`). No intentes ocultarlo, taparlo ni reposicionarlo desde la escena: vive en screen-space tras todo el render. Si la escena necesita usar esa esquina del canvas, mover el contenido de la escena, no el watermark.
+
+### Banda de subtítulos y tamaño de personajes (máximas)
+
+**La banda inferior es de los subtítulos.** El motor reserva una franja al pie del lienzo para los captions e impide que cualquier learner (y su name-label) la invada: `learner.js` clampa la base de todo learner por encima de `H - CAPTION_BAND - NAME_RESERVE` (56 + 20). Al componer, ubica a los personajes bien por encima del borde inferior; si la escena necesita más aire, sube `canvas.h`, nunca metas personajes en la banda. El motor lo fuerza igual, pero authoring correcto evita que te los suba de golpe.
+
+**Nada de blobs enanos.** Los personajes secundarios (estudiantes, público, acompañantes) van del porte del protagonista: `hero: true` con scale comparable (5). Nada de blobs chicos no-hero (scale 3-4): se leen como enanos. Tamaños menores solo para una mecánica de población/multitud deliberada.
 
 ## Style and palette (brand-aligned)
 

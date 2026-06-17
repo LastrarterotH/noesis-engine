@@ -6,6 +6,13 @@
 // `world` instance; World exposes _initLearner/_touchLearner/_tickLearner as
 // thin wrappers.
 
+// Máxima de noesis: la banda inferior del lienzo es de los subtítulos. Ningún
+// learner (ni su name-label, que cuelga bajo los pies) puede invadirla. El
+// caption se ancla en H-18 y crece hacia arriba; estos valores reservan su
+// alto más el del nombre. Mantener en sintonía con el mismo reserve en fx.js.
+export const CAPTION_BAND = 56;   // alto reservado para el caption (hasta 2 líneas)
+export const NAME_RESERVE = 20;   // alto del name-label que cuelga bajo los pies
+
 // Catmull-Rom spline sampler: densify control points into a smooth polyline
 // that passes through every control point. Used by the followPath behavior.
 function sampleSpline(P, perSeg) {
@@ -220,6 +227,14 @@ export function tickLearner(world, e, dt) {
       e.y = horizonY;
       if (e.vy < 0) e.vy = -e.vy * 0.4;
     }
+  }
+  // Máxima: el cuerpo y el name-label quedan SIEMPRE por encima de la banda de
+  // subtítulos. Vale para todo learner, tenga o no behavior. (e.y es el centro;
+  // los pies están a media altura del sprite por debajo.)
+  {
+    const half = ((e.hero !== false ? 11 : 7) * (e.scale || 4)) / 2;
+    const footMax = world.H - CAPTION_BAND - NAME_RESERVE;
+    if (e.y + half > footMax) { e.y = footMax - half; if (e.vy > 0) e.vy = 0; }
   }
   // Collision / separation: push e away from any overlapping learner.
   // Default ON for all learners; opt-out per entity with `solid: false`.

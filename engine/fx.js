@@ -7,8 +7,8 @@
 // _positionBubbles/_drawFx as thin wrappers. The `fx` getter memoizes this api
 // on world._fxApi, so it is built once per World (not rebuilt every access).
 
-import { tone, sweep, createAmbientSound, createAmbientMusic, audio } from './audio.js?v=65';
-import { richToHtml } from './util.js?v=65';
+import { tone, sweep, createAmbientSound, createAmbientMusic, audio } from './audio.js?v=70';
+import { richToHtml } from './util.js?v=70';
 
 export function createFxApi(world) {
   const W = world;
@@ -607,10 +607,11 @@ export function positionBubbles(world) {
       if (!e) continue;
       // El nombre vive DEBAJO del blob: arriba está la zona de los globos de
       // diálogo y se tapaban. Media altura del sprite (hero 11 celdas, minion
-      // 7) más un margen corto, con tope para no invadir la franja de
-      // subtítulos (captions) del fondo del lienzo.
+      // 7) más un margen corto, con tope DURO por encima de la banda de
+      // subtítulos (máxima de noesis): el nombre nunca cae sobre el caption.
+      // El 56 es CAPTION_BAND de learner.js; mantener en sintonía.
       const half = ((e.hero !== false ? 11 : 7) * (e.scale || 4)) / 2;
-      const ny = Math.min(e.y + half + 4, world.H - 36);
+      const ny = Math.min(e.y + half + 4, world.H - 56);
       n.el.style.left = `${screenXPct(e.x)}%`;
       n.el.style.top = `${screenYPct(ny)}%`;
       n.el.style.opacity = e._sleeping ? '0.35' : String(e._alpha ?? 1);

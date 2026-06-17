@@ -157,6 +157,10 @@ export function tickAnimatedProps(world, dt) {
       // Solo avanza el reloj: el jitter del desorden lo lee el drawer.
       if (p._t == null) p._t = 0;
       p._t += dt;
+    } else if (p.type === 'cat') {
+      // Solo avanza el reloj: el drawer lo usa para la respiración (pose curl).
+      if (p._t == null) p._t = world.rng() * Math.PI * 2;
+      p._t += dt;
     } else if (p.type === 'bird') {
       if (p._birdSpeed == null) {
         p._birdSpeed = 60 + world.rng() * 50;

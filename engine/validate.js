@@ -10,10 +10,10 @@
 // hooks) o se escanean del código fuente del motor (buildVocab recibe un
 // lector de fuentes), así el validador no se desincroniza al crecer el motor.
 
-import { PROP_SPRITES } from './prop-sprites.js?v=65';
-import { SKY_PRESETS } from './sky-presets.js?v=65';
-import { HOOK_NAMES, HOOK_ARGS } from './hooks.js?v=65';
-import { compileForm, FORM_TYPES } from './forms.js?v=65';
+import { PROP_SPRITES } from './prop-sprites.js?v=70';
+import { SKY_PRESETS } from './sky-presets.js?v=70';
+import { HOOK_NAMES, HOOK_ARGS } from './hooks.js?v=70';
+import { compileForm, FORM_TYPES } from './forms.js?v=70';
 
 // Fuentes del motor que buildVocab escanea con regex (enums de despachos
 // if/else que no se exportan como datos).
@@ -68,7 +68,7 @@ const FLOOR_PROPS = new Set([
   'flower', 'flower-cluster', 'rock', 'fountain', 'pond', 'bench', 'mushroom', 'tall-grass',
   'cactus', 'palm', 'crate', 'barrel', 'streetlamp', 'building', 'lighthouse', 'boat',
   'pedestal', 'bonfire', 'swing', 'door', 'sign', 'chest', 'switch', 'path-tile',
-  'flag', 'mountain', 'domino',
+  'flag', 'mountain', 'domino', 'cat', 'vault',
 ]);
 
 const LABEL_ANCHORS = ['top-left', 'top', 'top-right', 'left', 'center', 'right', 'bottom-left', 'bottom', 'bottom-right'];
@@ -81,7 +81,7 @@ const CHART_KEYS = ['id', 'type', 'x', 'y', 'w', 'h', 'xDomain', 'yDomain', 'xTi
 const SERIES_KEYS = ['id', 'color', 'width', 'fill', 'dash', 'dots', 'data', 'reveal'];
 const CANVAS_KEYS = ['w', 'h', 'bg', 'ss', 'sky', 'horizon', 'floor', 'safeArea', 'ysort', 'layers'];
 const ENTITY_KEYS = ['id', 'type', 'x', 'y', 'name', 'body', 'color2', 'scale', 'hero', 'mood', 'accessory', 'accessoryColor', 'behavior', 'look', 'health', 'extinguishable', 'extinctionThreshold', 'ageRate', 'maxAge', 'skybound', 'greets', 'sleepable', 'solid', 'stage'];
-const PROP_KEYS = ['type', 'id', 'x', 'y', 'scale', 'color', 'color2', 'beakColor', 'interactive', 'solid', 'solidBox', 'z', 'dir', 'state', 'open', 'label', 'light', 'fall', 'w', 'h', 'cols', 'rows', 'disorder', 'homeFrac', 'jitter'];
+const PROP_KEYS = ['type', 'id', 'x', 'y', 'scale', 'color', 'color2', 'beakColor', 'interactive', 'solid', 'solidBox', 'z', 'dir', 'state', 'open', 'label', 'light', 'fall', 'w', 'h', 'cols', 'rows', 'disorder', 'homeFrac', 'jitter', 'pose', 'alpha', 'glass', 'wheel', 'face', 'lift'];
 const LABEL_KEYS = ['id', 'html', 'text', 'x', 'y', 'anchor', 'style', 'hidden'];
 const METER_KEYS = ['id', 'label', 'x', 'y', 'w', 'h', 'color', 'max', 'value', 'showValue'];
 // Un step puede combinar varias acciones; esto es la unión de claves que
@@ -110,6 +110,118 @@ function isCoord(v) {
   if (typeof v === 'number') return v >= 0 || 'las coordenadas negativas no existen (usa anchors tipo "right-20" para medir desde un borde)';
   if (typeof v === 'string') return ANCHOR_RE.test(v) || 'no es un anchor válido (formato: "left+10", "center", "bottom-30")';
   return 'debe ser número (0..1 fracción del canvas, >=1 píxeles) o string anchor ("left+10", "center")';
+}
+
+// Resuelve una coordenada de escena (número px, fracción 0..1 o anchor string)
+// a píxeles. Devuelve null si no se puede resolver (anchor raro): el caller la
+// trata como no rastreable.
+function resolveCoord(v, dim) {
+  if (typeof v === 'number') return v <= 1 ? v * dim : v;
+  if (typeof v === 'string') {
+    const m = v.match(/^(left|right|center|top|bottom|middle)([+-]\d+(?:\.\d+)?)?$/);
+    if (!m) return null;
+    const off = m[2] ? parseFloat(m[2]) : 0;
+    if (m[1] === 'left' || m[1] === 'top') return off;
+    if (m[1] === 'right' || m[1] === 'bottom') return dim + off;
+    return dim / 2 + off;   // center / middle
+  }
+  return null;
+}
+
+// Distancia de un punto a un segmento (para saber si una ruta de caminata pasa
+// por encima de un cuerpo quieto).
+function distPointSegment(px, py, ax, ay, bx, by) {
+  const dx = bx - ax, dy = by - ay;
+  const L2 = dx * dx + dy * dy;
+  let t = L2 ? ((px - ax) * dx + (py - ay) * dy) / L2 : 0;
+  t = Math.max(0, Math.min(1, t));
+  const cx = ax + t * dx, cy = ay + t * dy;
+  return Math.hypot(px - cx, py - cy);
+}
+
+// Radio aproximado del cuerpo de un aprendiz, derivado de su escala (un hero a
+// scale 5 mide ~55 px de alto, ~27 de medio-ancho).
+function learnerRadius(e) {
+  return (typeof e.scale === 'number' ? e.scale : 4) * 5.2;
+}
+
+// Rastrea las posiciones de las entidades a lo largo del guion lineal y avisa
+// cuando un step "walk" haría que el caminante atraviese a otro cuerpo (sus
+// siluetas se solapan), o cuando dos entidades arrancan encimadas. Es una
+// heurística de autoría: sigue el guion top-level (no ramas if/runScript) y no
+// puede seguir posiciones que cambie un "do" en JS. No toca la física.
+function checkMovement(ctx, config) {
+  const ents = (config.entities || []).filter(e => e && e.id);
+  if (ents.length < 2) return;
+  const W = (config.canvas && typeof config.canvas.w === 'number') ? config.canvas.w : 720;
+  const H = (config.canvas && typeof config.canvas.h === 'number') ? config.canvas.h : 400;
+  const pos = new Map();
+  for (const e of ents) {
+    const x = resolveCoord(e.x == null ? 0.5 : e.x, W);
+    const y = resolveCoord(e.y == null ? 0.5 : e.y, H);
+    if (x == null || y == null) continue;        // no rastreable
+    pos.set(e.id, { x, y, r: learnerRadius(e), invisible: e._alpha === 0 });
+  }
+  // Solape al arrancar (dos cuerpos visibles en el mismo punto).
+  const ids = [...pos.keys()];
+  for (let i = 0; i < ids.length; i++) {
+    for (let j = i + 1; j < ids.length; j++) {
+      const a = pos.get(ids[i]), b = pos.get(ids[j]);
+      if (a.invisible || b.invisible) continue;
+      if (Math.hypot(a.x - b.x, a.y - b.y) < (a.r + b.r) * 0.8) {
+        ctx.warn('entities', `"${ids[i]}" y "${ids[j]}" arrancan encimados (sus cuerpos se solapan en su posición inicial). Sepáralos para que no se monten.`);
+      }
+    }
+  }
+  const steps = Array.isArray(config.script) ? config.script : null;
+  if (!steps) return;
+  const segCheck = (moverId, from, to, targetId, path) => {
+    for (const [id, p] of pos) {
+      if (id === moverId || id === targetId || p.invisible) continue;
+      const d = distPointSegment(p.x, p.y, from.x, from.y, to.x, to.y);
+      if (d < (p.r + from.r) * 0.9) {
+        ctx.warn(path, `la caminata de "${moverId}" pasa por encima de "${id}" (los cuerpos se solapan en el trayecto). Reubica el destino, el origen o a "${id}", o haz que "${id}" se aparte antes con su propio walk.`);
+      }
+    }
+  };
+  steps.forEach((s, i) => {
+    if (!s || typeof s !== 'object') return;
+    if (s.walk != null && pos.has(s.walk)) {
+      const from = pos.get(s.walk);
+      let to = null, targetId = null;
+      if (Array.isArray(s.to)) {
+        const x = resolveCoord(s.to[0], W), y = resolveCoord(s.to[1], H);
+        if (x != null && y != null) to = { x, y };
+      } else if (typeof s.to === 'string' && pos.has(s.to)) {
+        const tp = pos.get(s.to); to = { x: tp.x, y: tp.y }; targetId = s.to;
+      } else if (s.to && typeof s.to === 'object') {
+        const x = resolveCoord(s.to.x, W), y = resolveCoord(s.to.y, H);
+        if (x != null && y != null) to = { x, y };
+      }
+      if (to) { segCheck(s.walk, from, to, targetId, `script[${i}].walk`); from.invisible = false; pos.set(s.walk, { x: to.x, y: to.y, r: from.r, invisible: false }); }
+    }
+    if (s.path != null && pos.has(s.path) && Array.isArray(s.points) && s.points.length) {
+      let from = pos.get(s.path);
+      s.points.forEach((pt, k) => {
+        const x = resolveCoord(Array.isArray(pt) ? pt[0] : pt.x, W);
+        const y = resolveCoord(Array.isArray(pt) ? pt[1] : pt.y, H);
+        if (x == null || y == null) return;
+        segCheck(s.path, from, { x, y }, null, `script[${i}].path`);
+        from = { x, y, r: from.r, invisible: false };
+      });
+      pos.set(s.path, from);
+    }
+    if (s.appear != null && pos.has(s.appear)) pos.get(s.appear).invisible = false;
+    if (s.vanish != null && pos.has(s.vanish)) pos.get(s.vanish).invisible = true;
+    if (s.scene != null && s.move && typeof s.move === 'object') {
+      for (const [mid, p] of Object.entries(s.move)) {
+        if (pos.has(mid) && Array.isArray(p) && p.length === 2) {
+          const x = resolveCoord(p[0], W), y = resolveCoord(p[1], H);
+          if (x != null && y != null) { const cur = pos.get(mid); pos.set(mid, { x, y, r: cur.r, invisible: cur.invisible }); }
+        }
+      }
+    }
+  });
 }
 
 function checkTextStyle(ctx, path, value) {
@@ -831,6 +943,7 @@ export function createValidator(vocab) {
       }
     }
     if (config.form != null) vForm(ctx, config);
+    checkMovement(ctx, config);
     return { errors, warnings };
   }
 

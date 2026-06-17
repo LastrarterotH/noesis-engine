@@ -2,8 +2,8 @@
 // Per-prop draw functions + dispatch (drawProp). Animated/bespoke props
 // have their own renderer; static props fall through to PROP_SPRITES.
 
-import { PROP_SPRITES } from './prop-sprites.js?v=70';
-import { mixColors } from './util.js?v=70';
+import { PROP_SPRITES } from './prop-sprites.js?v=74';
+import { mixColors } from './util.js?v=74';
 
 // Compute a default collision box for a solid prop: the bottom 60% of the
 // sprite, centered on prop.x. Authors can override with `solidBox: {x,y,w,h}`
@@ -1289,9 +1289,227 @@ export function drawVault(ctx, prop) {
   for (const [rx, ry] of [[-10, -18], [9, -18], [-10, -1], [9, -1]]) px(rx, ry, 1, 1, mDeep);
 }
 
+// Wheat: espigas de trigo dorado con grano y vaivén suave (como tall-grass,
+// pero con cabeza de grano). `color` tiñe la caña. (x, y) es la base.
+export function drawWheat(ctx, prop) {
+  const s = prop.scale || 3;
+  const cx = Math.round(prop.x);
+  const cy = Math.round(prop.y);
+  const stalk = prop.color || '#c8962e';
+  const stalkD = '#9a6f1e';
+  const grain = '#e8c24a';
+  const grainHi = '#fbe9a8';
+  const t = prop._swayT || 0;
+  const a = prop.alpha == null ? 1 : Math.max(0, Math.min(1, prop.alpha));
+  if (a <= 0.01) return;
+  ctx.save();
+  ctx.globalAlpha *= a;
+  const px = (gx, gy, gw, gh, c) => { ctx.fillStyle = c; ctx.fillRect(cx + gx * s, cy + gy * s, gw * s, gh * s); };
+  const blades = [
+    { x: -4, h: 7, phase: 0.0 },
+    { x: -2, h: 9, phase: 0.6 },
+    { x: 0, h: 11, phase: 1.2 },
+    { x: 2, h: 8, phase: 0.3 },
+    { x: 4, h: 10, phase: 0.9 },
+  ];
+  for (const b of blades) {
+    for (let y = 0; y < b.h; y++) {
+      const heightFrac = y / (b.h - 1 || 1);
+      const offset = Math.round(Math.sin(t + b.phase) * heightFrac * 2.2);
+      px(b.x + offset, -y - 1, 1, 1, y === 0 ? stalkD : stalk);
+    }
+    const off = Math.round(Math.sin(t + b.phase) * 2.6);
+    const gx = b.x + off, gy = -b.h - 1;
+    px(gx, gy - 1, 1, 1, grainHi);
+    px(gx, gy, 1, 1, grainHi);
+    px(gx - 1, gy + 1, 1, 1, grain);
+    px(gx, gy + 1, 1, 1, grain);
+    px(gx + 1, gy + 1, 1, 1, grain);
+    px(gx, gy + 2, 1, 1, grain);
+  }
+  ctx.restore();
+}
+
+// Chasm: grieta en la tierra con luz del inframundo. (x, y) es el punto en el
+// suelo. `open` (0..1) la abre (animable con tween "id.open"); el resplandor
+// late con `_t`. La mecánica del rapto: la tierra se abre y algo emerge.
+export function drawChasm(ctx, prop) {
+  const s = prop.scale || 4;
+  const cx = Math.round(prop.x);
+  const cy = Math.round(prop.y);
+  const open = Math.max(0, Math.min(1, prop.open == null ? 1 : prop.open));
+  if (open < 0.02) return;
+  const t = prop._t || 0;
+  const hw = open * 15 * s;
+  const hh = open * 3.2 * s;
+  const pulse = 0.55 + 0.45 * Math.sin(t * 3);
+  ctx.save();
+  const g = ctx.createRadialGradient(cx, cy - hh * 0.3, 0, cx, cy, hw * 1.5);
+  g.addColorStop(0, 'rgba(240,120,50,' + (0.55 * pulse * open).toFixed(3) + ')');
+  g.addColorStop(0.45, 'rgba(190,50,35,' + (0.30 * open).toFixed(3) + ')');
+  g.addColorStop(1, 'rgba(120,20,20,0)');
+  ctx.fillStyle = g;
+  ctx.beginPath(); ctx.ellipse(cx, cy, hw * 1.5, hh * 2.2, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = '#0b0712';
+  ctx.beginPath(); ctx.ellipse(cx, cy, hw, hh, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = 'rgba(235,95,45,' + (0.5 + 0.4 * pulse).toFixed(2) + ')';
+  ctx.beginPath(); ctx.ellipse(cx, cy, hw * 0.6, hh * 0.42, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = 'rgba(255,205,130,' + (0.4 * pulse).toFixed(2) + ')';
+  ctx.beginPath(); ctx.ellipse(cx, cy, hw * 0.28, hh * 0.22, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = '#1a1422';
+  const n = Math.max(4, Math.round(open * 9));
+  for (let i = 0; i < n; i++) {
+    const a = (i / n) * Math.PI * 2;
+    const ex = cx + Math.cos(a) * hw * 0.92;
+    const ey = cy + Math.sin(a) * hh * 0.92;
+    const up = Math.sin(a) < 0 ? -1 : 1;
+    ctx.beginPath();
+    ctx.moveTo(ex - s * 0.8, ey);
+    ctx.lineTo(ex, ey + up * s * 1.4);
+    ctx.lineTo(ex + s * 0.8, ey);
+    ctx.closePath(); ctx.fill();
+  }
+  ctx.restore();
+}
+
+// Wonderflower: la flor imposible. Pétalos que emiten luz y ciclan de color
+// (rojo, dorado, púrpura, azul) con `_t`. (x, y) es la base del tallo.
+export function drawWonderflower(ctx, prop) {
+  const s = prop.scale || 3;
+  const cx = Math.round(prop.x);
+  const cy = Math.round(prop.y);
+  const t = prop._t || 0;
+  const a = prop.alpha == null ? 1 : Math.max(0, Math.min(1, prop.alpha));
+  if (a <= 0.01) return;
+  ctx.save();
+  ctx.globalAlpha *= a;
+  const colors = ['#e0445f', '#F4AC1D', '#9a5bd0', '#4f8fe0'];
+  const ph = ((t * 0.6) % colors.length + colors.length) % colors.length;
+  const i0 = Math.floor(ph), i1 = (i0 + 1) % colors.length, f = ph - i0;
+  const col = mixColors(colors[i0], colors[i1], f);
+  const colL = mixColors(col, '#ffffff', 0.4);
+  const stem = '#3e7a4b';
+  const headY = cy - 8 * s;
+  const pulse = 0.6 + 0.4 * Math.sin(t * 2.4);
+  const px = (gx, gy, gw, gh, c) => { ctx.fillStyle = c; ctx.fillRect(cx + gx * s, cy + gy * s, gw * s, gh * s); };
+  ctx.save();
+  ctx.globalAlpha = 0.32 * pulse;
+  ctx.fillStyle = col;
+  ctx.beginPath(); ctx.arc(cx, headY, 7 * s, 0, Math.PI * 2); ctx.fill();
+  ctx.restore();
+  px(-0.5, -8, 1, 8, stem);
+  px(-2.5, -5, 2, 1, stem);
+  px(0.6, -4, 2, 1, stem);
+  ctx.save();
+  for (let k = 0; k < 8; k++) {
+    const a = k / 8 * Math.PI * 2;
+    const pxp = cx + Math.cos(a) * 2.6 * s, pyp = headY + Math.sin(a) * 2.6 * s;
+    ctx.fillStyle = (k % 2) ? col : colL;
+    ctx.beginPath(); ctx.ellipse(pxp, pyp, 1.5 * s, 1.0 * s, a, 0, Math.PI * 2); ctx.fill();
+  }
+  ctx.restore();
+  ctx.fillStyle = mixColors(col, '#000000', 0.25);
+  ctx.beginPath(); ctx.arc(cx, headY, 1.7 * s, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = '#fbe9a8';
+  ctx.beginPath(); ctx.arc(cx, headY, 0.8 * s, 0, Math.PI * 2); ctx.fill();
+  ctx.restore();
+}
+
+// Pomegranate: granada partida que muestra un anillo de semillas glossy. `seeds`
+// (0..6) controla cuántas quedan: comerlas las quita una a una. `color` tiñe la
+// cáscara; `alpha` la desvanece. (x, y) es la base.
+export function drawPomegranate(ctx, prop) {
+  const s = prop.scale || 2;
+  const cx = Math.round(prop.x);
+  const cy = Math.round(prop.y);
+  const a = prop.alpha == null ? 1 : Math.max(0, Math.min(1, prop.alpha));
+  if (a <= 0.01) return;
+  const seeds = prop.seeds == null ? 6 : prop.seeds;
+  const rind = prop.color || '#a8323a';
+  const rindD = mixColors(rind, '#000000', 0.40);
+  const rindHi = mixColors(rind, '#ffffff', 0.28);
+  const flesh = '#f3cdd2';
+  const seedC = '#d83a58';
+  const seedHi = '#ff9fb0';
+  const calyx = mixColors(rind, '#000000', 0.22);
+  const TAU = Math.PI * 2;
+  ctx.save();
+  ctx.globalAlpha *= a;
+  ctx.fillStyle = 'rgba(8,10,22,0.25)';
+  ctx.beginPath(); ctx.ellipse(cx, cy, 5.2 * s, 1.5 * s, 0, 0, TAU); ctx.fill();
+  ctx.fillStyle = rindD; ctx.beginPath(); ctx.ellipse(cx, cy - 4.4 * s, 5.0 * s, 5.0 * s, 0, 0, TAU); ctx.fill();
+  ctx.fillStyle = rind; ctx.beginPath(); ctx.ellipse(cx, cy - 4.6 * s, 4.5 * s, 4.6 * s, 0, 0, TAU); ctx.fill();
+  ctx.fillStyle = rindHi; ctx.beginPath(); ctx.ellipse(cx - 1.8 * s, cy - 6.4 * s, 1.4 * s, 1.0 * s, -0.5, 0, TAU); ctx.fill();
+  ctx.fillStyle = calyx;
+  for (const dx of [-1.1, 0, 1.1]) {
+    ctx.beginPath();
+    ctx.moveTo(cx + (dx - 0.5) * s, cy - 9.0 * s);
+    ctx.lineTo(cx + dx * s, cy - 10.5 * s);
+    ctx.lineTo(cx + (dx + 0.5) * s, cy - 9.0 * s);
+    ctx.closePath(); ctx.fill();
+  }
+  ctx.fillStyle = flesh; ctx.beginPath(); ctx.ellipse(cx, cy - 5.2 * s, 3.4 * s, 2.7 * s, 0, 0, TAU); ctx.fill();
+  ctx.strokeStyle = mixColors(flesh, '#a8323a', 0.4); ctx.lineWidth = Math.max(1, s * 0.4);
+  ctx.beginPath(); ctx.ellipse(cx, cy - 5.2 * s, 3.4 * s, 2.7 * s, 0, 0, TAU); ctx.stroke();
+  const n = Math.max(0, Math.min(6, Math.ceil(seeds)));
+  for (let i = 0; i < 6; i++) {
+    if (i >= n) continue;
+    const ang = -Math.PI / 2 + i * TAU / 6;
+    const sx = cx + Math.cos(ang) * 1.95 * s;
+    const sy = cy - 5.2 * s + Math.sin(ang) * 1.5 * s;
+    ctx.fillStyle = seedC; ctx.beginPath(); ctx.ellipse(sx, sy, 0.95 * s, 1.15 * s, 0, 0, TAU); ctx.fill();
+    ctx.fillStyle = seedHi; ctx.beginPath(); ctx.arc(sx - 0.32 * s, sy - 0.38 * s, 0.34 * s, 0, TAU); ctx.fill();
+  }
+  ctx.restore();
+}
+
+// Tree-bare: árbol desnudo de invierno, ramas vectoriales que se bifurcan, con
+// nieve en las puntas. Gemelo del prop `tree` para el cruce verde↔pelado por
+// temporada. `color` tiñe la corteza; `alpha` lo desvanece. (x, y) es la base.
+export function drawTreeBare(ctx, prop) {
+  const s = prop.scale || 3.5;
+  const cx = Math.round(prop.x);
+  const cy = Math.round(prop.y);
+  const a = prop.alpha == null ? 1 : Math.max(0, Math.min(1, prop.alpha));
+  if (a <= 0.01) return;
+  const bark = prop.color || '#6a5236';
+  const snow = '#e8f1fb';
+  const TAU = Math.PI * 2;
+  ctx.save();
+  ctx.globalAlpha *= a;
+  // Sombra de contacto.
+  ctx.fillStyle = 'rgba(8,10,22,0.22)';
+  ctx.beginPath(); ctx.ellipse(cx, cy, 4 * s, 1.1 * s, 0, 0, TAU); ctx.fill();
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  ctx.strokeStyle = bark;
+  const branch = function (x, y, ang, len, w, depth) {
+    const x2 = x + Math.cos(ang) * len;
+    const y2 = y + Math.sin(ang) * len;
+    ctx.lineWidth = Math.max(1, w);
+    ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x2, y2); ctx.stroke();
+    if (depth <= 0) {
+      ctx.fillStyle = snow;
+      ctx.beginPath(); ctx.arc(x2, y2, Math.max(1.2, w * 0.9), 0, TAU); ctx.fill();
+      ctx.strokeStyle = bark;
+      return;
+    }
+    branch(x2, y2, ang - (0.34 + 0.06 * depth), len * 0.76, w * 0.66, depth - 1);
+    branch(x2, y2, ang + (0.34 + 0.06 * depth), len * 0.76, w * 0.66, depth - 1);
+    if (depth >= 2) branch(x2, y2, ang - 0.04, len * 0.6, w * 0.5, depth - 1);
+  };
+  branch(cx, cy, -Math.PI / 2, 9 * s, 2.3 * s, 3);
+  ctx.restore();
+}
+
 export function drawProp(ctx, prop) {
   if (prop.type === 'cat') return drawCat(ctx, prop);
   if (prop.type === 'vault') return drawVault(ctx, prop);
+  if (prop.type === 'tree-bare') return drawTreeBare(ctx, prop);
+  if (prop.type === 'pomegranate') return drawPomegranate(ctx, prop);
+  if (prop.type === 'wheat') return drawWheat(ctx, prop);
+  if (prop.type === 'chasm') return drawChasm(ctx, prop);
+  if (prop.type === 'wonderflower') return drawWonderflower(ctx, prop);
   if (prop.type === 'pond') return drawPond(ctx, prop);
   if (prop.type === 'field') return drawField(ctx, prop);
   if (prop.type === 'domino') return drawDomino(ctx, prop);
@@ -1311,6 +1529,11 @@ export function drawProp(ctx, prop) {
   if (prop.type === 'clock') return drawClock(ctx, prop);
   const def = PROP_SPRITES[prop.type];
   if (!def) return;
+  // alpha animable también para sprites (flores que brotan/marchitan, etc.).
+  const spriteA = prop.alpha == null ? 1 : Math.max(0, Math.min(1, prop.alpha));
+  if (spriteA <= 0.01) return;
+  const _prevGA = ctx.globalAlpha;
+  if (spriteA < 1) ctx.globalAlpha = _prevGA * spriteA;
   const s = prop.scale || 3;
   const rows = def.rows;
   const h = rows.length;
@@ -1358,6 +1581,7 @@ export function drawProp(ctx, prop) {
       }
     }
   }
+  ctx.globalAlpha = _prevGA;
   // Lamp halo: warm radial glow around the bulb (also streetlamp).
   if (prop.type === 'lamp' || prop.type === 'streetlamp') {
     const bx = prop.x;

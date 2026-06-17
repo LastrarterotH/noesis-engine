@@ -2,27 +2,27 @@
 // World class: simulation state + tick + draw orchestration.
 // Owns entities, camera, scripts, fx, bubbles, labels, ambient, audio handles.
 
-import { mulberry32, ease, colorAlpha, mixColors, drawRichText, measureRichText } from './util.js?v=70';
-import { compileHooks } from './hooks.js?v=70';
-import { createAmbientSound } from './audio.js?v=70';
-import { SKY_PRESETS } from './sky-presets.js?v=70';
-import { computeSolidBox, drawProp } from './prop-draw.js?v=70';
-import { PROP_NATURAL_SCALE, PROP_SPRITES } from './prop-sprites.js?v=70';
-import { Draw } from './draw.js?v=70';
-import { initCamera, tickCamera } from './camera.js?v=70';
-import { makeAmbientParticle, tickAmbient, drawAmbient } from './ambient.js?v=70';
+import { mulberry32, ease, colorAlpha, mixColors, drawRichText, measureRichText } from './util.js?v=74';
+import { compileHooks } from './hooks.js?v=74';
+import { createAmbientSound } from './audio.js?v=74';
+import { SKY_PRESETS } from './sky-presets.js?v=74';
+import { computeSolidBox, drawProp } from './prop-draw.js?v=74';
+import { PROP_NATURAL_SCALE, PROP_SPRITES } from './prop-sprites.js?v=74';
+import { Draw } from './draw.js?v=74';
+import { initCamera, tickCamera } from './camera.js?v=74';
+import { makeAmbientParticle, tickAmbient, drawAmbient } from './ambient.js?v=74';
 import {
   runScript as _runScript, stopScripts as _stopScripts, tickScripts,
   evalScriptExpr, processScript, execScriptStep,
-} from './scripts.js?v=70';
-import { compileForm } from './forms.js?v=70';
-import { drawFloor } from './floor.js?v=70';
-import { tickAnimatedProps } from './animated-props.js?v=70';
-import { initLearner, touchLearner, tickLearner } from './learner.js?v=70';
-import { handleClick, togglePropInteraction } from './interaction.js?v=70';
+} from './scripts.js?v=74';
+import { compileForm } from './forms.js?v=74';
+import { drawFloor } from './floor.js?v=74';
+import { tickAnimatedProps } from './animated-props.js?v=74';
+import { initLearner, touchLearner, tickLearner } from './learner.js?v=74';
+import { handleClick, togglePropInteraction } from './interaction.js?v=74';
 import {
   createFxApi, spawnBubble, spawnParticles, tickFx, positionBubbles, drawFx,
-} from './fx.js?v=70';
+} from './fx.js?v=74';
 
 // Props que emiten luz solos cuando hay `ambient.darkness` (opt-out con
 // `light: false` en el prop). `dy` ubica la fuente en celdas del sprite
@@ -518,6 +518,8 @@ export class World {
         const bottom = frac(L.bottom ?? 1, this.H);
         const h = Math.max(0, bottom - top);
         ctx.save();
+        // alpha animable por capa (para desvanecer el fondo, p.ej. al bajar al inframundo).
+        if (L.alpha != null) ctx.globalAlpha *= Math.max(0, Math.min(1, L.alpha));
         ctx.translate((this.W / 2 - cam.x) * px + cam.shakeX * px, 0);
         if (L.color) {
           ctx.fillStyle = L.color;

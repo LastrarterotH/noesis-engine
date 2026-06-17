@@ -1220,6 +1220,50 @@ export const PROP_SPRITES = {
     palette: { S: '#eef2f8', s: '#c5cfdd', R: '#8a93ab', r: '#5a6378', d: '#3a3f55' },
     mainKey: 'R',
   },
+  pomegranate: {
+    rows: [
+      '.....cc.....',
+      '....cccc....',
+      '...RRRRRR...',
+      '..RRRRRRRR..',
+      '.RRRssssRRR.',
+      '.RRsssWsssR.',
+      '.RRssssssRR.',
+      '.RRRssssRRR.',
+      '..RRRRRRRR..',
+      '..dRRRRRRd..',
+      '...dddddd...',
+      '....dddd....',
+    ],
+    palette: { c: '#7a3a2a', R: '#b0393a', d: '#6e2020', s: '#e0445f', W: '#ff9fae' },
+    mainKey: 'R',
+  },
+  column: {
+    rows: [
+      'KKKKKKKK',
+      'KMMMMMMK',
+      '.MMMMMM.',
+      '.MsMMsM.',
+      '.MsMMsM.',
+      '.MsMMsM.',
+      '.MsMMsM.',
+      '.MsMMsM.',
+      '.MsMMsM.',
+      '.MsMMsM.',
+      '.MsMMsM.',
+      '.MsMMsM.',
+      '.MsMMsM.',
+      '.MsMMsM.',
+      '.MsMMsM.',
+      '.MsMMsM.',
+      '.MMMMMM.',
+      'KMMMMMMK',
+      'KKKKKKKK',
+      'dddddddd',
+    ],
+    palette: { K: '#2a3040', M: '#3c4356', s: '#272c3a', d: '#171b26' },
+    mainKey: 'M',
+  },
 };
 
 // Tamaño natural por tipo: el scale que recibe un prop cuando la escena no
@@ -1238,7 +1282,7 @@ export const PROP_NATURAL_SCALE = {
   rug: 4, 'rug-stripes': 4, 'rug-medallion': 3.5, 'rug-checker': 4, book: 1.6, computer: 2.5,
   // objetos
   crate: 3.5, barrel: 2, chest: 3, coin: 2, gem: 1.8, pokeball: 2, pedestal: 2.5, bell: 3, domino: 3, field: 1,
-  cat: 3, vault: 3.5,
+  cat: 3, vault: 3.5, pomegranate: 1.6, column: 4, wheat: 3, chasm: 4, wonderflower: 2.4, 'tree-bare': 3.5,
   // urbano / estructuras
   building: 3.5, streetlamp: 3, lighthouse: 3.5, boat: 2.8, door: 3, sign: 2.4, bench: 2.6,
   // animados / interactivos

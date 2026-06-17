@@ -155,6 +155,20 @@ export function drawAccessories(draw, ctx, px, hero, eyeGY, accessory, opts) {
         ctx.fillStyle = earDark;
         px(7, -2, 1, 1);
       }
+    } else if (acc === 'crown') {
+      // Corona de puntas sobre la cabeza, con una gema central.
+      const gold = opts.accessoryColor || '#F4AC1D';
+      ctx.fillStyle = gold;
+      if (hero) {
+        px(1, -1, 7, 1);                 // banda
+        px(1, -2, 1, 1); px(4, -2, 1, 1); px(7, -2, 1, 1);  // puntas
+        px(4, -3, 1, 1);                 // punta central más alta
+      } else {
+        px(0, -1, 5, 1);
+        px(0, -2, 1, 1); px(2, -2, 1, 1); px(4, -2, 1, 1);
+      }
+      ctx.fillStyle = '#c44a3e';         // gema
+      px(hero ? 4 : 2, -1, 1, 1);
     } else if (acc === 'bow') {
       // Small 3-pixel bow on top of head, slightly right of center.
       ctx.fillStyle = opts.accessoryColor || '#F4AC1D';

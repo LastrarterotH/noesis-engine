@@ -2,9 +2,9 @@
 // Pixel-art draw primitives: learner blob, eye geometry, mood-routing,
 // accessories overlay. Instantiated once per World.
 
-import { mixColors } from './util.js?v=70';
-import { drawMoodOverlays } from './mood.js?v=70';
-import { drawAccessories } from './accessories.js?v=70';
+import { mixColors } from './util.js?v=74';
+import { drawMoodOverlays } from './mood.js?v=74';
+import { drawAccessories } from './accessories.js?v=74';
 
 export class Draw {
   constructor(world) { this.world = world; }
@@ -112,6 +112,20 @@ export class Draw {
       if (sp >= LOOK_MIN_MOTION) {
         opts = { ...opts, look: { x: entity.vx, y: entity.vy } };
       }
+    }
+    // Mirada dirigida: si el blob está quieto y tiene `lookAt` (id de otra
+    // entidad o un punto {x, y}), las pupilas apuntan hacia ahí. Permite que los
+    // personajes se miren entre sí o miren la acción sin moverse. El movimiento
+    // manda sobre lookAt (arriba); lookAt manda sobre la mirada idle.
+    if (!opts.look && entity && entity.lookAt != null) {
+      let tx = null, ty = null;
+      if (typeof entity.lookAt === 'string') {
+        const tgt = this.world.byId(entity.lookAt);
+        if (tgt) { tx = tgt.x; ty = tgt.y; }
+      } else if (typeof entity.lookAt === 'object') {
+        tx = entity.lookAt.x; ty = entity.lookAt.y;
+      }
+      if (tx != null && ty != null) opts = { ...opts, look: { x: tx - entity.x, y: ty - entity.y } };
     }
 
     // Walk bob: vertical wave when entity is moving.

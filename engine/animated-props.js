@@ -161,6 +161,18 @@ export function tickAnimatedProps(world, dt) {
       // Solo avanza el reloj: el drawer lo usa para la respiración (pose curl).
       if (p._t == null) p._t = world.rng() * Math.PI * 2;
       p._t += dt;
+    } else if (p.type === 'wheat') {
+      // Vaivén de las espigas (igual que tall-grass).
+      if (p._swayT == null) p._swayT = world.rng() * Math.PI * 2;
+      p._swayT += dt * 1.1;
+    } else if (p.type === 'chasm') {
+      // Reloj para el latido del resplandor.
+      if (p._t == null) p._t = world.rng() * Math.PI * 2;
+      p._t += dt;
+    } else if (p.type === 'wonderflower') {
+      // Reloj para el ciclo de color y el pulso del resplandor.
+      if (p._t == null) p._t = world.rng() * Math.PI * 2;
+      p._t += dt;
     } else if (p.type === 'bird') {
       if (p._birdSpeed == null) {
         p._birdSpeed = 60 + world.rng() * 50;

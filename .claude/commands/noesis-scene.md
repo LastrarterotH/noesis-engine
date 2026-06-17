@@ -8,6 +8,11 @@ You are generating a new scene for **noesis-engine**, a narrative animation engi
 
 ## Input
 
+El método de autoría de noesis es teatral: lo ideal es partir de un guion teatral
+(la guía está en `docs/guion-teatral.md`) y traducirlo al vocabulario de abajo.
+Si el usuario trae un guion, síguelo beat por beat; si no, dialógalo en ese
+formato antes de construir.
+
 The user invokes `/noesis-scene <description> [flags]`. Parse:
 
 - **description** (required) — free text; may name a theory, an author, a vivid metaphor, or a scenario ("aula", "parque", "noche", etc.).
@@ -211,7 +216,7 @@ leaveTombstone: true            show tombstone after death
 extinguishable: false           opt-in to Skinner-style fade
 extinctionThreshold: 8          s without reinforce before fade
 imitates: otherEntity           copies target's mood periodically
-lookAt: otherEntity             (legacy; gaze now follows motion by default)
+lookAt: id | {x,y}              blob quieto mira a esa entidad o punto (el movimiento manda; cámbialo con `do`)
 sleepable: true                 false = never sleep (scripted scenes)
 greets: true                    false = never auto-greet
 solid: true                     false = no collision with other learners
@@ -255,6 +260,10 @@ If `behavior` is set, engine auto-applies velocity, bounces off canvas edges, se
 **Conceptual / morph**: `field` (campo de partículas orden→desorden: `w`, `h`, `cols`, `rows`, `color`/`color2`, y `disorder` 0..1 animable con `tween "id.disorder"`; opcionales `homeFrac` = el orden ocupa solo esa fracción izquierda y el desorden esparce por todo, para un gas confinado que se expande, y `jitter` = tembleque base de gas). Para entropía, mezcla, difusión, cambio de fase, expansión libre. El desorden se ve en las partículas: no le pongas una barra.
 
 **Personajes / escena (bespoke, dibujados en vivo)**: `cat` (gato con formas suaves, no pixel: `pose` `walk`/`curl`/`fall`, `color` recolorea el pelaje entero, `dir` espeja, `alpha` 0..1 lo vuelve fantasma para doble exposición, respira en `curl`) y `vault` (caja fuerte de frente en dos capas que el z-index intercala con otros props: `face` `back`/`front`, `glass` 0..1 vuelve la cara translúcida para ver el interior, `wheel` en radianes gira el volante, `lift` en celdas la eleva sobre una mesa con ruedas, `color` tiñe el metal).
+
+**Mitología / naturaleza (bespoke salvo donde se indica)**: `pomegranate` (granada partida con anillo de seis semillas glossy; `seeds` 0..6, comerlas las quita una a una), `column` (sprite: columna de inframundo), `wheat` (espigas de trigo dorado con vaivén), `chasm` (grieta en la tierra con luz rojiza pulsante; `open` 0..1, animable con `tween "id.open"`), `wonderflower` (flor que cicla de color con resplandor) y `tree-bare` (árbol desnudo de invierno con nieve; gemelo de `tree`, se cruza con él vía `alpha` por temporada).
+
+**`alpha` en sprites y capas**: además de los bespoke, los props de sprite y las `canvas.layers` aceptan `alpha` (0..1), animable con `tween "id.alpha"` (flores que brotan/marchitan) o, para una capa de fondo, con un `do` que tweenee el objeto de `canvas.layers`. Declara un `alpha` inicial para que el tween tenga origen.
 
 **Notación paso a paso**: declara `labels` con `"hidden": true` y revélalos en el guion con `{ "showLabel": "id" }` / `{ "hideLabel": "id" }`, para construir un panel de fórmulas a un lado mientras la animación corre (con la notación `_`/`^`: `ΔS = nR ln(V_f / V_i) > 0`).
 

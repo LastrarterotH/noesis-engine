@@ -12,7 +12,7 @@ const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const gradient = { addColorStop() {} };
 const ctx = new Proxy({}, {
   get(t, p) {
-    if (p === 'createRadialGradient' || p === 'createLinearGradient') return () => gradient;
+    if (p === 'createRadialGradient' || p === 'createLinearGradient' || p === 'createConicGradient') return () => gradient;
     if (p === 'measureText') return () => ({ width: 0 });
     if (p === 'canvas') return t.canvas;
     if (p === 'getImageData') return () => ({ data: [] });

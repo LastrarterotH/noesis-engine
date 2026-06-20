@@ -1,0 +1,19 @@
+{
+  "meta": { "id": "genially-test", "version": "0.1", "lang": ["es"] },
+  "text": { "es": { "title": "prop · genially", "body": ["Previsualización del prop genially a varios tamaños. El grande gira con spin."] } },
+  "canvas": { "w": 760, "h": 420, "bg": "#e9edf2", "safeArea": 20 },
+  "walls": [],
+  "zones": [],
+  "labels": [],
+  "props": [
+    { "type": "genially", "id": "big", "x": 300, "y": 210, "scale": 6 },
+    { "type": "genially", "id": "med", "x": 590, "y": 150, "scale": 3 },
+    { "type": "genially", "id": "sml", "x": 620, "y": 300, "scale": 2 }
+  ],
+  "entities": [],
+  "hooks": {
+    "onInit": "",
+    "onStep": "",
+    "onDraw": ""
+  }
+}

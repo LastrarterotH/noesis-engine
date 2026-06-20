@@ -1,0 +1,104 @@
+{
+  "meta": { "id": "08-cuaderno-tres-formas", "number": 8, "version": "0.1", "lang": ["es"], "music": "pedagogical" },
+  "text": {
+    "es": {
+      "title": "Un cuaderno, tres formas de aprender",
+      "body": [
+        "Sobre una publicación de <strong>Juan Vicente García Manjón</strong> en LinkedIn: los <strong>Cuadernos de Copilot</strong> permiten transformar un mismo conjunto de fuentes en tres formatos de estudio distintos, un audio-resumen, una guía de estudio y un mapa mental.",
+        "El <strong>audio-resumen</strong> convierte el material en voz: admite distintas voces, idiomas y un modo diálogo que se escucha como una conversación entre dos personas.",
+        "La <strong>guía de estudio</strong> destila el contenido en resúmenes y tarjetas de aprendizaje para repasar, con ejercicios de coincidencias y, próximamente, cuestionarios.",
+        "El <strong>mapa mental</strong> despliega la estructura completa del tema de un vistazo, mostrando cómo se conectan las ideas.",
+        "Lo interesante no es la herramienta, sino el principio que la sostiene: un mismo contenido codificado por varias vías se aprende mejor. Es el <strong>doble código</strong> de Paivio (1986), que separa el canal verbal del visual, y el <strong>aprendizaje multimedia</strong> de Mayer (2009): oír, repasar y ver la estructura activan rutas distintas que se refuerzan entre sí.",
+        "Sirve para la educación y para cualquier trabajo con información de referencia."
+      ],
+      "references": [
+        { "authors": "García Manjón, J. V.", "year": 2026, "title": "Publicación sobre las nuevas funcionalidades de los Cuadernos de Copilot", "url": "linkedin.com" },
+        { "authors": "Paivio, A.", "year": 1986, "title": "Mental Representations: A Dual Coding Approach", "publisher": "Oxford University Press" },
+        { "authors": "Mayer, R. E.", "year": 2009, "title": "Multimedia Learning (2.ª ed.)", "publisher": "Cambridge University Press" }
+      ]
+    }
+  },
+  "hint": { "es": "una fuente, tres formatos: audio, guía y mapa mental" },
+  "hintDuration": 4,
+  "canvas": {
+    "w": 900, "h": 540, "bg": "#222a44", "floor": "wood", "horizon": 0.52, "safeArea": 20,
+    "layers": [
+      {
+        "top": 0, "bottom": 0.52, "parallax": 0.05,
+        "gradient": [ { "at": 0, "color": "#2c3658" }, { "at": 1, "color": "#1d2440" } ]
+      }
+    ]
+  },
+  "ambient": { "saturation": 1, "darkness": 0 },
+  "walls": [],
+  "zones": [],
+  "labels": [],
+  "props": [
+    { "type": "table", "id": "desk", "x": 460, "y": 432 },
+    { "type": "notebook", "id": "nb", "x": 460, "y": 404, "scale": 3, "z": 1, "color": "#3a5a8c", "glow": 0 },
+    { "type": "aiorb", "id": "ia", "x": 460, "y": 300, "scale": 3, "z": 2, "color": "#4fd0e0" },
+    { "type": "scroll", "id": "src1", "x": 330, "y": 450, "scale": 2.2 },
+    { "type": "scroll", "id": "src2", "x": 388, "y": 460, "scale": 2 },
+    { "type": "scroll", "id": "src3", "x": 300, "y": 466, "scale": 2.4 }
+  ],
+  "entities": [
+    { "type": "learner", "id": "aprendiz", "x": 236, "y": 432, "scale": 5, "hero": true, "body": "#e0b070", "name": "Aprendiz", "behavior": null, "lookAt": { "x": 460, "y": 395 } }
+  ],
+  "script": [
+    { "wait": 0.8 },
+    { "caption": "UN CUADERNO, TRES FORMAS", "style": "title" },
+    { "wait": 2.2 },
+    { "caption": "", "style": "title" },
+    { "caption": "Sobre una publicación de Juan Vicente García Manjón sobre los Cuadernos de Copilot." },
+    { "wait": 4.6 },
+
+    { "caption": "Tienes fuentes dispersas: apuntes, lecturas, notas." },
+    { "wait": 3.4 },
+
+    { "caption": "La IA las reúne en un solo cuaderno." },
+    { "tween": "ia.y", "to": 352, "duration": 1.4, "easing": "easeInOut" },
+    { "tween": "nb.glow", "to": 1, "duration": 1.4 },
+    { "do": "['src1','src2','src3'].forEach(function(id,i){var p=world.props.find(function(q){return q.id===id;}); if(!p)return; var sx=p.x, sy=p.y, ex=460, ey=400, s0=p.scale||2; var delay=0.15+i*0.55; p._u=0; world.tween(p,'_u',1,{duration:1.0,delay:delay,easing:'easeInOut',onUpdate:function(o,u){o.x=sx+(ex-sx)*u; o.y=sy+(ey-sy)*u-Math.sin(u*Math.PI)*94; o.scale=s0*(1-0.55*u); o.alpha=u<0.68?1:Math.max(0,1-(u-0.68)/0.32);},onDone:function(o){o.alpha=0; var nb=world.props.find(function(q){return q.id==='nb';}); if(nb)nb.glow=1; if(world._fx){for(var k=0;k<12;k++){world._fx.push({type:'particle',x:ex+(world.rng()-0.5)*18,y:ey-10,vx:(world.rng()-0.5)*50,vy:-22-world.rng()*46,gravity:70,age:0,duration:0.5+world.rng()*0.35,size:2,color:world.rng()<0.5?'rgb(120,210,255)':'rgb(244,200,120)'});}}}});});" },
+    { "tone": 392, "dur": 0.14 },
+    { "wait": 3.8 },
+
+    { "caption": "Primero, un audio: escucha el resumen, en distintas voces y hasta en modo diálogo." },
+    { "do": "var a=world.byId('aprendiz'); if(a) a.lookAt={x:300,y:200};" },
+    { "tween": "out1", "to": 1, "duration": 0.8, "easing": "easeOutBack" },
+    { "tone": 466, "dur": 0.14 },
+    { "wait": 4.6 },
+
+    { "caption": "Luego, una guía de estudio: resúmenes y tarjetas para repasar." },
+    { "do": "var a=world.byId('aprendiz'); if(a) a.lookAt={x:452,y:170};" },
+    { "tween": "out2", "to": 1, "duration": 0.8, "easing": "easeOutBack" },
+    { "tone": 523, "dur": 0.14 },
+    { "wait": 4.6 },
+
+    { "caption": "Y un mapa mental: la estructura completa, de un vistazo." },
+    { "do": "var a=world.byId('aprendiz'); if(a) a.lookAt={x:700,y:180};" },
+    { "tween": "out3", "to": 1, "duration": 1.4, "easing": "easeOutCubic" },
+    { "tone": 587, "dur": 0.16 },
+    { "wait": 1.6 },
+    { "tone": 659, "dur": 0.2 },
+    { "wait": 3.2 },
+
+    { "caption": "Tres canales para un mismo contenido: oído, repaso y estructura." },
+    { "do": "var a=world.byId('aprendiz'); if(a) a.lookAt={x:460,y:360};" },
+    { "wait": 4.0 },
+    { "caption": "Es el doble código de Paivio y el aprendizaje multimedia de Mayer: varias vías que codifican lo mismo afianzan el recuerdo." },
+    { "wait": 5.4 },
+
+    { "say": "aprendiz", "text": "Me animo a probarlo.", "duration": 2.6 },
+    { "mood": "aprendiz", "value": "happy", "duration": 6 },
+    { "wait": 3.2 },
+    { "caption": "Un mismo contenido, tres formas de aprenderlo." },
+    { "wait": 5.0 }
+  ],
+  "hooks": {
+    "onInit": "const s = world.state; s.out1 = 0; s.out2 = 0; s.out3 = 0;",
+    "onStep": "",
+    "onDraw": "const s = world.state;\nconst A = function (v) { return Math.max(0, Math.min(1, v || 0)); };\nconst PJS = ' \"Plus Jakarta Sans\", ui-sans-serif, system-ui';\nconst TAU = Math.PI * 2;\nconst T = world.t || 0;\nconst NB = { x: 460, y: 380 };\nconst o1 = A(s.out1), o2 = A(s.out2), o3 = A(s.out3);\n// líneas-pipeline del cuaderno a cada formato (cian punteado)\nconst hubs = [ { x: 185, a: o1, ty: 222 }, { x: 452, a: o2, ty: 182 }, { x: 628, a: o3, ty: 202 } ];\nfor (const h of hubs) {\n  if (h.a < 0.02) continue;\n  world.draw.arrow(NB.x, NB.y, h.x, h.ty, { color: '#4fd0e0', alpha: h.a * 0.55, width: 1.6, dash: [5, 5], head: 0, curve: (h.x - NB.x) * 0.08 });\n}\n// ===== AUDIO =====\nif (o1 > 0.01) {\n  ctx.save(); ctx.globalAlpha = o1;\n  const x = 185, y = 190, w = 152, h = 86, L = x - w / 2, Tp = y - h / 2;\n  world.draw.rrect(L, Tp, w, h, 8); ctx.fillStyle = 'rgba(20,26,48,0.95)'; ctx.fill();\n  world.draw.rrect(L, Tp, w, h, 8); ctx.lineWidth = 1.4; ctx.strokeStyle = 'rgba(79,208,224,0.55)'; ctx.stroke();\n  ctx.font = '700 10px' + PJS; ctx.textAlign = 'left'; ctx.textBaseline = 'top'; ctx.fillStyle = '#F4AC1D'; ctx.fillText('AUDIO', L + 12, Tp + 9);\n  const sx = L + 24, sy = y + 4;\n  ctx.fillStyle = '#cfe8ee';\n  ctx.beginPath(); ctx.moveTo(sx - 6, sy - 5); ctx.lineTo(sx - 1, sy - 5); ctx.lineTo(sx + 5, sy - 11); ctx.lineTo(sx + 5, sy + 11); ctx.lineTo(sx - 1, sy + 5); ctx.lineTo(sx - 6, sy + 5); ctx.closePath(); ctx.fill();\n  ctx.strokeStyle = '#4fd0e0'; ctx.lineWidth = 1.6;\n  ctx.beginPath(); ctx.arc(sx + 5, sy, 9, -0.7, 0.7); ctx.stroke();\n  ctx.beginPath(); ctx.arc(sx + 5, sy, 14, -0.6, 0.6); ctx.stroke();\n  ctx.fillStyle = '#4fd0e0';\n  const bx = L + 54, bw = 3, gap = 4;\n  for (let i = 0; i < 9; i++) { const hh = 4 + 11 * Math.abs(Math.sin(T * 4 + i * 0.7)); ctx.fillRect(bx + i * (bw + gap), y + 4 - hh / 2, bw, hh); }\n  const v1 = 0.5 + 0.5 * Math.sin(T * 3), v2 = 0.5 + 0.5 * Math.sin(T * 3 + Math.PI);\n  ctx.fillStyle = 'rgba(244,172,29,' + (0.35 + 0.6 * v1) + ')'; ctx.beginPath(); ctx.arc(L + w - 24, y + 2, 4, 0, TAU); ctx.fill();\n  ctx.fillStyle = 'rgba(244,172,29,' + (0.35 + 0.6 * v2) + ')'; ctx.beginPath(); ctx.arc(L + w - 13, y + 2, 4, 0, TAU); ctx.fill();\n  ctx.font = '500 9px' + PJS; ctx.fillStyle = '#9aa6c8'; ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic'; ctx.fillText('voces · diálogo', x, Tp + h - 9);\n  ctx.restore();\n}\n// ===== GUÍA DE ESTUDIO =====\nif (o2 > 0.01) {\n  ctx.save(); ctx.globalAlpha = o2;\n  const x = 452, y = 138, w = 158, h = 92, L = x - w / 2, Tp = y - h / 2;\n  world.draw.rrect(L, Tp, w, h, 8); ctx.fillStyle = 'rgba(20,26,48,0.95)'; ctx.fill();\n  world.draw.rrect(L, Tp, w, h, 8); ctx.lineWidth = 1.4; ctx.strokeStyle = 'rgba(244,172,29,0.5)'; ctx.stroke();\n  ctx.font = '700 10px' + PJS; ctx.textAlign = 'left'; ctx.textBaseline = 'top'; ctx.fillStyle = '#F4AC1D'; ctx.fillText('GUÍA DE ESTUDIO', L + 12, Tp + 9);\n  const shades = ['#e6dcc4', '#ede3cb', '#f3ead5'];\n  const cw = 44, ch = 32, cyc = y + 8;\n  for (let k = 2; k >= 0; k--) { const ox = L + 16 + k * 4, oy = cyc - k * 3; world.draw.rrect(ox, oy - ch / 2, cw, ch, 4); ctx.fillStyle = shades[k]; ctx.fill(); }\n  ctx.fillStyle = '#F4AC1D'; ctx.fillRect(L + 24, cyc - 9, 28, 3);\n  ctx.fillStyle = '#6E7896'; ctx.fillRect(L + 24, cyc - 2, 24, 2); ctx.fillRect(L + 24, cyc + 3, 28, 2); ctx.fillRect(L + 24, cyc + 8, 16, 2);\n  for (let i = 0; i < 3; i++) { const ry = cyc - 9 + i * 9; ctx.fillStyle = '#4fd0e0'; ctx.beginPath(); ctx.arc(L + 100, ry, 1.8, 0, TAU); ctx.fill(); ctx.fillStyle = '#9aa6c8'; ctx.fillRect(L + 106, ry - 1.2, 36, 2.4); }\n  ctx.font = '500 9px' + PJS; ctx.fillStyle = '#9aa6c8'; ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic'; ctx.fillText('resúmenes · tarjetas', x, Tp + h - 9);\n  ctx.restore();\n}\n// ===== MAPA MENTAL (clímax): árbol con raíz a la izquierda, ramas a la derecha =====\nif (o3 > 0.01) {\n  ctx.save();\n  const rootX = 628, rootY = 176, ex = rootX + 29;\n  const kids = [ { x: 792, y: 106, t: 'idea' }, { x: 814, y: 152, t: 'ejemplo' }, { x: 814, y: 200, t: 'dato' }, { x: 792, y: 246, t: 'duda' } ];\n  // 1) ramas curvas que nacen del borde derecho de la raíz (sin punta)\n  kids.forEach(function (k, i) {\n    const ka = A((o3 - 0.10 - i * 0.15) / 0.2); if (ka < 0.02) return;\n    ctx.save(); ctx.globalAlpha = o3 * ka;\n    world.draw.arrow(ex, rootY, k.x, k.y, { color: '#4fd0e0', width: 1.8, alpha: 0.85, head: 0, curve: (k.y - rootY) * 0.18 });\n    ctx.restore();\n  });\n  // 2) nodos hijos opacos (tapan el extremo de cada rama)\n  kids.forEach(function (k, i) {\n    const ka = A((o3 - 0.10 - i * 0.15) / 0.2); if (ka < 0.02) return;\n    ctx.save(); ctx.globalAlpha = o3 * ka;\n    world.draw.node(k.x, k.y, 56, 24, { fill: '#1F2547', stroke: '#9aa6c8', strokeWidth: 1.2, radius: 6, label: k.t, labelColor: '#cfe8ee', font: '600 9px' + PJS });\n    ctx.restore();\n  });\n  // 3) raíz encima de todas las ramas\n  ctx.save(); ctx.globalAlpha = o3;\n  world.draw.node(rootX, rootY, 58, 30, { fill: '#3a5a8c', stroke: '#4fd0e0', strokeWidth: 1.8, radius: 7, label: 'Tema', labelColor: '#FBFAF6', font: '700 11px' + PJS });\n  ctx.font = '700 10px' + PJS; ctx.fillStyle = '#F4AC1D'; ctx.textAlign = 'center'; ctx.textBaseline = 'top'; ctx.fillText('MAPA MENTAL', 716, 268);\n  ctx.restore();\n  ctx.restore();\n}\n// ===== learners (el motor delega su dibujo al onDraw) =====\nconst ls = world.entities.filter(function (e) { return e.type === 'learner'; });\nls.sort(function (a, b) { return (a.y || 0) - (b.y || 0); });\nfor (const e of ls) world.draw.learner(e);",
+    "onClick": "",
+    "onReset": ""
+  }
+}

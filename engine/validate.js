@@ -10,10 +10,10 @@
 // hooks) o se escanean del código fuente del motor (buildVocab recibe un
 // lector de fuentes), así el validador no se desincroniza al crecer el motor.
 
-import { PROP_SPRITES } from './prop-sprites.js?v=80';
-import { SKY_PRESETS } from './sky-presets.js?v=80';
-import { HOOK_NAMES, HOOK_ARGS } from './hooks.js?v=80';
-import { compileForm, FORM_TYPES } from './forms.js?v=80';
+import { PROP_SPRITES } from './prop-sprites.js?v=87';
+import { SKY_PRESETS } from './sky-presets.js?v=87';
+import { HOOK_NAMES, HOOK_ARGS } from './hooks.js?v=87';
+import { compileForm, FORM_TYPES } from './forms.js?v=87';
 
 // Fuentes del motor que buildVocab escanea con regex (enums de despachos
 // if/else que no se exportan como datos).
@@ -81,7 +81,7 @@ const CHART_KEYS = ['id', 'type', 'x', 'y', 'w', 'h', 'xDomain', 'yDomain', 'xTi
 const SERIES_KEYS = ['id', 'color', 'width', 'fill', 'dash', 'dots', 'data', 'reveal'];
 const CANVAS_KEYS = ['w', 'h', 'bg', 'ss', 'sky', 'horizon', 'floor', 'safeArea', 'ysort', 'layers'];
 const ENTITY_KEYS = ['id', 'type', 'x', 'y', 'name', 'body', 'color2', 'scale', 'hero', 'mood', 'accessory', 'accessoryColor', 'behavior', 'look', 'lookAt', 'health', 'extinguishable', 'extinctionThreshold', 'ageRate', 'maxAge', 'skybound', 'greets', 'sleepable', 'solid', 'stage'];
-const PROP_KEYS = ['type', 'id', 'x', 'y', 'scale', 'color', 'color2', 'beakColor', 'interactive', 'solid', 'solidBox', 'z', 'dir', 'state', 'open', 'label', 'light', 'fall', 'w', 'h', 'cols', 'rows', 'disorder', 'homeFrac', 'jitter', 'pose', 'alpha', 'glass', 'wheel', 'face', 'lift', 'seeds', 'eye', 'glow'];
+const PROP_KEYS = ['type', 'id', 'x', 'y', 'scale', 'color', 'color2', 'beakColor', 'interactive', 'solid', 'solidBox', 'z', 'dir', 'state', 'open', 'label', 'light', 'fall', 'w', 'h', 'cols', 'rows', 'disorder', 'homeFrac', 'jitter', 'pose', 'alpha', 'glass', 'wheel', 'face', 'lift', 'seeds', 'eye', 'glow', 'spin'];
 const LABEL_KEYS = ['id', 'html', 'text', 'x', 'y', 'anchor', 'style', 'hidden'];
 const METER_KEYS = ['id', 'label', 'x', 'y', 'w', 'h', 'color', 'max', 'value', 'showValue'];
 // Un step puede combinar varias acciones; esto es la unión de claves que

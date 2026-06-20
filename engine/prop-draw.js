@@ -2,8 +2,8 @@
 // Per-prop draw functions + dispatch (drawProp). Animated/bespoke props
 // have their own renderer; static props fall through to PROP_SPRITES.
 
-import { PROP_SPRITES } from './prop-sprites.js?v=80';
-import { mixColors } from './util.js?v=80';
+import { PROP_SPRITES } from './prop-sprites.js?v=87';
+import { mixColors } from './util.js?v=87';
 
 // Compute a default collision box for a solid prop: the bottom 60% of the
 // sprite, centered on prop.x. Authors can override with `solidBox: {x,y,w,h}`
@@ -1760,7 +1760,80 @@ export function drawNotebook(ctx, prop) {
   ctx.restore();
 }
 
+export function drawGenially(ctx, prop) {
+  const s = prop.scale || 3;
+  const cx = Math.round(prop.x);
+  const cy = Math.round(prop.y);
+  const a = prop.alpha == null ? 1 : Math.max(0, Math.min(1, prop.alpha));
+  if (a <= 0.01) return;
+  const TAU = Math.PI * 2;
+  const D2R = Math.PI / 180;
+  const R = 9 * s;
+  const navy = prop.color || '#0d1b2e';
+  const ringStart = -Math.PI / 2 + (prop.spin || 0);
+  // Rampa arcoíris (sentido del logo: cálidos arriba, fríos abajo).
+  const stops = ['#f6b53a', '#ff7eb3', '#ff5e7e', '#c850c0', '#7b6cff', '#4f9dff', '#3ddc97', '#bfe06a'];
+  ctx.save();
+  ctx.globalAlpha *= a;
+  ctx.translate(cx, cy);
+  // Halo opcional cuando glow > 0.
+  const glow = prop.glow == null ? 0 : Math.max(0, Math.min(1, prop.glow));
+  if (glow > 0.01) {
+    const g = ctx.createRadialGradient(0, 0, R * 0.6, 0, 0, R * 1.5);
+    g.addColorStop(0, `rgba(255,126,179,${0.35 * glow})`);
+    g.addColorStop(1, 'rgba(255,126,179,0)');
+    ctx.save(); ctx.fillStyle = g; ctx.beginPath(); ctx.arc(0, 0, R * 1.5, 0, TAU); ctx.fill(); ctx.restore();
+  }
+  // Sombra suave para despegar de cualquier fondo.
+  const sh = ctx.createRadialGradient(0, R * 0.12, R * 0.6, 0, R * 0.12, R * 1.28);
+  sh.addColorStop(0, 'rgba(10,15,30,0.26)');
+  sh.addColorStop(1, 'rgba(10,15,30,0)');
+  ctx.save(); ctx.fillStyle = sh; ctx.beginPath(); ctx.arc(0, R * 0.12, R * 1.28, 0, TAU); ctx.fill(); ctx.restore();
+  // Aro arcoíris. Con conic-gradient queda perfecto y sin costuras; si el
+  // navegador no lo soporta, se cae al método por segmentos de arco.
+  ctx.save();
+  if (typeof ctx.createConicGradient === 'function') {
+    const cg = ctx.createConicGradient(ringStart, 0, 0);
+    for (let i = 0; i < stops.length; i++) cg.addColorStop(i / stops.length, stops[i]);
+    cg.addColorStop(1, stops[0]);
+    ctx.fillStyle = cg;
+    ctx.beginPath();
+    ctx.arc(0, 0, R, 0, TAU, false);
+    ctx.arc(0, 0, R * 0.80, 0, TAU, true);
+    ctx.fill();
+  } else {
+    const N = 180, rRing = R * 0.90;
+    ctx.lineCap = 'butt'; ctx.lineWidth = R * 0.21;
+    for (let k = 0; k < N; k++) {
+      const f = k / N, seg = f * stops.length, i = Math.floor(seg) % stops.length, t = seg - Math.floor(seg);
+      ctx.strokeStyle = mixColors(stops[i], stops[(i + 1) % stops.length], t);
+      ctx.beginPath(); ctx.arc(0, 0, rRing, ringStart + f * TAU, ringStart + (k + 1.45) / N * TAU); ctx.stroke();
+    }
+  }
+  ctx.restore();
+  // Disco navy con leve volumen.
+  const gd = ctx.createRadialGradient(-R * 0.22, -R * 0.22, R * 0.08, 0, 0, R * 0.82);
+  gd.addColorStop(0, mixColors(navy, '#ffffff', 0.10));
+  gd.addColorStop(1, navy);
+  ctx.fillStyle = gd;
+  ctx.beginPath(); ctx.arc(0, 0, R * 0.80, 0, TAU); ctx.fill();
+  // Espiral blanca (la "C"/e de Genially): anillo grueso CIRCULAR con la boca a la
+  // derecha, INCLINADO (la punta superior sube hacia la 1 en punto y la inferior
+  // baja hacia las 3-4). Es una rotación rígida: la curva de arriba sigue siendo
+  // el espejo de la de abajo, solo que ladeada como en el logo.
+  const rR = R * 0.48, wR = R * 0.21;
+  ctx.strokeStyle = '#ffffff'; ctx.lineWidth = wR; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+  ctx.beginPath();
+  ctx.arc(0, 0, rR, 17 * D2R, 307 * D2R, false); // C ladeada ~18° en antihorario
+  ctx.stroke();
+  // Punto (el ojo), abajo a la derecha del centro.
+  ctx.fillStyle = '#ffffff';
+  ctx.beginPath(); ctx.arc(rR * 0.31, rR * 0.11, wR * 0.60, 0, TAU); ctx.fill();
+  ctx.restore();
+}
+
 export function drawProp(ctx, prop) {
+  if (prop.type === 'genially') return drawGenially(ctx, prop);
   if (prop.type === 'notebook') return drawNotebook(ctx, prop);
   if (prop.type === 'cat') return drawCat(ctx, prop);
   if (prop.type === 'vault') return drawVault(ctx, prop);

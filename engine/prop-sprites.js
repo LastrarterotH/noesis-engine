@@ -1282,7 +1282,7 @@ export const PROP_NATURAL_SCALE = {
   rug: 4, 'rug-stripes': 4, 'rug-medallion': 3.5, 'rug-checker': 4, book: 1.6, computer: 2.5,
   // objetos
   crate: 3.5, barrel: 2, chest: 3, coin: 2, gem: 1.8, pokeball: 2, pedestal: 2.5, bell: 3, domino: 3, field: 1,
-  cat: 3, vault: 3.5, pomegranate: 1.6, column: 4, wheat: 3, chasm: 4, wonderflower: 2.4, 'tree-bare': 3.5,
+  cat: 3, vault: 3.5, pomegranate: 1.6, column: 4, wheat: 3, chasm: 4, wonderflower: 2.4, 'tree-bare': 3.5, basilisk: 6, aiorb: 3, notebook: 3,
   // urbano / estructuras
   building: 3.5, streetlamp: 3, lighthouse: 3.5, boat: 2.8, door: 3, sign: 2.4, bench: 2.6,
   // animados / interactivos

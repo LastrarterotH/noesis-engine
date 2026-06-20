@@ -2,27 +2,27 @@
 // World class: simulation state + tick + draw orchestration.
 // Owns entities, camera, scripts, fx, bubbles, labels, ambient, audio handles.
 
-import { mulberry32, ease, colorAlpha, mixColors, drawRichText, measureRichText } from './util.js?v=74';
-import { compileHooks } from './hooks.js?v=74';
-import { createAmbientSound } from './audio.js?v=74';
-import { SKY_PRESETS } from './sky-presets.js?v=74';
-import { computeSolidBox, drawProp } from './prop-draw.js?v=74';
-import { PROP_NATURAL_SCALE, PROP_SPRITES } from './prop-sprites.js?v=74';
-import { Draw } from './draw.js?v=74';
-import { initCamera, tickCamera } from './camera.js?v=74';
-import { makeAmbientParticle, tickAmbient, drawAmbient } from './ambient.js?v=74';
+import { mulberry32, ease, colorAlpha, mixColors, drawRichText, measureRichText, formatAPA } from './util.js?v=80';
+import { compileHooks } from './hooks.js?v=80';
+import { createAmbientSound } from './audio.js?v=80';
+import { SKY_PRESETS } from './sky-presets.js?v=80';
+import { computeSolidBox, drawProp } from './prop-draw.js?v=80';
+import { PROP_NATURAL_SCALE, PROP_SPRITES } from './prop-sprites.js?v=80';
+import { Draw } from './draw.js?v=80';
+import { initCamera, tickCamera } from './camera.js?v=80';
+import { makeAmbientParticle, tickAmbient, drawAmbient } from './ambient.js?v=80';
 import {
   runScript as _runScript, stopScripts as _stopScripts, tickScripts,
   evalScriptExpr, processScript, execScriptStep,
-} from './scripts.js?v=74';
-import { compileForm } from './forms.js?v=74';
-import { drawFloor } from './floor.js?v=74';
-import { tickAnimatedProps } from './animated-props.js?v=74';
-import { initLearner, touchLearner, tickLearner } from './learner.js?v=74';
-import { handleClick, togglePropInteraction } from './interaction.js?v=74';
+} from './scripts.js?v=80';
+import { compileForm } from './forms.js?v=80';
+import { drawFloor } from './floor.js?v=80';
+import { tickAnimatedProps } from './animated-props.js?v=80';
+import { initLearner, touchLearner, tickLearner } from './learner.js?v=80';
+import { handleClick, togglePropInteraction } from './interaction.js?v=80';
 import {
   createFxApi, spawnBubble, spawnParticles, tickFx, positionBubbles, drawFx,
-} from './fx.js?v=74';
+} from './fx.js?v=80';
 
 // Props que emiten luz solos cuando hay `ambient.darkness` (opt-out con
 // `light: false` en el prop). `dy` ubica la fuente en celdas del sprite
@@ -1025,8 +1025,16 @@ export class World {
       drawRichText(ctx, txt, this.W / 2, ty, { px: 17, weight: '600', family: UIQ, align: 'center' });
       ctx.restore();
     }
+    const r = this._replay;
+    // Referencias (APA) como tarjeta de cierre: se dibujan EN el canvas cuando
+    // aparece "Ver nuevamente", así entran también en la grabación. Toman el
+    // bloque `text` del config (idioma `es` por defecto).
+    const txd = this.config.text ? (this.config.text.es || this.config.text[Object.keys(this.config.text)[0]]) : null;
+    const refsArr = (txd && Array.isArray(txd.references)) ? txd.references : [];
+    const showRefsCard = !!(r && r.visible && refsArr.length);
+
     const cap = this._caption && this._caption.text;
-    if (cap) {
+    if (cap && !showRefsCard) {
       ctx.save();
       ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
       const capFont = { px: 14, weight: '500', family: UIQ };
@@ -1046,9 +1054,51 @@ export class World {
       for (const ln of lines) { drawRichText(ctx, ln, this.W / 2, y, { ...capFont, align: 'center' }); y += lh; }
       ctx.restore();
     }
-    const r = this._replay;
     if (r && r.visible) {
-      const bw = 200, bh = 40, bx = this.W / 2 - bw / 2, by = this.H - 112;
+      const bw = 200, bh = 40;
+      let by = this.H - 112;
+      if (showRefsCard) {
+        ctx.save();
+        ctx.textBaseline = 'alphabetic';
+        const refFont = { px: 13, weight: '500', family: UIQ };
+        const maxW = Math.min(600, this.W - 110);
+        const refLines = []; let totalLines = 0;
+        for (const rf of refsArr) {
+          const txt = formatAPA(rf).replace(/<[^>]*>/g, '');
+          const words = txt.split(' ');
+          const ls = []; let line = '';
+          for (const w of words) {
+            const test = line ? line + ' ' + w : w;
+            if (measureRichText(ctx, test, refFont) > maxW && line) { ls.push(line); line = w; }
+            else line = test;
+          }
+          if (line) ls.push(line);
+          refLines.push(ls); totalLines += ls.length;
+        }
+        const lh = 19, headH = 20, padX = 22, padTop = 15, padBot = 16, gap = 9;
+        const cardH = padTop + headH + totalLines * lh + (refLines.length - 1) * gap + padBot;
+        const cardW = maxW + padX * 2;
+        const cardX = Math.round(this.W / 2 - cardW / 2);
+        by = this.H - 22 - bh;
+        const cardTop = Math.round(by - 16 - cardH);
+        this._declRrect(ctx, cardX, cardTop, cardW, cardH, 12);
+        ctx.fillStyle = 'rgba(246,242,232,0.97)'; ctx.fill();
+        this._declRrect(ctx, cardX, cardTop, cardW, cardH, 12);
+        ctx.strokeStyle = 'rgba(31,37,71,0.18)'; ctx.lineWidth = 1; ctx.stroke();
+        let yy = cardTop + padTop + 9;
+        ctx.fillStyle = '#c8901a'; ctx.font = '600 11px ' + UIQ; ctx.textAlign = 'left';
+        try { ctx.letterSpacing = '2px'; } catch (e) {}
+        ctx.fillText('REFERENCIAS', cardX + padX, yy);
+        try { ctx.letterSpacing = '0px'; } catch (e) {}
+        yy += headH;
+        ctx.fillStyle = '#3a4063';
+        for (const ls of refLines) {
+          for (const ln of ls) { drawRichText(ctx, ln, cardX + padX, yy, { ...refFont, align: 'left' }); yy += lh; }
+          yy += gap;
+        }
+        ctx.restore();
+      }
+      const bx = this.W / 2 - bw / 2;
       r.box = { x: bx, y: by, w: bw, h: bh };
       ctx.fillStyle = 'rgba(251,250,246,0.96)';
       this._declRrect(ctx, bx, by, bw, bh, bh / 2); ctx.fill();

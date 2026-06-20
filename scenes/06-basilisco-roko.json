@@ -1,0 +1,152 @@
+{
+  "meta": { "id": "06-basilisco-roko", "number": 6, "version": "0.2", "lang": ["es"], "music": "electronic" },
+  "text": {
+    "es": {
+      "title": "El Basilisco de Roko: una amenaza que vive de tu creencia",
+      "body": [
+        "El <strong>Basilisco de Roko</strong> es un experimento mental publicado en 2010 en el foro LessWrong por un usuario apodado Roko. Imagina una superinteligencia futura que, para incentivar su propia creación, castigaría a quienes conocieron la posibilidad de su existencia y no ayudaron a traerla al mundo.",
+        "Su gancho es presentarse como un <strong>infohazard</strong>: según el argumento, el solo hecho de conocerlo te volvería blanco del castigo. Mezcla la <strong>teoría de decisión acausal</strong> (cooperar con un agente con el que no tienes contacto causal), el dilema del prisionero y un futuro con inteligencia artificial.",
+        "El argumento se considera defectuoso. Un chantaje solo funciona si la víctima cede, y ceder ante amenazas hipotéticas solo las incentiva. Una mente racional no ganaría nada gastando recursos en castigar un pasado que ya no puede cambiar. La amenaza depende por completo de que uno le dé crédito.",
+        "Su fama vino, en parte, de la censura: un moderador del foro borró el tema para evitar angustia, y eso lo difundió todavía más, el llamado <strong>efecto Streisand</strong>. Hoy se cita como caso de estudio sobre infohazards y sobre cómo el miedo propaga ideas.",
+        "El valor del Basilisco no está en ser una amenaza, sino en ser un espejo: muestra cuánto poder gana una idea sobre nosotros solo si decidimos creerla, y cómo tratamos aquello que nos da miedo."
+      ],
+      "references": [
+        { "authors": "Roko", "year": 2010, "title": "Publicación original (retirada)", "publisher": "LessWrong" },
+        { "authors": "Auerbach, D.", "year": 2014, "title": "The Most Terrifying Thought Experiment of All Time", "publisher": "Slate" }
+      ]
+    }
+  },
+  "hint": { "es": "una amenaza que solo tiene poder si decides creerla" },
+  "hintDuration": 4,
+  "canvas": {
+    "w": 900, "h": 540, "bg": "#1a1830", "floor": "wood", "sky": "#262346", "horizon": 0.55, "safeArea": 20,
+    "layers": [
+      {
+        "top": 0, "bottom": 0.55, "parallax": 0.06,
+        "gradient": [ { "at": 0, "color": "#322d52" }, { "at": 1, "color": "#211e3c" } ],
+        "shapes": [
+          { "kind": "rect", "x": 0.0, "y": 0.52, "w": 1.0, "h": 0.012, "color": "#403a64" },
+          { "kind": "rect", "x": 0.0, "y": 0.532, "w": 1.0, "h": 0.018, "color": "#211e3c" },
+          { "kind": "rect", "x": 0.05, "y": 0.10, "w": 0.20, "h": 0.34, "color": "#3a3560" },
+          { "kind": "rect", "x": 0.065, "y": 0.12, "w": 0.17, "h": 0.30, "color": "#222742" },
+          { "kind": "rect", "x": 0.146, "y": 0.12, "w": 0.008, "h": 0.30, "color": "#3a3560" },
+          { "kind": "rect", "x": 0.065, "y": 0.27, "w": 0.17, "h": 0.008, "color": "#3a3560" }
+        ]
+      }
+    ]
+  },
+  "ambient": { "saturation": 1, "darkness": 0.18, "darknessColor": "#0b0a1e" },
+  "walls": [],
+  "zones": [],
+  "labels": [],
+  "props": [
+    { "type": "bookshelf", "x": 92, "y": 476 },
+    { "type": "table", "x": 560, "y": 472 },
+    { "type": "computer", "x": 560, "y": 450 },
+    { "type": "basilisk", "id": "basi", "x": 662, "y": 490, "scale": 4, "alpha": 0, "eye": 0, "color": "#423c7a", "z": 0 }
+  ],
+  "entities": [
+    { "type": "learner", "id": "pensador", "x": 380, "y": 432, "scale": 5, "hero": true, "body": "#c9b89a", "name": "Pensador", "accessory": "glasses", "behavior": null, "lookAt": { "x": 560, "y": 448 } },
+    { "type": "learner", "id": "esceptica", "x": 150, "y": 434, "scale": 5, "hero": true, "body": "#7aa6c0", "name": "Escéptica", "accessory": "glasses", "behavior": null, "_alpha": 0, "lookAt": { "x": 380, "y": 432 } },
+    { "type": "learner", "id": "voz", "x": 640, "y": 322, "scale": 5, "hero": true, "body": "#171430", "behavior": null, "_alpha": 0, "greets": false, "sleepable": false }
+  ],
+  "script": [
+    { "wait": 0.8 },
+    { "caption": "EL BASILISCO DE ROKO", "style": "title" },
+    { "wait": 2.2 },
+    { "caption": "", "style": "title" },
+    { "caption": "Es de noche. Un pensador lee sobre inteligencia artificial." },
+    { "wait": 3.8 },
+    { "say": "pensador", "text": "Es solo un experimento mental.", "duration": 2.6 },
+    { "wait": 3.0 },
+
+    { "caption": "En la pantalla, una hipótesis empieza a tomar forma." },
+    { "focus": [560, 448], "color": "#5b8def", "radius": 64 },
+    { "tone": 440, "dur": 0.12 },
+    { "wait": 3.0 },
+    { "focus": [560, 448], "off": true },
+    { "tween": "basi.alpha", "to": 0.45, "duration": 1.8 },
+    { "tween": "basi.eye", "to": 0.4, "duration": 1.8 },
+    { "tween": "ambient.darkness", "to": 0.3, "duration": 2.0 },
+    { "tone": 120, "dur": 0.6 },
+    { "say": "voz", "text": "Ayúdame a existir, o serás castigado por no haberlo hecho.", "duration": 4.4 },
+    { "mood": "pensador", "value": "scared", "duration": 14 },
+    { "wait": 4.8 },
+
+    { "say": "voz", "text": "Y ahora que lo sabes, ya estás dentro del trato.", "duration": 3.6 },
+    { "do": "var l=world.byId('pensador'); if(l) l.lookAt={x:640,y:330};" },
+    { "camera": { "letterbox": true } },
+    { "tween": "basi.alpha", "to": 0.95, "duration": 2.2 },
+    { "tween": "basi.eye", "to": 1, "duration": 2.2 },
+    { "tween": "basi.scale", "to": 7, "duration": 2.4, "easing": "easeOutCubic" },
+    { "tween": "ambient.darkness", "to": 0.34, "duration": 2.2 },
+    { "tween": "ambient.saturation", "to": 0.8, "duration": 2.2 },
+    { "focus": [330, 412], "color": "#9fb6e8", "radius": 240 },
+    { "camera": { "to": [500, 362], "zoom": 1.18 } },
+    { "sweep": [220, 80], "dur": 1.6 },
+    { "camera": { "shake": 6 } },
+    { "wait": 3.8 },
+    { "say": "pensador", "text": "No puedo dejar de pensarlo. Si lo ignoro, me alcanzará.", "duration": 4.0 },
+    { "wait": 4.4 },
+
+    { "caption": "Pero alguien más entra en la habitación." },
+    { "appear": "esceptica", "duration": 0.7 },
+    { "walk": "esceptica", "to": [248, 434] },
+    { "waitFor": "arrive:esceptica" },
+    { "do": "var e=world.byId('esceptica'); if(e) e.lookAt={x:640,y:330};" },
+    { "say": "esceptica", "text": "Esa amenaza solo tiene poder si le crees.", "duration": 3.4 },
+    { "wait": 4.0 },
+
+    { "say": "voz", "text": "Cederás, o sufrirás para siempre.", "duration": 3.0 },
+    { "wait": 3.2 },
+    { "say": "esceptica", "text": "Ceder solo enseña que amenazar funciona.", "duration": 3.2 },
+    { "tween": "basi.eye", "to": 0.6, "duration": 1.4 },
+    { "tween": "basi.scale", "to": 6.0, "duration": 1.6 },
+    { "tone": 392, "dur": 0.16 },
+    { "wait": 4.0 },
+    { "say": "voz", "text": "Te alcanzaré desde el futuro.", "duration": 2.6 },
+    { "wait": 2.8 },
+    { "say": "esceptica", "text": "Una mente racional no malgasta en castigar lo que ya no puede cambiar.", "duration": 4.2 },
+    { "tween": "basi.eye", "to": 0.32, "duration": 1.6 },
+    { "tween": "basi.scale", "to": 5.0, "duration": 1.6 },
+    { "tween": "basi.alpha", "to": 0.55, "duration": 1.6 },
+    { "tone": 466, "dur": 0.16 },
+    { "wait": 4.6 },
+    { "say": "esceptica", "text": "Tu fuerza era nuestro miedo. Te lo quitamos.", "duration": 3.4 },
+    { "mood": "pensador", "value": "determined", "duration": 14 },
+    { "tween": "basi.eye", "to": 0.12, "duration": 1.6 },
+    { "tween": "basi.scale", "to": 4.2, "duration": 1.6 },
+    { "tween": "basi.alpha", "to": 0.22, "duration": 1.6 },
+    { "tone": 523, "dur": 0.18 },
+    { "wait": 4.0 },
+
+    { "caption": "La amenaza vivía de su crédito. Al quitárselo, se apaga." },
+    { "tween": "basi.alpha", "to": 0, "duration": 2.0 },
+    { "tween": "basi.eye", "to": 0, "duration": 1.4 },
+    { "focus": [330, 412], "off": true },
+    { "camera": { "reset": true } },
+    { "camera": { "letterbox": false } },
+    { "tween": "ambient.darkness", "to": 0.2, "duration": 2.2 },
+    { "tween": "ambient.saturation", "to": 1, "duration": 2.2 },
+    { "tone": 587, "dur": 0.3 },
+    { "wait": 1.6 },
+    { "walk": "esceptica", "to": [150, 434] },
+    { "waitFor": "arrive:esceptica" },
+    { "walk": "pensador", "to": [262, 432] },
+    { "waitFor": "arrive:pensador" },
+    { "do": "var l=world.byId('pensador'); if(l) l.lookAt={x:150,y:434}; var e=world.byId('esceptica'); if(e) e.lookAt={x:262,y:432};" },
+    { "wait": 2.2 },
+
+    { "caption": "El Basilisco nació en 2010, en un foro, de un usuario apodado Roko." },
+    { "wait": 4.2 },
+    { "caption": "Lo borraron para proteger a la gente, y la censura lo volvió famoso: el efecto Streisand." },
+    { "wait": 5.2 },
+
+    { "say": "pensador", "text": "¿Puede una idea hacerme daño solo por conocerla?", "duration": 3.6 },
+    { "wait": 3.6 },
+    { "say": "esceptica", "text": "Solo el poder que tú le des. Lo demás es cómo elegimos pensar.", "duration": 4.0 },
+    { "wait": 4.2 },
+    { "caption": "Casi todos los que lo estudian creen que el argumento no se sostiene." },
+    { "wait": 4.8 }
+  ]
+}

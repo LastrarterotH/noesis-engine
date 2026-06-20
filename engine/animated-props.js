@@ -173,6 +173,36 @@ export function tickAnimatedProps(world, dt) {
       // Reloj para el ciclo de color y el pulso del resplandor.
       if (p._t == null) p._t = world.rng() * Math.PI * 2;
       p._t += dt;
+    } else if (p.type === 'aiorb') {
+      // Reloj para la rotación del anillo y el pulso del núcleo.
+      if (p._t == null) p._t = world.rng() * Math.PI * 2;
+      p._t += dt;
+    } else if (p.type === 'notebook') {
+      // Reloj para el pulso del resplandor cuando la IA procesa.
+      if (p._t == null) p._t = world.rng() * Math.PI * 2;
+      p._t += dt;
+    } else if (p.type === 'basilisk') {
+      // Reloj para la ondulación del cuerpo y el pulso del ojo.
+      if (p._t == null) { p._t = world.rng() * Math.PI * 2; p._nextSpark = 0; }
+      p._t += dt;
+      // Chispas digitales (verde/cian) que emanan del cuerpo: más cuando el ojo
+      // tiene poder (eye), nada cuando se apaga.
+      const eyeP = p.eye == null ? 1 : p.eye;
+      p._nextSpark -= dt;
+      if (eyeP > 0.05 && p._nextSpark <= 0 && world._fx) {
+        const sc = p.scale || 6;
+        world._fx.push({
+          type: 'particle',
+          x: p.x + (world.rng() - 0.5) * 9 * sc * 0.7,
+          y: p.y - (5 + world.rng() * 21) * sc,
+          vx: (world.rng() - 0.5) * 16,
+          vy: -16 - world.rng() * 26,
+          gravity: 8, age: 0, duration: 0.7 + world.rng() * 0.6,
+          size: 2,
+          color: world.rng() < 0.5 ? 'rgb(120,255,170)' : 'rgb(120,210,255)',
+        });
+        p._nextSpark = (0.04 + world.rng() * 0.07) / Math.max(0.2, eyeP);
+      }
     } else if (p.type === 'bird') {
       if (p._birdSpeed == null) {
         p._birdSpeed = 60 + world.rng() * 50;

@@ -2,8 +2,8 @@
 // Per-prop draw functions + dispatch (drawProp). Animated/bespoke props
 // have their own renderer; static props fall through to PROP_SPRITES.
 
-import { PROP_SPRITES } from './prop-sprites.js?v=74';
-import { mixColors } from './util.js?v=74';
+import { PROP_SPRITES } from './prop-sprites.js?v=80';
+import { mixColors } from './util.js?v=80';
 
 // Compute a default collision box for a solid prop: the bottom 60% of the
 // sprite, centered on prop.x. Authors can override with `solidBox: {x,y,w,h}`
@@ -1502,9 +1502,270 @@ export function drawTreeBare(ctx, prop) {
   ctx.restore();
 }
 
+// Basilisk: serpiente-máquina imponente que se eleva, con un ojo central que
+// resplandece (la mirada). La mecánica de la escena 06: `scale` la hace crecer,
+// `alpha` la disuelve y `eye` (0..1) controla la intensidad del ojo y su glare.
+// "Crece con la creencia, se disuelve con la razón." (x, y) es la base.
+export function drawBasilisk(ctx, prop) {
+  const s = prop.scale || 6;
+  const cx = Math.round(prop.x);
+  const cy = Math.round(prop.y);
+  const a = prop.alpha == null ? 1 : Math.max(0, Math.min(1, prop.alpha));
+  if (a <= 0.01) return;
+  const eye = Math.max(0, Math.min(1, prop.eye == null ? 1 : prop.eye));
+  const t = prop._t || 0;
+  const body = prop.color || '#171430';
+  const bodyHi = mixColors(body, '#8fb0ff', 0.5);
+  const rim = mixColors(body, '#9fc0ff', 0.7);
+  const bodyD = mixColors(body, '#000000', 0.55);
+  const fleck = mixColors(body, '#7a5fb0', 0.5);
+  const eyeCol = '#ff7a3c';
+  const eyeHot = '#ffe3b0';
+  const TAU = Math.PI * 2;
+  const N = 11;
+  const H = 27 * s;
+  const sway = Math.sin(t * 0.8) * 0.05;
+  const pt = (p) => ({ x: Math.sin(p * Math.PI * 1.5) * 5.2 * s * (1 - p * 0.35), y: -p * H });
+  ctx.save();
+  ctx.globalAlpha *= a;
+  ctx.translate(cx, cy);
+  ctx.rotate(sway);
+  // Aura de pavor (crece con el ojo).
+  const aura = ctx.createRadialGradient(0, -H * 0.62, 0, 0, -H * 0.62, 17 * s);
+  aura.addColorStop(0, 'rgba(120,40,160,' + (0.20 * eye).toFixed(3) + ')');
+  aura.addColorStop(1, 'rgba(120,40,160,0)');
+  ctx.fillStyle = aura;
+  ctx.beginPath(); ctx.arc(0, -H * 0.62, 17 * s, 0, TAU); ctx.fill();
+  // Sombra de contacto.
+  ctx.fillStyle = 'rgba(6,4,12,0.35)';
+  ctx.beginPath(); ctx.ellipse(0, 0, 6 * s, 1.6 * s, 0, 0, TAU); ctx.fill();
+  // Cuerpo: serpiente que se eleva (segmentos de base ancha a cabeza angosta).
+  for (let i = 0; i <= N; i++) {
+    const p = i / N;
+    const q = pt(p);
+    const r = (5.6 - p * 4.2) * s;
+    ctx.fillStyle = bodyD;
+    ctx.beginPath(); ctx.ellipse(q.x, q.y, r + s * 0.5, r * 1.12 + s * 0.5, 0, 0, TAU); ctx.fill();
+    ctx.fillStyle = body;
+    ctx.beginPath(); ctx.ellipse(q.x, q.y, r, r * 1.12, 0, 0, TAU); ctx.fill();
+    ctx.fillStyle = bodyHi;
+    ctx.beginPath(); ctx.ellipse(q.x - r * 0.5, q.y - r * 0.2, r * 0.4, r * 0.72, 0, 0, TAU); ctx.fill();
+    // Borde luminoso frío para que la silueta resalte sobre la penumbra.
+    ctx.strokeStyle = rim; ctx.lineWidth = Math.max(1, s * 0.3);
+    ctx.beginPath(); ctx.ellipse(q.x, q.y, r, r * 1.12, 0, 0, TAU); ctx.stroke();
+    if (i % 2 === 0) { ctx.fillStyle = fleck; ctx.beginPath(); ctx.arc(q.x + r * 0.2, q.y, r * 0.18, 0, TAU); ctx.fill(); }
+  }
+  // Lluvia de código (piel digital, matrix): dashes verdes que caen por el
+  // cuerpo, intensidad por `eye`, se apagan al disolverse.
+  if (eye > 0.05) {
+    for (let c = 0; c < 6; c++) {
+      const cp = 0.12 + c * 0.15;
+      const q = pt(cp);
+      const r = (5.6 - cp * 4.2) * s;
+      const colX = q.x + ((c % 3) - 1) * r * 0.5;
+      const span = r * 2.0;
+      const flow = ((t * 0.8 + c * 0.37) % 1 + 1) % 1;
+      for (let k = 0; k < 3; k++) {
+        const f = (flow + k / 3) % 1;
+        const yy = q.y - r + f * span;
+        ctx.fillStyle = 'rgba(130,255,180,' + (0.55 * eye * (1 - f)).toFixed(2) + ')';
+        ctx.fillRect(colX, yy, Math.max(1, s * 0.35), Math.max(2, s * 0.85));
+      }
+    }
+  }
+  // Cresta de púas.
+  ctx.fillStyle = fleck;
+  for (let i = 5; i <= N - 1; i++) {
+    const p = i / N, q = pt(p), r = (5.6 - p * 4.2) * s;
+    ctx.beginPath();
+    ctx.moveTo(q.x - r * 0.2, q.y - r);
+    ctx.lineTo(q.x, q.y - r - 1.4 * s);
+    ctx.lineTo(q.x + r * 0.5, q.y - r * 0.6);
+    ctx.closePath(); ctx.fill();
+  }
+  // Cabeza (cuña angular hacia la derecha).
+  const head = pt(1);
+  ctx.fillStyle = bodyD;
+  ctx.beginPath();
+  ctx.moveTo(head.x - 3.2 * s, head.y + 1.6 * s);
+  ctx.lineTo(head.x - 1.6 * s, head.y - 3.0 * s);
+  ctx.lineTo(head.x + 4.8 * s, head.y - 1.3 * s);
+  ctx.lineTo(head.x + 1.4 * s, head.y + 2.4 * s);
+  ctx.closePath(); ctx.fill();
+  ctx.fillStyle = body;
+  ctx.beginPath();
+  ctx.moveTo(head.x - 2.7 * s, head.y + 1.2 * s);
+  ctx.lineTo(head.x - 1.2 * s, head.y - 2.5 * s);
+  ctx.lineTo(head.x + 4.2 * s, head.y - 1.2 * s);
+  ctx.lineTo(head.x + 1.1 * s, head.y + 2.0 * s);
+  ctx.closePath(); ctx.fill();
+  // Ceja/cresta sobre el ojo (mirada amenazante).
+  ctx.fillStyle = fleck;
+  ctx.beginPath();
+  ctx.moveTo(head.x - 0.6 * s, head.y - 2.0 * s);
+  ctx.lineTo(head.x + 2.6 * s, head.y - 1.6 * s);
+  ctx.lineTo(head.x + 2.2 * s, head.y - 0.8 * s);
+  ctx.lineTo(head.x - 0.4 * s, head.y - 1.2 * s);
+  ctx.closePath(); ctx.fill();
+  // Ojo: glare + iris + pupila vertical.
+  const ex = head.x + 1.0 * s, ey = head.y - 0.4 * s;
+  if (eye > 0.02) {
+    const g = ctx.createRadialGradient(ex, ey, 0, ex, ey, 11 * s * (0.5 + eye));
+    g.addColorStop(0, 'rgba(255,150,70,' + (0.65 * eye).toFixed(3) + ')');
+    g.addColorStop(0.5, 'rgba(255,90,40,' + (0.26 * eye).toFixed(3) + ')');
+    g.addColorStop(1, 'rgba(255,90,40,0)');
+    ctx.fillStyle = g;
+    ctx.beginPath(); ctx.arc(ex, ey, 11 * s * (0.5 + eye), 0, TAU); ctx.fill();
+  }
+  const pulse = 0.85 + 0.15 * Math.sin(t * 4);
+  ctx.fillStyle = eyeCol;
+  ctx.beginPath(); ctx.ellipse(ex, ey, 1.9 * s, 2.4 * s, 0, 0, TAU); ctx.fill();
+  ctx.fillStyle = eyeHot;
+  ctx.beginPath(); ctx.ellipse(ex, ey, 1.3 * s * pulse, 1.7 * s * pulse, 0, 0, TAU); ctx.fill();
+  ctx.fillStyle = '#1a0a08';
+  ctx.beginPath(); ctx.ellipse(ex, ey, 0.42 * s, 1.85 * s, 0, 0, TAU); ctx.fill();
+  ctx.restore();
+}
+
+// AiOrb: un orbe de IA. Anillo segmentado que rota, núcleo que late, puntos en
+// órbita y un iris tipo lente. `color` lo tiñe, `alpha` lo desvanece, `_t`
+// anima. Flota (no se apoya en el piso). Reutilizable como "una IA" en escena.
+export function drawAiOrb(ctx, prop) {
+  const s = prop.scale || 3;
+  const cx = Math.round(prop.x);
+  const cy = Math.round(prop.y);
+  const a = prop.alpha == null ? 1 : Math.max(0, Math.min(1, prop.alpha));
+  if (a <= 0.01) return;
+  const t = prop._t || 0;
+  const col = prop.color || '#4fd0e0';
+  const colD = mixColors(col, '#000000', 0.45);
+  const colHot = mixColors(col, '#ffffff', 0.55);
+  const TAU = Math.PI * 2;
+  const pulse = 0.85 + 0.15 * Math.sin(t * 3);
+  ctx.save();
+  ctx.globalAlpha *= a;
+  ctx.translate(cx, cy);
+  // Resplandor.
+  const g = ctx.createRadialGradient(0, 0, 0, 0, 0, 6 * s);
+  g.addColorStop(0, mixColors(col, '#ffffff', 0.2));
+  g.addColorStop(1, 'rgba(79,208,224,0)');
+  ctx.save(); ctx.globalAlpha *= 0.3 * pulse; ctx.fillStyle = g;
+  ctx.beginPath(); ctx.arc(0, 0, 6 * s, 0, TAU); ctx.fill(); ctx.restore();
+  // Anillo exterior.
+  ctx.strokeStyle = colD; ctx.lineWidth = Math.max(1, s * 0.4);
+  ctx.beginPath(); ctx.arc(0, 0, 3.0 * s, 0, TAU); ctx.stroke();
+  // Anillo segmentado que rota.
+  ctx.save(); ctx.rotate(t * 0.7);
+  ctx.strokeStyle = colHot; ctx.lineWidth = Math.max(1, s * 0.5);
+  for (let k = 0; k < 6; k++) {
+    const a0 = k * TAU / 6 + 0.15;
+    ctx.beginPath(); ctx.arc(0, 0, 3.7 * s, a0, a0 + 0.55); ctx.stroke();
+  }
+  ctx.restore();
+  // Puntos en órbita.
+  ctx.save(); ctx.rotate(-t * 0.9);
+  ctx.fillStyle = colHot;
+  for (let k = 0; k < 3; k++) {
+    const ang = k * TAU / 3;
+    ctx.beginPath(); ctx.arc(Math.cos(ang) * 4.4 * s, Math.sin(ang) * 4.4 * s, 0.5 * s, 0, TAU); ctx.fill();
+  }
+  ctx.restore();
+  // Núcleo (lente) con iris.
+  ctx.fillStyle = col; ctx.beginPath(); ctx.arc(0, 0, 2.0 * s, 0, TAU); ctx.fill();
+  ctx.fillStyle = colD; ctx.beginPath(); ctx.arc(0, 0, 1.5 * s, 0, TAU); ctx.fill();
+  ctx.strokeStyle = colHot; ctx.lineWidth = Math.max(1, s * 0.25);
+  for (let k = 0; k < 6; k++) {
+    const ang = k * TAU / 6 + t * 0.3;
+    ctx.beginPath();
+    ctx.moveTo(Math.cos(ang) * 0.7 * s, Math.sin(ang) * 0.7 * s);
+    ctx.lineTo(Math.cos(ang) * 1.4 * s, Math.sin(ang) * 1.4 * s);
+    ctx.stroke();
+  }
+  ctx.fillStyle = colHot; ctx.beginPath(); ctx.arc(0, 0, 0.7 * s * pulse, 0, TAU); ctx.fill();
+  ctx.fillStyle = '#ffffff'; ctx.beginPath(); ctx.arc(-0.3 * s, -0.3 * s, 0.28 * s, 0, TAU); ctx.fill();
+  ctx.restore();
+}
+
+export function drawNotebook(ctx, prop) {
+  const s = prop.scale || 3;
+  const cx = Math.round(prop.x);
+  const cy = Math.round(prop.y);
+  const a = prop.alpha == null ? 1 : Math.max(0, Math.min(1, prop.alpha));
+  if (a <= 0.01) return;
+  const TAU = Math.PI * 2;
+  const cover = prop.color || '#3a5a8c';
+  const coverD = mixColors(cover, '#000000', 0.42);
+  const coverL = mixColors(cover, '#ffffff', 0.30);
+  const paper = '#f3ead5';
+  const paperSh = mixColors(paper, '#000000', 0.16);
+  const ink = mixColors(cover, '#ffffff', 0.55);
+  const metal = '#c7ccd6';
+  const metalD = '#8b909c';
+  const glow = prop.glow == null ? 0 : Math.max(0, Math.min(1, prop.glow));
+  const t = prop._t || 0;
+  const hw = 5.6 * s, hh = 7.0 * s, r = 1.1 * s;
+  ctx.save();
+  ctx.globalAlpha *= a;
+  ctx.translate(cx, cy);
+  // Resplandor cuando la IA procesa (glow 0..1): halo ámbar/cian.
+  if (glow > 0.01) {
+    const pulse = 0.78 + 0.22 * Math.sin(t * 3);
+    const g = ctx.createRadialGradient(0, 0, hw * 0.4, 0, 0, hw * 2.6);
+    g.addColorStop(0, `rgba(79,208,224,${0.32 * glow * pulse})`);
+    g.addColorStop(1, 'rgba(79,208,224,0)');
+    ctx.save(); ctx.fillStyle = g;
+    ctx.beginPath(); ctx.arc(0, 0, hw * 2.6, 0, TAU); ctx.fill(); ctx.restore();
+  }
+  // Sombra de contacto.
+  ctx.save(); ctx.globalAlpha *= 0.26; ctx.fillStyle = '#000000';
+  ctx.beginPath(); ctx.ellipse(0.6 * s, hh + 1.0 * s, hw * 1.05, 1.5 * s, 0, 0, TAU); ctx.fill(); ctx.restore();
+  // Pila de páginas (canto derecho, levemente desplazado).
+  ctx.fillStyle = paperSh;
+  ctx.beginPath(); ctx.roundRect(-hw + 1.2 * s, -hh + 0.7 * s, hw * 2, hh * 2, r); ctx.fill();
+  ctx.fillStyle = paper;
+  ctx.beginPath(); ctx.roundRect(-hw + 0.7 * s, -hh + 0.4 * s, hw * 2 - 0.2 * s, hh * 2 - 0.2 * s, r); ctx.fill();
+  // Tapa.
+  ctx.fillStyle = cover;
+  ctx.beginPath(); ctx.roundRect(-hw, -hh, hw * 2, hh * 2, r); ctx.fill();
+  // Sombra interna inferior y brillo superior de la tapa.
+  ctx.save(); ctx.globalAlpha *= 0.5; ctx.fillStyle = coverD;
+  ctx.beginPath(); ctx.roundRect(-hw, hh - 2.2 * s, hw * 2, 2.2 * s, r); ctx.fill(); ctx.restore();
+  ctx.save(); ctx.globalAlpha *= 0.5; ctx.fillStyle = coverL;
+  ctx.beginPath(); ctx.roundRect(-hw + 0.6 * s, -hh + 0.5 * s, hw * 2 - 1.2 * s, 1.1 * s, r * 0.6); ctx.fill(); ctx.restore();
+  // Etiqueta de título sobre la tapa.
+  const lw = hw * 1.5, lh = hh * 0.62;
+  ctx.fillStyle = paper;
+  ctx.beginPath(); ctx.roundRect(-lw / 2 + 0.8 * s, -hh + 1.8 * s, lw, lh, 0.5 * s); ctx.fill();
+  ctx.strokeStyle = ink; ctx.lineWidth = Math.max(1, 0.18 * s);
+  for (let i = 0; i < 3; i++) {
+    const ly = -hh + 2.7 * s + i * 1.0 * s;
+    ctx.globalAlpha *= 1;
+    ctx.beginPath();
+    ctx.moveTo(-lw / 2 + 1.8 * s, ly);
+    ctx.lineTo(lw / 2 - (i === 2 ? 2.6 * s : 0.8 * s), ly);
+    ctx.stroke();
+  }
+  // Espiral metálica en el canto izquierdo.
+  const rings = 7;
+  for (let k = 0; k < rings; k++) {
+    const ry = -hh + 1.0 * s + (k + 0.5) * (hh * 2 - 2.0 * s) / rings;
+    ctx.strokeStyle = metalD; ctx.lineWidth = Math.max(1.4, 0.5 * s);
+    ctx.beginPath(); ctx.ellipse(-hw, ry, 1.3 * s, 0.55 * s, 0, Math.PI * 0.15, Math.PI * 1.35); ctx.stroke();
+    ctx.strokeStyle = metal; ctx.lineWidth = Math.max(1, 0.28 * s);
+    ctx.beginPath(); ctx.ellipse(-hw - 0.15 * s, ry - 0.12 * s, 1.3 * s, 0.55 * s, 0, Math.PI * 0.2, Math.PI * 1.1); ctx.stroke();
+  }
+  // Marca / elástico vertical hacia la derecha.
+  ctx.fillStyle = mixColors(cover, '#000000', 0.2);
+  ctx.beginPath(); ctx.roundRect(hw - 2.2 * s, -hh, 0.9 * s, hh * 2, 0); ctx.fill();
+  ctx.restore();
+}
+
 export function drawProp(ctx, prop) {
+  if (prop.type === 'notebook') return drawNotebook(ctx, prop);
   if (prop.type === 'cat') return drawCat(ctx, prop);
   if (prop.type === 'vault') return drawVault(ctx, prop);
+  if (prop.type === 'aiorb') return drawAiOrb(ctx, prop);
+  if (prop.type === 'basilisk') return drawBasilisk(ctx, prop);
   if (prop.type === 'tree-bare') return drawTreeBare(ctx, prop);
   if (prop.type === 'pomegranate') return drawPomegranate(ctx, prop);
   if (prop.type === 'wheat') return drawWheat(ctx, prop);

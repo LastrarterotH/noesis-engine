@@ -2,27 +2,27 @@
 // World class: simulation state + tick + draw orchestration.
 // Owns entities, camera, scripts, fx, bubbles, labels, ambient, audio handles.
 
-import { mulberry32, ease, colorAlpha, mixColors, drawRichText, measureRichText, formatAPA } from './util.js?v=89';
-import { compileHooks } from './hooks.js?v=89';
-import { createAmbientSound } from './audio.js?v=89';
-import { SKY_PRESETS } from './sky-presets.js?v=89';
-import { computeSolidBox, drawProp } from './prop-draw.js?v=89';
-import { PROP_NATURAL_SCALE, PROP_SPRITES } from './prop-sprites.js?v=89';
-import { Draw } from './draw.js?v=89';
-import { initCamera, tickCamera } from './camera.js?v=89';
-import { makeAmbientParticle, tickAmbient, drawAmbient } from './ambient.js?v=89';
+import { mulberry32, ease, colorAlpha, mixColors, drawRichText, measureRichText, formatAPA } from './util.js?v=91';
+import { compileHooks } from './hooks.js?v=91';
+import { createAmbientSound } from './audio.js?v=91';
+import { SKY_PRESETS } from './sky-presets.js?v=91';
+import { computeSolidBox, drawProp } from './prop-draw.js?v=91';
+import { PROP_NATURAL_SCALE, PROP_SPRITES } from './prop-sprites.js?v=91';
+import { Draw } from './draw.js?v=91';
+import { initCamera, tickCamera } from './camera.js?v=91';
+import { makeAmbientParticle, tickAmbient, drawAmbient } from './ambient.js?v=91';
 import {
   runScript as _runScript, stopScripts as _stopScripts, tickScripts,
   evalScriptExpr, processScript, execScriptStep,
-} from './scripts.js?v=89';
-import { compileForm } from './forms.js?v=89';
-import { drawFloor } from './floor.js?v=89';
-import { tickAnimatedProps } from './animated-props.js?v=89';
-import { initLearner, touchLearner, tickLearner } from './learner.js?v=89';
-import { handleClick, togglePropInteraction } from './interaction.js?v=89';
+} from './scripts.js?v=91';
+import { compileForm } from './forms.js?v=91';
+import { drawFloor } from './floor.js?v=91';
+import { tickAnimatedProps } from './animated-props.js?v=91';
+import { initLearner, touchLearner, tickLearner } from './learner.js?v=91';
+import { handleClick, togglePropInteraction } from './interaction.js?v=91';
 import {
   createFxApi, spawnBubble, spawnParticles, tickFx, positionBubbles, drawFx,
-} from './fx.js?v=89';
+} from './fx.js?v=91';
 
 // Props que emiten luz solos cuando hay `ambient.darkness` (opt-out con
 // `light: false` en el prop). `dy` ubica la fuente en celdas del sprite
@@ -1143,7 +1143,28 @@ export class World {
     const list = sort
       ? this.props.slice().sort((a, b) => ((a.z || 0) - (b.z || 0)) || (a.y - b.y))
       : this.props;
-    for (const p of list) drawProp(ctx, p);
+    // El prado (pasture) es cobertura de suelo: hay que recortarlo a la región
+    // bajo el horizonte en espacio-PANTALLA, igual que la textura del piso. El
+    // cielo se pinta en espacio-pantalla, así que un push-in de cámara hacia
+    // abajo subiría el prado a la franja del cielo si no se recorta. El resto
+    // de los props no se tocan (un árbol o una nube sí viven sobre el horizonte).
+    const cConf = this.config.canvas || {};
+    const horizonY = cConf.sky ? Math.round(this.H * (cConf.horizon ?? 0.45)) : 0;
+    for (const p of list) {
+      if (p.type === 'pasture' && horizonY > 0) {
+        const t = ctx.getTransform();
+        ctx.save();
+        ctx.setTransform(this._ss, 0, 0, this._ss, 0, 0);
+        ctx.beginPath();
+        ctx.rect(0, horizonY, this.W, this.H - horizonY);
+        ctx.clip();
+        ctx.setTransform(t);
+        drawProp(ctx, p);
+        ctx.restore();
+      } else {
+        drawProp(ctx, p);
+      }
+    }
   }
 
   // Mixed Y-sort helper for onDraw. Pass an array of:

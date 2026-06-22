@@ -2,8 +2,8 @@
 // Per-prop draw functions + dispatch (drawProp). Animated/bespoke props
 // have their own renderer; static props fall through to PROP_SPRITES.
 
-import { PROP_SPRITES } from './prop-sprites.js?v=89';
-import { mixColors } from './util.js?v=89';
+import { PROP_SPRITES } from './prop-sprites.js?v=91';
+import { mixColors } from './util.js?v=91';
 
 // Compute a default collision box for a solid prop: the bottom 60% of the
 // sprite, centered on prop.x. Authors can override with `solidBox: {x,y,w,h}`
@@ -1832,7 +1832,224 @@ export function drawGenially(ctx, prop) {
   ctx.restore();
 }
 
+// Pasture: el prado común, protagonista de la tragedia de los comunes. Un manto
+// de hierba con tréboles, ranúnculos y dientes de león sobre una banda de suelo.
+// `wear` (0..1) lo agota: los claros de tierra nacen en el centro (donde más
+// pisa el rebaño) y crecen hacia los bordes hasta fusionarse; las flores se
+// cierran y desaparecen conforme su mata muere. Animable con tween "id.wear".
+// El verde que falta deja ver el piso `earth` de la escena. `w` ancho, `depth`
+// fondo (px), `color` el verde base, `_swayT` el vaivén. (x, y) = borde frontal.
+export function drawPasture(ctx, prop) {
+  const s = prop.scale || 3;
+  const cx = Math.round(prop.x);
+  const baseY = Math.round(prop.y);
+  const w = prop.w || 600;
+  const depth = prop.depth || 78;
+  const wear = Math.max(0, Math.min(1, prop.wear == null ? 0 : prop.wear));
+  const t = prop._swayT || 0;
+  const a = prop.alpha == null ? 1 : Math.max(0, Math.min(1, prop.alpha));
+  if (a <= 0.01) return;
+  // Verdes y flores.
+  const gDark = mixColors(prop.color || '#5f9e57', '#1f3a23', 0.45);
+  const gMid = prop.color || '#5f9e57';
+  const gLite = mixColors(prop.color || '#5f9e57', '#d8e89a', 0.5);
+  const dry = '#9c8a4e';                 // hierba reseca al borde de morir
+  const dirt = '#6b4a2e';                // mota de tierra en el claro
+  const ranunc = '#F4AC1D';              // ranúnculo (amarillo)
+  const dande = '#f6e27a';               // diente de león
+  const trebol = '#e9efd6';              // trébol (blanco verdoso)
+  // Hash determinista por celda (mismo patrón siempre, sin Math.random).
+  const hash = (i, j) => {
+    const v = Math.sin(i * 12.9898 + j * 78.233) * 43758.5453;
+    return v - Math.floor(v);
+  };
+  const left = cx - w / 2;
+  const stepX = 15;                      // separación de matas (px)
+  const stepY = 13;
+  const cols = Math.floor(w / stepX);
+  const rows = Math.max(2, Math.floor(depth / stepY));
+  ctx.save();
+  ctx.globalAlpha *= a;
+  for (let j = 0; j < rows; j++) {
+    // Perspectiva suave: las filas del fondo (j chico) van más arriba y un
+    // pelín más pequeñas y juntas que las del frente.
+    const rowFrac = j / (rows - 1 || 1);            // 0 fondo .. 1 frente
+    const py = baseY - depth + rowFrac * depth;
+    const persp = 0.74 + 0.26 * rowFrac;            // tamaño por profundidad
+    for (let i = 0; i < cols; i++) {
+      const h0 = hash(i, j);
+      const h1 = hash(i + 31, j + 17);
+      const jitterX = (h0 - 0.5) * stepX * 0.9;
+      const jitterY = (h1 - 0.5) * stepY * 0.7;
+      const gx = left + (i + 0.5) * stepX + jitterX;
+      const gy = py + jitterY;
+      // Distancia normalizada al centro del prado: el desgaste avanza desde
+      // el centro (más pisoteado) hacia los bordes. Mezclo el radio con ruido
+      // para que el borde del claro sea orgánico y los parches se fusionen.
+      const nx = (gx - cx) / (w / 2);                 // -1..1
+      const ny = (rowFrac - 0.62) / 0.62;             // frente pisa más
+      const radial = Math.min(1, Math.sqrt(nx * nx * 0.85 + ny * ny * 0.5));
+      const death = radial * 0.62 + h0 * 0.38;        // umbral de muerte 0..1
+      const blade = persp * s;
+      if (wear >= death) {
+        // Mata muerta: claro de tierra. Casi siempre transparente (se ve el
+        // piso earth); de vez en cuando una brizna reseca o una mota de tierra
+        // para que el erial no quede liso.
+        if (h1 < 0.16) {
+          ctx.fillStyle = dry;
+          ctx.fillRect(Math.round(gx), Math.round(gy - blade), Math.max(1, Math.round(blade * 0.7)), Math.max(1, Math.round(blade)));
+        } else if (h1 > 0.9) {
+          ctx.fillStyle = dirt;
+          ctx.fillRect(Math.round(gx - blade * 0.4), Math.round(gy - blade * 0.4), Math.max(1, Math.round(blade * 0.9)), Math.max(1, Math.round(blade * 0.5)));
+        }
+        continue;
+      }
+      // Mata viva: penacho en tres tonos (base, cuerpo, punta) con la punta
+      // inclinada por el viento. Tres rects para que el prado entero no pese.
+      const sway = Math.sin(t + (i + j) * 0.6) * blade * 0.55;
+      const tall = (1.5 + h1 * 1.3) * blade;          // altura del penacho
+      ctx.fillStyle = gDark;
+      ctx.fillRect(Math.round(gx - blade * 0.75), Math.round(gy - blade * 0.5), Math.max(1, Math.round(blade * 1.5)), Math.max(1, Math.round(blade * 0.6)));
+      ctx.fillStyle = gMid;
+      ctx.fillRect(Math.round(gx - blade * 0.5), Math.round(gy - tall), Math.max(1, Math.round(blade)), Math.max(1, Math.round(tall)));
+      ctx.fillStyle = gLite;
+      ctx.fillRect(Math.round(gx - blade * 0.4 + sway), Math.round(gy - tall), Math.max(1, Math.round(blade * 0.8)), Math.max(1, Math.round(blade * 0.7)));
+      // Flor: una fracción de las matas. Se cierra (capullo) cuando su muerte
+      // se acerca al desgaste actual, y desaparece al morir (arriba, continue).
+      if (h0 > 0.72) {
+        const fx = Math.round(gx + sway * 0.5);
+        const fy = Math.round(gy - tall - blade * 0.4);
+        const closing = (death - wear) < 0.12;       // a punto de morir: capullo
+        const kind = h1 < 0.4 ? ranunc : (h1 < 0.72 ? dande : trebol);
+        if (closing) {
+          // Capullo cerrado (verde con punta del color).
+          ctx.fillStyle = gDark;
+          ctx.fillRect(fx, fy, Math.max(1, Math.round(blade * 0.8)), Math.max(1, Math.round(blade * 1.1)));
+          ctx.fillStyle = kind;
+          ctx.fillRect(fx, fy, Math.max(1, Math.round(blade * 0.8)), Math.max(1, Math.round(blade * 0.4)));
+        } else {
+          // Flor abierta: corola + corazón.
+          const r = blade * 0.62;
+          ctx.fillStyle = kind;
+          ctx.fillRect(fx - Math.round(r), fy - Math.round(r), Math.max(1, Math.round(r * 2)), Math.max(1, Math.round(r * 2)));
+          ctx.fillStyle = kind === trebol ? '#c7d6a0' : '#b9791a';
+          ctx.fillRect(fx - Math.round(r * 0.3), fy - Math.round(r * 0.3), Math.max(1, Math.round(r * 0.7)), Math.max(1, Math.round(r * 0.7)));
+        }
+      }
+    }
+  }
+  ctx.restore();
+}
+
+// Sheep: oveja del rebaño común. Cuerpo de lana en tres tonos con textura de
+// vellón, cabeza oscura, orejas y cuatro patas. `color` tiñe la lana, `dir`
+// espeja, y `_t` da una respiración suave. (x, y) = los pies.
+export function drawSheep(ctx, prop) {
+  const s = prop.scale || 3;
+  const cx = Math.round(prop.x);
+  const cy = Math.round(prop.y);
+  const wool = prop.color || '#ece4d3';
+  const woolHi = mixColors(wool, '#ffffff', 0.4);
+  const woolSh = mixColors(wool, '#6e5f44', 0.4);
+  const face = '#3b3328';
+  const faceHi = '#52483a';
+  const hoof = '#241e16';
+  const eye = '#0e0a06';
+  const dir = prop._dir == null ? (prop.dir || 1) : prop._dir;
+  const t = prop._t || 0;
+  const breath = Math.sin(t * 1.6) * 0.5;          // sube/baja del lomo, sutil
+  const a = prop.alpha == null ? 1 : Math.max(0, Math.min(1, prop.alpha));
+  if (a <= 0.01) return;
+  ctx.save();
+  ctx.globalAlpha *= a;
+  const px = (gx, gy, gw, gh, c) => {
+    ctx.fillStyle = c;
+    const sx = cx + (gx * dir) * s - (dir < 0 ? gw * s : 0);
+    ctx.fillRect(sx, cy + (gy + breath * (gy < -1 ? 1 : 0)) * s, gw * s, gh * s);
+  };
+  // Sombra de contacto.
+  ctx.fillStyle = 'rgba(0,0,0,0.18)';
+  ctx.fillRect(cx - 5 * s, cy - s * 0.2, 10 * s, s * 0.7);
+  // Patas (cuatro, oscuras con pezuña).
+  px(-3, -2, 1, 2, face); px(-3, 0, 1, 1, hoof);
+  px(-1, -2, 1, 2, face); px(-1, 0, 1, 1, hoof);
+  px(2, -2, 1, 2, face);  px(2, 0, 1, 1, hoof);
+  px(4, -2, 1, 2, face);  px(4, 0, 1, 1, hoof);
+  // Cuerpo de lana (volumen redondeado).
+  px(-4, -5, 8, 1, wool);
+  px(-5, -6, 9, 1, wool);
+  px(-5, -7, 8, 1, wool);
+  px(-4, -8, 6, 1, wool);
+  px(-4, -4, 8, 2, woolSh);          // panza en sombra
+  // Textura de vellón: rizos de luz y sombra salpicados.
+  px(-4, -7, 1, 1, woolHi); px(-1, -8, 1, 1, woolHi); px(2, -7, 1, 1, woolHi);
+  px(-3, -6, 1, 1, woolHi); px(0, -6, 1, 1, woolHi); px(3, -6, 1, 1, woolHi);
+  px(-2, -5, 1, 1, woolSh); px(1, -5, 1, 1, woolSh); px(-4, -6, 1, 1, woolSh);
+  // Cola corta (lana).
+  px(-6, -6, 1, 2, wool); px(-6, -6, 1, 1, woolHi);
+  // Cabeza oscura inclinada al pasto (al frente, lado +dir).
+  px(4, -7, 3, 1, face);
+  px(4, -6, 4, 2, face);
+  px(5, -7, 2, 1, faceHi);            // frente con luz
+  px(7, -5, 1, 1, face);              // hocico
+  // Oreja.
+  px(4, -8, 1, 1, face); px(3, -7, 1, 1, faceHi);
+  // Ojo.
+  px(6, -6, 1, 1, eye);
+  ctx.restore();
+}
+
+// Fence: la primera cerca, símbolo del cierre (la regla que los pastores se
+// dan). Postes de madera y dos travesaños con veta, sombra y luz. `panels`
+// (gaps entre postes), `color` la madera. (x, y) = base, centrada en x.
+export function drawFence(ctx, prop) {
+  const s = prop.scale || 3.5;
+  const cx = Math.round(prop.x);
+  const cy = Math.round(prop.y);
+  const panels = Math.max(1, Math.round(prop.panels || 3));
+  const wood = prop.color || '#9a6f3e';
+  const woodHi = mixColors(wood, '#e7c98f', 0.5);
+  const woodSh = mixColors(wood, '#3a2814', 0.55);
+  const grain = mixColors(wood, '#3a2814', 0.3);
+  const a = prop.alpha == null ? 1 : Math.max(0, Math.min(1, prop.alpha));
+  if (a <= 0.01) return;
+  const panelW = 7;                       // ancho de cada vano en celdas
+  const totalCells = panels * panelW;
+  const left = cx - (totalCells / 2) * s;
+  const postH = 9;                        // alto del poste en celdas
+  const rect = (gx, gy, gw, gh, c) => {
+    ctx.fillStyle = c;
+    ctx.fillRect(Math.round(left + gx * s), Math.round(cy + gy * s), Math.round(gw * s), Math.round(gh * s));
+  };
+  ctx.save();
+  ctx.globalAlpha *= a;
+  // Sombra al pie.
+  ctx.fillStyle = 'rgba(0,0,0,0.16)';
+  ctx.fillRect(Math.round(left - s), Math.round(cy - s * 0.3), Math.round((totalCells + 2) * s), Math.round(s * 0.8));
+  // Travesaños (dos), detrás de los postes.
+  for (const ry of [-6, -3]) {
+    rect(0, ry, totalCells, 1, wood);
+    rect(0, ry, totalCells, 0.35, woodHi);          // luz arriba
+    rect(0, ry + 0.7, totalCells, 0.3, woodSh);      // sombra abajo
+    // Vetas cada par de celdas.
+    for (let g = 2; g < totalCells; g += 3) rect(g, ry + 0.2, 0.25, 0.6, grain);
+  }
+  // Postes (en cada extremo de vano).
+  for (let p = 0; p <= panels; p++) {
+    const gx = p * panelW;
+    rect(gx, -postH, 1, postH, wood);
+    rect(gx, -postH, 0.4, postH, woodHi);            // canto iluminado
+    rect(gx + 0.7, -postH, 0.3, postH, woodSh);       // canto en sombra
+    rect(gx, -postH, 1, 0.5, woodHi);                 // tope
+    rect(gx - 0.15, -postH - 0.4, 1.3, 0.5, woodSh);  // capuchón
+  }
+  ctx.restore();
+}
+
 export function drawProp(ctx, prop) {
+  if (prop.type === 'pasture') return drawPasture(ctx, prop);
+  if (prop.type === 'sheep') return drawSheep(ctx, prop);
+  if (prop.type === 'fence') return drawFence(ctx, prop);
   if (prop.type === 'genially') return drawGenially(ctx, prop);
   if (prop.type === 'notebook') return drawNotebook(ctx, prop);
   if (prop.type === 'cat') return drawCat(ctx, prop);

@@ -203,6 +203,14 @@ export function tickAnimatedProps(world, dt) {
         });
         p._nextSpark = (0.04 + world.rng() * 0.07) / Math.max(0.2, eyeP);
       }
+    } else if (p.type === 'pasture') {
+      // Reloj para el vaivén de la hierba.
+      if (p._swayT == null) p._swayT = world.rng() * Math.PI * 2;
+      p._swayT += dt * 1.1;
+    } else if (p.type === 'sheep') {
+      // Reloj para la respiración suave del lomo.
+      if (p._t == null) p._t = world.rng() * Math.PI * 2;
+      p._t += dt;
     } else if (p.type === 'bird') {
       if (p._birdSpeed == null) {
         p._birdSpeed = 60 + world.rng() * 50;

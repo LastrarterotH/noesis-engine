@@ -401,6 +401,22 @@ const MUSIC_PRESETS = {
     pulse: true, pulseStep: 1.4, pulseDur: 0.6, pulseVol: 0.22,
     grow: true, growDur: 42, elecStep: 0.7, elecVol: 0.16,
   },
+  // Festiva y brillante: progresion toda mayor (C - F - G - C), registro alto,
+  // arpegio rapido y saltarin, pulso con rebote y capa que crece a la fiesta.
+  joyful: {
+    type: 'triangle', vol: 0.055, beatRate: 0.06,
+    chords: [
+      [130.81, 261.63, 329.63, 392.00],
+      [174.61, 349.23, 440.00, 523.25],
+      [196.00, 392.00, 493.88, 587.33],
+      [130.81, 261.63, 392.00, 523.25],
+    ],
+    chordDur: 4.0,
+    arp: [ { v: 1, oct: 1 }, { v: 2, oct: 1 }, { v: 3, oct: 1 }, { v: 1, oct: 2 }, { v: 3, oct: 1 }, { v: 2, oct: 1 } ],
+    arpType: 'triangle', arpStep: 0.26, arpDur: 0.3, arpVol: 0.24, arpRest: 0.06,
+    pulse: true, pulseStep: 0.8, pulseDur: 0.3, pulseVol: 0.22,
+    grow: true, growDur: 28, elecStep: 0.5, elecVol: 0.13,
+  },
 };
 
 export function createAmbientMusic(mood, volume) {

@@ -7,8 +7,8 @@
 // _positionBubbles/_drawFx as thin wrappers. The `fx` getter memoizes this api
 // on world._fxApi, so it is built once per World (not rebuilt every access).
 
-import { tone, sweep, createAmbientSound, createAmbientMusic, audio } from './audio.js?v=91';
-import { richToHtml } from './util.js?v=91';
+import { tone, sweep, createAmbientSound, createAmbientMusic, audio } from './audio.js?v=92';
+import { richToHtml } from './util.js?v=92';
 
 export function createFxApi(world) {
   const W = world;

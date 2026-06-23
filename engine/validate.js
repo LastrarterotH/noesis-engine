@@ -10,10 +10,10 @@
 // hooks) o se escanean del código fuente del motor (buildVocab recibe un
 // lector de fuentes), así el validador no se desincroniza al crecer el motor.
 
-import { PROP_SPRITES } from './prop-sprites.js?v=91';
-import { SKY_PRESETS } from './sky-presets.js?v=91';
-import { HOOK_NAMES, HOOK_ARGS } from './hooks.js?v=91';
-import { compileForm, FORM_TYPES } from './forms.js?v=91';
+import { PROP_SPRITES } from './prop-sprites.js?v=92';
+import { SKY_PRESETS } from './sky-presets.js?v=92';
+import { HOOK_NAMES, HOOK_ARGS } from './hooks.js?v=92';
+import { compileForm, FORM_TYPES } from './forms.js?v=92';
 
 // Fuentes del motor que buildVocab escanea con regex (enums de despachos
 // if/else que no se exportan como datos).
@@ -69,7 +69,7 @@ const FLOOR_PROPS = new Set([
   'cactus', 'palm', 'crate', 'barrel', 'streetlamp', 'building', 'lighthouse', 'boat',
   'pedestal', 'bonfire', 'swing', 'door', 'sign', 'chest', 'switch', 'path-tile',
   'flag', 'mountain', 'domino', 'cat', 'vault', 'wheat', 'column', 'wonderflower', 'chasm', 'tree-bare', 'basilisk',
-  'sheep', 'fence',
+  'sheep', 'fence', 'turtle',
 ]);
 
 const LABEL_ANCHORS = ['top-left', 'top', 'top-right', 'left', 'center', 'right', 'bottom-left', 'bottom', 'bottom-right'];

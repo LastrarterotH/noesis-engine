@@ -2,8 +2,8 @@
 // Per-prop draw functions + dispatch (drawProp). Animated/bespoke props
 // have their own renderer; static props fall through to PROP_SPRITES.
 
-import { PROP_SPRITES } from './prop-sprites.js?v=91';
-import { mixColors } from './util.js?v=91';
+import { PROP_SPRITES } from './prop-sprites.js?v=92';
+import { mixColors } from './util.js?v=92';
 
 // Compute a default collision box for a solid prop: the bottom 60% of the
 // sprite, centered on prop.x. Authors can override with `solidBox: {x,y,w,h}`
@@ -2046,7 +2046,78 @@ export function drawFence(ctx, prop) {
   ctx.restore();
 }
 
+// Turtle: la tortuga de la paradoja de Zenón. Caparazón en domo con escudos,
+// piel verde-amarilla, cuatro patas y una cabeza que asoma y se mece con `_t`.
+// `color` tiñe el caparazón, `dir` espeja (1 mira a la derecha), `alpha`. La
+// lentitud es del guion (se mueve por tween de x), no del drawer. (x, y) = pies.
+export function drawTurtle(ctx, prop) {
+  const s = prop.scale || 2.8;
+  const cx = Math.round(prop.x);
+  const cy = Math.round(prop.y);
+  const shell = prop.color || '#6f8f4a';
+  const shellHi = mixColors(shell, '#e6e89a', 0.5);
+  const shellMid = mixColors(shell, '#dfe08e', 0.22);
+  const shellDk = mixColors(shell, '#2c3a1c', 0.5);
+  const scute = mixColors(shell, '#222c14', 0.7);     // líneas entre escudos
+  const skin = mixColors(shell, '#d6c06a', 0.6);       // piel amarillo-verdosa
+  const skinHi = mixColors(skin, '#ffffff', 0.3);
+  const skinDk = mixColors(skin, '#3a3018', 0.45);
+  const eye = '#15100a';
+  const dir = prop._dir == null ? (prop.dir || 1) : prop._dir;
+  const t = prop._t || 0;
+  const headOut = (Math.sin(t * 1.2) * 0.5 + 0.5);     // 0..1 cabeza asomando
+  const legPhase = Math.sin(t * 2.0);                   // balanceo de patas
+  const a = prop.alpha == null ? 1 : Math.max(0, Math.min(1, prop.alpha));
+  if (a <= 0.01) return;
+  ctx.save();
+  ctx.globalAlpha *= a;
+  const px = (gx, gy, gw, gh, c) => {
+    ctx.fillStyle = c;
+    const sx = cx + (gx * dir) * s - (dir < 0 ? gw * s : 0);
+    ctx.fillRect(sx, cy + gy * s, gw * s, gh * s);
+  };
+  // Sombra de contacto.
+  ctx.fillStyle = 'rgba(0,0,0,0.18)';
+  ctx.fillRect(cx - 6 * s, cy - s * 0.2, 12 * s, s * 0.7);
+  // Patas traseras y delanteras (oscuras, con leve balanceo).
+  const lp = Math.round(legPhase * 0.5);
+  px(-5, -2, 1.4, 2, skin);  px(-5, 0 + 0, 1.4, 0.6, skinDk);            // trasera lejana
+  px(-3.4 + lp * 0.2, -2, 1.4, 2, skin); px(-3.4 + lp * 0.2, 0, 1.4, 0.6, skinDk);
+  px(2, -2, 1.4, 2, skin);   px(2, 0, 1.4, 0.6, skinDk);
+  px(3.7 - lp * 0.2, -2, 1.5, 2, skinHi); px(3.7 - lp * 0.2, 0, 1.5, 0.6, skinDk); // delantera
+  // Cola corta atrás (lado -dir).
+  px(-6.4, -3.2, 1.2, 1, skin);
+  px(-6.8, -3.0, 0.6, 0.8, skinDk);
+  // Cabeza al frente (lado +dir), asomando segun headOut, con cuello.
+  const hx = 4.6 + headOut * 1.4;
+  px(hx - 0.4, -4.4, 1.6, 1.8, skin);                  // cuello/cabeza
+  px(hx + 0.5, -4.4, 1.4, 1.6, skin);                  // morro
+  px(hx + 0.4, -4.5, 1.3, 0.7, skinHi);                // luz sobre la cabeza
+  px(hx + 1.7, -3.7, 0.5, 0.5, skinDk);                // punta del hocico
+  px(hx + 0.9, -3.9, 0.7, 0.7, eye);                   // ojo
+  px(hx + 1.0, -4.0, 0.3, 0.3, '#fdfdf5');             // brillo del ojo
+  // Caparazón: domo en cuatro tonos con borde, cúpula y escudos.
+  px(-5.2, -4.2, 10.4, 1.2, shellDk);                  // reborde inferior (marginales)
+  px(-5.0, -5.2, 10.0, 1.1, shell);
+  px(-4.4, -6.2, 8.8, 1.1, shellMid);
+  px(-3.4, -7.1, 6.8, 1.0, shell);
+  px(-2.2, -7.9, 4.4, 1.0, shellHi);                   // cúpula con luz
+  px(-1.0, -8.4, 2.0, 0.7, shellHi);
+  // Escudos del caparazón (líneas oscuras radiales + costuras).
+  px(-0.2, -8.3, 0.45, 4.0, scute);                    // costura central
+  px(-3.0, -6.6, 0.4, 2.3, scute);
+  px(2.6, -6.6, 0.4, 2.3, scute);
+  px(-4.2, -5.1, 0.4, 1.0, scute);
+  px(3.8, -5.1, 0.4, 1.0, scute);
+  px(-2.0, -7.6, 2.0, 0.4, scute);                     // arco superior
+  px(0.2, -7.6, 1.9, 0.4, scute);
+  // Pequeño highlight especular en la cúpula.
+  px(-1.6, -7.7, 0.8, 0.5, mixColors(shellHi, '#ffffff', 0.45));
+  ctx.restore();
+}
+
 export function drawProp(ctx, prop) {
+  if (prop.type === 'turtle') return drawTurtle(ctx, prop);
   if (prop.type === 'pasture') return drawPasture(ctx, prop);
   if (prop.type === 'sheep') return drawSheep(ctx, prop);
   if (prop.type === 'fence') return drawFence(ctx, prop);

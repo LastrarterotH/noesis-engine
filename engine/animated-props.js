@@ -211,6 +211,10 @@ export function tickAnimatedProps(world, dt) {
       // Reloj para la respiración suave del lomo.
       if (p._t == null) p._t = world.rng() * Math.PI * 2;
       p._t += dt;
+    } else if (p.type === 'turtle') {
+      // Reloj para la cabeza que asoma y el balanceo de patas.
+      if (p._t == null) p._t = world.rng() * Math.PI * 2;
+      p._t += dt;
     } else if (p.type === 'bird') {
       if (p._birdSpeed == null) {
         p._birdSpeed = 60 + world.rng() * 50;

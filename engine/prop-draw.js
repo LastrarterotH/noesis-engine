@@ -2,8 +2,8 @@
 // Per-prop draw functions + dispatch (drawProp). Animated/bespoke props
 // have their own renderer; static props fall through to PROP_SPRITES.
 
-import { PROP_SPRITES } from './prop-sprites.js?v=92';
-import { mixColors } from './util.js?v=92';
+import { PROP_SPRITES } from './prop-sprites.js?v=94';
+import { mixColors } from './util.js?v=94';
 
 // Compute a default collision box for a solid prop: the bottom 60% of the
 // sprite, centered on prop.x. Authors can override with `solidBox: {x,y,w,h}`
@@ -42,6 +42,10 @@ export function drawButterfly(ctx, prop) {
   const color2 = prop.color2 || '#fbe9b8';
   const dark = '#1F2547';
   const t = prop._t || 0;
+  const a = prop.alpha == null ? 1 : Math.max(0, Math.min(1, prop.alpha));
+  if (a <= 0.01) return;
+  ctx.save();
+  ctx.globalAlpha *= a;
   // Smooth 3-phase flap.
   const phase = (Math.sin(t * 7) + 1) * 0.5;
   const px = (gx, gy, gw, gh, c) => {
@@ -90,6 +94,7 @@ export function drawButterfly(ctx, prop) {
     px(1, -5, 1, 2, color);
     px(1, -3, 1, 2, color);
   }
+  ctx.restore();
 }
 
 export function drawCloud(ctx, prop) {
@@ -133,6 +138,10 @@ export function drawBird(ctx, prop) {
   const t = prop._t || 0;
   const flapPhase = (Math.sin(t * 12) + 1) * 0.5;   // 0..1
   const dir = (prop._birdDir == null ? 1 : prop._birdDir);
+  const a = prop.alpha == null ? 1 : Math.max(0, Math.min(1, prop.alpha));
+  if (a <= 0.01) return;
+  ctx.save();
+  ctx.globalAlpha *= a;
   const px = (gx, gy, gw, gh, c) => {
     ctx.fillStyle = c;
     // Horizontal mirror if flying left.
@@ -163,6 +172,7 @@ export function drawBird(ctx, prop) {
     px(-2, -1, 2, 1, dark);
     px(-2, 0, 3, 1, dark);
   }
+  ctx.restore();
 }
 
 export function drawFish(ctx, prop) {
@@ -2116,7 +2126,172 @@ export function drawTurtle(ctx, prop) {
   ctx.restore();
 }
 
+// Grinder: la moledora. Caja pesada de hierro con embudo en la boca de arriba,
+// manivela al costado, dos engranajes que muerden al frente y una ranura de
+// salida abajo. (x, y) es la base (apoya en el suelo). `color` tiñe el hierro
+// (las luces y sombras se derivan de él con mixColors); `crank` (radianes) gira
+// la manivela y los engranajes; `glow` (0..1) enciende la luz interna que se
+// filtra por la boca, las junturas y la ranura; `alpha` la desvanece. Nace para
+// la escena del trueque: una respuesta sale por la ranura, y la luz de quien
+// preguntó entra por ella. La luz proyectada al mundo la pone un `focus` o un
+// `light` de la escena (en oscuridad el glow propio solo se ve dentro del haz).
+export function drawGrinder(ctx, prop) {
+  const s = prop.scale || 4;
+  const cx = Math.round(prop.x);
+  const cy = Math.round(prop.y);            // piso (donde apoyan las patas)
+  const a = prop.alpha == null ? 1 : Math.max(0, Math.min(1, prop.alpha));
+  if (a <= 0.01) return;
+  const TAU = Math.PI * 2;
+  const metal = prop.color || '#41506e';
+  const mTop  = mixColors(metal, '#ffffff', 0.30);
+  const mMid  = mixColors(metal, '#ffffff', 0.12);
+  const mDark = mixColors(metal, '#000000', 0.34);
+  const mDeep = mixColors(metal, '#000000', 0.56);
+  const mouth = '#0a0d18';
+  const amber = '#F4AC1D';
+  const crank = prop.crank || 0;
+  const glow = prop.glow == null ? 0 : Math.max(0, Math.min(1, prop.glow));
+  const t = prop._t || 0;
+  const pulse = 0.80 + 0.20 * Math.sin(t * 5);
+  const gA = glow * pulse;                   // intensidad efectiva del encendido
+  const lit = glow > 0.30;
+  const px = (gx, gy, gw, gh, c) => { ctx.fillStyle = c; ctx.fillRect(cx + gx * s, cy + gy * s, Math.ceil(gw * s) + 1, Math.ceil(gh * s) + 1); };
+
+  ctx.save();
+  ctx.globalAlpha *= a;
+
+  // Sombra de contacto en el piso.
+  ctx.save();
+  ctx.globalAlpha *= 0.32;
+  ctx.fillStyle = '#04050c';
+  ctx.beginPath(); ctx.ellipse(cx, cy, 9.4 * s, 1.7 * s, 0, 0, TAU); ctx.fill();
+  ctx.restore();
+
+  // Halo cálido cuando se enciende (la luz de las tripas).
+  if (glow > 0.01) {
+    const g = ctx.createRadialGradient(cx, cy - 7 * s, 1 * s, cx, cy - 7 * s, 17 * s);
+    g.addColorStop(0, `rgba(244,172,29,${(0.42 * gA).toFixed(3)})`);
+    g.addColorStop(0.5, `rgba(244,172,29,${(0.16 * gA).toFixed(3)})`);
+    g.addColorStop(1, 'rgba(244,172,29,0)');
+    ctx.save(); ctx.fillStyle = g;
+    ctx.beginPath(); ctx.arc(cx, cy - 7 * s, 17 * s, 0, TAU); ctx.fill(); ctx.restore();
+  }
+
+  // --- Patas ---
+  px(-7, -1.7, 2.6, 1.9, mDeep);
+  px(4.4, -1.7, 2.6, 1.9, mDeep);
+  px(-7, -1.7, 2.6, 0.5, mDark);
+  px(4.4, -1.7, 2.6, 0.5, mDark);
+
+  // --- Cuerpo: caja de hierro con biseles ---
+  px(-8, -13.5, 16, 12, mDark);              // silueta/base
+  px(-7.4, -13, 14.8, 11, metal);            // cara
+  px(-7.4, -13, 14.8, 0.8, mTop);            // luz superior
+  px(-7.4, -3.2, 14.8, 0.9, mDeep);          // sombra inferior
+  px(-7.4, -13, 0.9, 11, mTop);              // bisel izquierdo (luz)
+  px(6.5, -13, 0.9, 11, mDeep);              // bisel derecho (sombra)
+  // Vetas del metal cepillado (en las franjas laterales, fuera de la cavidad).
+  for (let gy = -11; gy <= -5; gy += 2) { px(-6.6, gy, 1.6, 0.26, mDark); px(5.0, gy, 1.6, 0.26, mDark); }
+  // Junturas que filtran luz cuando se enciende.
+  if (glow > 0.01) {
+    ctx.save(); ctx.globalAlpha *= Math.min(1, gA);
+    px(-7.4, -7.0, 14.8, 0.2, amber);
+    px(-7.4, -10.4, 14.8, 0.16, amber);
+    ctx.restore();
+  }
+
+  // --- Embudo en la boca de arriba (trapecio que se ensancha hacia arriba) ---
+  for (let i = 0; i < 6; i++) {
+    const yy = -13.4 - i;                     // de la boca del cuerpo hacia arriba
+    const f = i / 5;
+    const hw = 3.4 + f * 3.4;                  // medio ancho: 3.4 abajo .. 6.8 arriba
+    px(-hw, yy, hw * 2, 1.06, i === 5 ? mTop : (i % 2 ? mMid : metal));
+    const mw = hw - 0.95;                      // boca oscura interior
+    px(-mw, yy, mw * 2, 1.06, mouth);
+  }
+  px(-6.9, -19.4, 13.8, 0.7, mTop);           // labio superior con luz
+  px(-6.9, -19.4, 0.7, 0.9, mTop);
+  px(6.2, -19.4, 0.7, 0.9, mDeep);
+  if (glow > 0.01) {                           // la boca brilla al moler
+    ctx.save(); ctx.globalAlpha *= Math.min(1, gA);
+    const gm = ctx.createLinearGradient(0, cy - 19 * s, 0, cy - 13 * s);
+    gm.addColorStop(0, 'rgba(244,172,29,0)');
+    gm.addColorStop(1, 'rgba(255,243,201,0.85)');
+    ctx.fillStyle = gm;
+    ctx.fillRect(cx - 3.0 * s, cy - 16.5 * s, 6.0 * s, 3.5 * s);
+    ctx.restore();
+  }
+
+  // --- Cavidad de engranajes (ventana al interior) ---
+  ctx.fillStyle = mouth;
+  ctx.beginPath(); ctx.roundRect(cx - 5.2 * s, cy - 11.6 * s, 10.4 * s, 6.4 * s, 1.1 * s); ctx.fill();
+  if (glow > 0.01) {
+    ctx.save(); ctx.globalAlpha *= Math.min(1, gA);
+    const gc = ctx.createRadialGradient(cx, cy - 8.4 * s, 0.5 * s, cx, cy - 8.4 * s, 6 * s);
+    gc.addColorStop(0, 'rgba(255,243,201,0.92)');
+    gc.addColorStop(0.6, 'rgba(244,172,29,0.45)');
+    gc.addColorStop(1, 'rgba(244,172,29,0)');
+    ctx.fillStyle = gc;
+    ctx.beginPath(); ctx.roundRect(cx - 5.2 * s, cy - 11.6 * s, 10.4 * s, 6.4 * s, 1.1 * s); ctx.fill();
+    ctx.restore();
+  }
+  ctx.strokeStyle = mDeep; ctx.lineWidth = Math.max(1, s * 0.3);
+  ctx.beginPath(); ctx.roundRect(cx - 5.2 * s, cy - 11.6 * s, 10.4 * s, 6.4 * s, 1.1 * s); ctx.stroke();
+
+  // Dos engranajes que muerden (giran con la manivela, en sentidos opuestos).
+  const gear = (gx, gy, rCells, teeth, ang) => {
+    const ox = cx + gx * s, oy = cy + gy * s, r = rCells * s;
+    ctx.save(); ctx.translate(ox, oy); ctx.rotate(ang);
+    ctx.fillStyle = mDeep;
+    const tw = r * 0.40, tl = r * 0.34;
+    for (let k = 0; k < teeth; k++) { ctx.save(); ctx.rotate(k * TAU / teeth); ctx.fillRect(-tw / 2, -r - tl * 0.55, tw, tl); ctx.restore(); }
+    ctx.fillStyle = mMid; ctx.beginPath(); ctx.arc(0, 0, r, 0, TAU); ctx.fill();
+    ctx.fillStyle = mDark; ctx.beginPath(); ctx.arc(0, 0, r * 0.60, 0, TAU); ctx.fill();
+    ctx.strokeStyle = mTop; ctx.lineWidth = Math.max(1, s * 0.22);
+    for (let k = 0; k < 4; k++) { const aa = k * Math.PI / 2; ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(Math.cos(aa) * r * 0.52, Math.sin(aa) * r * 0.52); ctx.stroke(); }
+    ctx.fillStyle = lit ? amber : mTop; ctx.beginPath(); ctx.arc(0, 0, r * 0.22, 0, TAU); ctx.fill();
+    ctx.restore();
+  };
+  gear(-2.2, -8.4, 2.7, 9, crank);
+  gear(2.1, -7.2, 1.9, 8, -crank * 1.42);
+
+  // --- Ranura de salida + bandeja al frente ---
+  px(-4.2, -3.6, 8.4, 1.0, mouth);
+  px(-4.2, -3.6, 8.4, 0.28, mDeep);
+  px(-4.8, -2.7, 9.6, 0.8, mDark);            // labio/bandeja que sobresale
+  px(-4.8, -2.7, 9.6, 0.3, mMid);
+  if (glow > 0.01) {
+    ctx.save(); ctx.globalAlpha *= Math.min(1, gA);
+    px(-3.8, -3.5, 7.6, 0.7, amber);
+    ctx.restore();
+  }
+
+  // Remaches en las esquinas del cuerpo.
+  for (const [rx, ry] of [[-7.0, -12.6], [6.3, -12.6], [-7.0, -3.4], [6.3, -3.4]]) px(rx, ry, 0.7, 0.7, mDeep);
+
+  // --- Manivela girable al costado derecho ---
+  px(6.4, -9.2, 1.8, 2.6, mDark);             // placa de montaje
+  px(6.4, -9.2, 1.8, 0.5, mMid);
+  ctx.save();
+  ctx.translate(cx + 8.4 * s, cy - 8.0 * s);  // pivote del eje
+  ctx.rotate(crank);
+  ctx.lineCap = 'round';
+  ctx.strokeStyle = mDeep; ctx.lineWidth = Math.max(2, s * 0.6);
+  ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(0, -3.6 * s); ctx.stroke();   // brazo radial
+  ctx.strokeStyle = mMid; ctx.lineWidth = Math.max(1, s * 0.28);
+  ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(0, -3.6 * s); ctx.stroke();
+  ctx.strokeStyle = mDeep; ctx.lineWidth = Math.max(2, s * 0.72);
+  ctx.beginPath(); ctx.moveTo(0, -3.6 * s); ctx.lineTo(2.4 * s, -3.6 * s); ctx.stroke();   // empuñadura
+  ctx.fillStyle = lit ? amber : mTop; ctx.beginPath(); ctx.arc(2.4 * s, -3.6 * s, 0.72 * s, 0, TAU); ctx.fill();
+  ctx.fillStyle = mDark; ctx.beginPath(); ctx.arc(0, 0, 1.05 * s, 0, TAU); ctx.fill();      // cubo del eje
+  ctx.fillStyle = mTop; ctx.beginPath(); ctx.arc(0, 0, 0.4 * s, 0, TAU); ctx.fill();
+  ctx.restore();
+
+  ctx.restore();
+}
+
 export function drawProp(ctx, prop) {
+  if (prop.type === 'grinder') return drawGrinder(ctx, prop);
   if (prop.type === 'turtle') return drawTurtle(ctx, prop);
   if (prop.type === 'pasture') return drawPasture(ctx, prop);
   if (prop.type === 'sheep') return drawSheep(ctx, prop);

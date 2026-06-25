@@ -181,6 +181,10 @@ export function tickAnimatedProps(world, dt) {
       // Reloj para el pulso del resplandor cuando la IA procesa.
       if (p._t == null) p._t = world.rng() * Math.PI * 2;
       p._t += dt;
+    } else if (p.type === 'grinder') {
+      // Reloj para el pulso de la luz interna cuando la moledora muele.
+      if (p._t == null) p._t = world.rng() * Math.PI * 2;
+      p._t += dt;
     } else if (p.type === 'basilisk') {
       // Reloj para la ondulación del cuerpo y el pulso del ojo.
       if (p._t == null) { p._t = world.rng() * Math.PI * 2; p._nextSpark = 0; }

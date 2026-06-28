@@ -1,0 +1,132 @@
+{
+  "meta": { "id": "10-fuera-de-juego", "number": 10, "version": "1.1", "lang": ["es"], "music": "epic" },
+  "text": {
+    "es": {
+      "title": "El fuera de juego: la línea y el instante",
+      "body": [
+        "Un atacante está en <strong>posición adelantada</strong> si, en el momento en que un compañero juega el balón, se encuentra en campo rival y más cerca de la línea de meta que el balón y que el penúltimo adversario (IFAB, 2024).",
+        "Estar adelantado no es, por sí mismo, una infracción. El <strong>fuera de juego</strong> se sanciona solo si ese jugador interviene en la jugada: juega el balón, estorba a un rival o saca ventaja de su posición.",
+        "El detalle que más confunde es temporal. La posición se congela en el instante del pase, no en el de la recepción. Un delantero puede recibir el balón muy por delante de la defensa y estar habilitado, si cuando salió el pase estaba en línea.",
+        "La referencia es el penúltimo adversario, casi siempre el último defensor, porque el arquero suele ser el último. Y estar a su misma altura cuenta como habilitado: en la duda, la regla favorece al atacante.",
+        "El video y las líneas trazadas volvieron la medición precisa hasta el centímetro. Esa exactitud resuelve unas jugadas y enciende otras: un gol puede caerse por un margen mínimo. Tampoco hay fuera de juego en un saque de banda, un córner ni un saque de meta."
+      ],
+      "references": [
+        { "authors": "IFAB", "year": 2024, "title": "Reglas de Juego 2024/25, Regla 11: El fuera de juego", "publisher": "International Football Association Board" },
+        { "authors": "IFAB", "year": 2024, "title": "Reglas de Juego 2024/25, Protocolo del VAR", "publisher": "International Football Association Board" }
+      ]
+    }
+  },
+  "hint": { "es": "la posición se mide cuando sale el pase, no cuando llega" },
+  "hintDuration": 4,
+  "canvas": {
+    "w": 980, "h": 560, "bg": "#3f7a3f", "floor": "grass", "safeArea": 20
+  },
+  "ambient": { "saturation": 1 },
+  "walls": [],
+  "zones": [],
+  "labels": [],
+  "props": [],
+  "entities": [
+    { "type": "learner", "id": "pasador", "x": 360, "y": 406, "scale": 6, "hero": true, "body": "#5b8def", "accessory": "headband", "behavior": null, "sleepable": false, "greets": false, "lookAt": { "x": 880, "y": 406 } },
+    { "type": "learner", "id": "delantero", "x": 516, "y": 406, "scale": 6, "hero": true, "body": "#5b8def", "behavior": null, "sleepable": false, "greets": false, "lookAt": { "x": 880, "y": 406 } },
+    { "type": "learner", "id": "defensa", "x": 600, "y": 322, "scale": 6, "hero": true, "body": "#c44a3e", "behavior": null, "sleepable": false, "greets": false, "lookAt": { "x": 320, "y": 406 } },
+    { "type": "learner", "id": "arquero", "x": 868, "y": 356, "scale": 6, "hero": true, "body": "#f0c419", "accessory": "glasses", "behavior": null, "sleepable": false, "greets": false, "lookAt": { "x": 520, "y": 406 } },
+    { "type": "learner", "id": "juez", "x": 600, "y": 160, "scale": 6, "hero": true, "body": "#1f2330", "behavior": null, "sleepable": false, "greets": false, "lookAt": { "x": 760, "y": 380 } }
+  ],
+  "script": [
+    { "wait": 0.6 },
+    { "caption": "EL FUERA DE JUEGO", "style": "title" },
+    { "wait": 2.2 },
+    { "caption": "", "style": "title" },
+
+    { "caption": "El delantero espera detrás del último defensor. Por ahora, habilitado." },
+    { "wait": 3.6 },
+    { "do": "var d=world.byId('delantero'); if(d) d.lookAt={x:360,y:406};" },
+    { "say": "pasador", "text": "Cuando salgas, te tiro el pase.", "duration": 2.8 },
+    { "wait": 2.4 },
+
+    { "caption": "El balón sale, y la corrida con él." },
+    { "do": "var d=world.byId('delantero'); if(d) d.lookAt=null;" },
+    { "walk": "delantero", "to": [662, 406], "speed": 165 },
+    { "waitFor": "arrive:delantero" },
+    { "tone": 520, "dur": 0.12 },
+    { "tween": "ballX", "to": 770, "duration": 1.2, "easing": "easeOutCubic" },
+    { "tween": "ballY", "to": 408, "duration": 1.2, "easing": "easeOutCubic" },
+    { "wait": 0.25 },
+    { "walk": "delantero", "to": [752, 406], "speed": 180 },
+    { "waitFor": "arrive:delantero" },
+    { "tone": 392, "dur": 0.1 },
+    { "tween": "ballX", "to": 916, "duration": 0.5, "easing": "easeOutCubic" },
+    { "tween": "ballY", "to": 402, "duration": 0.5, "easing": "easeOutCubic" },
+    { "sweep": [320, 720], "dur": 0.4 },
+    { "wait": 0.55 },
+
+    { "caption": "El balón entra. Gol." },
+    { "do": "var d=world.byId('delantero'); if(d) world.fx.celebrate(d,{});" },
+    { "tween": "hype", "to": 1, "duration": 0.35, "easing": "easeOutCubic" },
+    { "sweep": [440, 980], "dur": 0.9 },
+    { "tone": 660, "dur": 0.45 },
+    { "tone": 784, "dur": 0.55 },
+    { "tween": "hype", "to": 0.4, "duration": 1.6 },
+    { "wait": 2.6 },
+
+    { "caption": "Espera. El árbitro va a la revisión." },
+    { "camera": { "letterbox": true } },
+    { "tween": "ambient.saturation", "to": 0.72, "duration": 0.8 },
+    { "tween": "hype", "to": 0.1, "duration": 1.0 },
+    { "tone": 300, "dur": 0.5 },
+    { "mood": "delantero", "value": "confused", "duration": 8 },
+    { "wait": 3.0 },
+
+    { "caption": "Volvemos al instante exacto en que sale el pase. No al del gol." },
+    { "do": "var d=world.byId('delantero'); if(d){ d.x=662; d.y=406; } var s=world.state; s.ballX=372; s.ballY=412;" },
+    { "tone": 392, "dur": 0.18 },
+    { "wait": 3.8 },
+
+    { "caption": "La línea nace del penúltimo rival. El último suele ser el arquero." },
+    { "focus": "arquero", "color": "#f0c419", "radius": 64 },
+    { "wait": 1.8 },
+    { "focus": "arquero", "off": true },
+    { "focus": "defensa", "color": "#F4AC1D", "radius": 64 },
+    { "tween": "lineOn", "to": 1, "duration": 0.9, "easing": "easeOutCubic" },
+    { "tone": 523, "dur": 0.3 },
+    { "wait": 3.6 },
+
+    { "caption": "A la altura del defensor estaría habilitado. Lo pasa por un pirulete." },
+    { "camera": { "to": [636, 366], "zoom": 1.4 } },
+    { "wait": 1.0 },
+    { "focus": "delantero", "color": "#c44a3e", "radius": 54 },
+    { "tone": 466, "dur": 0.3 },
+    { "wait": 4.2 },
+    { "focus": "delantero", "off": true },
+    { "focus": "defensa", "off": true },
+    { "camera": { "to": [490, 290], "zoom": 1 } },
+    { "wait": 0.6 },
+
+    { "caption": "Posición adelantada. El gol se anula." },
+    { "tween": "flagUp", "to": 1, "duration": 0.5, "easing": "easeOutBack" },
+    { "tween": "hype", "to": 0, "duration": 1.0 },
+    { "tone": 880, "dur": 0.18 },
+    { "tone": 880, "dur": 0.18 },
+    { "mood": "delantero", "value": "sad", "duration": 8 },
+    { "do": "var f=world.byId('defensa'); if(f) world.fx.mood(f,'happy',5);" },
+    { "sweep": [620, 200], "dur": 1.1 },
+    { "wait": 3.8 },
+
+    { "camera": { "letterbox": false } },
+    { "tween": "ambient.saturation", "to": 1, "duration": 1.0 },
+    { "tween": "lineOn", "to": 0, "duration": 0.8 },
+    { "tween": "flagUp", "to": 0, "duration": 0.6 },
+    { "caption": "La regla mide cualquier parte con la que se marca, adelantada en el instante del pase." },
+    { "wait": 5.0 },
+    { "caption": "Por un margen mínimo se anula un gol: la línea es exacta, y aun así la jugada se sigue discutiendo." },
+    { "wait": 5.6 }
+  ],
+  "hooks": {
+    "onInit": "var s = world.state;\ns.ballX = 372; s.ballY = 412; s.lineOn = 0; s.lineX = 600; s.flagUp = 0; s.hype = 0;",
+    "onStep": "",
+    "onDraw": "var s = world.state;\nvar W = world.W, H = world.H;\nvar T = world.t;\nvar standBot = 150, fieldTop = 196, nearLine = 516, goalLine = 880;\n// --- tribuna: respaldo + gradas ---\nctx.fillStyle = '#39415a';\nctx.fillRect(0, 0, W, standBot);\nctx.fillStyle = '#2c3247';\nctx.fillRect(0, 0, W, 7);\nctx.fillStyle = 'rgba(0,0,0,0.12)';\nctx.fillRect(0, 50, W, 3); ctx.fillRect(0, 98, W, 3);\nctx.fillStyle = '#454d68';\nctx.fillRect(0, standBot - 6, W, 6);\n// --- publico: BLOBS propios (cuerpo + ojos, como los jugadores) que saltan ---\nvar hype = s.hype || 0;\nfor (var ry = 0; ry < 3; ry++) {\n  for (var rx = 0; rx < 27; rx++) {\n    var ph = rx * 0.5 + ry * 1.9;\n    var jump = Math.abs(Math.sin(T * 2.8 + ph)) * (4 + hype * 20);\n    var cx = 22 + rx * 36;\n    var cy = 48 + ry * 42 - jump;\n    var tc = (rx * 2 + ry * 5) % 6;\n    var col = (tc < 3) ? '#5b8def' : (tc < 5 ? '#c44a3e' : '#e6c34a');\n    world.draw.rrect(cx - 11, cy - 13, 22, 26, 9);\n    ctx.fillStyle = col; ctx.fill();\n    ctx.fillStyle = 'rgba(0,0,0,0.12)';\n    world.draw.rrect(cx - 11, cy + 4, 22, 9, 6); ctx.fill();\n    ctx.fillStyle = '#fbfaf6';\n    ctx.beginPath(); ctx.arc(cx - 4.5, cy - 4, 3, 0, 6.283); ctx.fill();\n    ctx.beginPath(); ctx.arc(cx + 4.5, cy - 4, 3, 0, 6.283); ctx.fill();\n    ctx.fillStyle = '#22262f';\n    ctx.beginPath(); ctx.arc(cx - 4.5, cy - 3.4, 1.5, 0, 6.283); ctx.fill();\n    ctx.beginPath(); ctx.arc(cx + 4.5, cy - 3.4, 1.5, 0, 6.283); ctx.fill();\n  }\n}\n// --- banda (fuera del campo, donde corre el juez) ---\nctx.fillStyle = 'rgba(0,0,0,0.06)';\nctx.fillRect(0, standBot, W, fieldTop - standBot);\n// --- franjas de corte del cesped ---\nctx.save();\nfor (var i = 0; i < 12; i++) {\n  ctx.fillStyle = (i % 2 === 0) ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.055)';\n  ctx.fillRect(i * 92 - 16, fieldTop, 92, H - fieldTop);\n}\nctx.restore();\n// --- lineas del campo (vista cenital), centradas en el eje del campo ---\nvar midY = (fieldTop + nearLine) / 2;\nctx.strokeStyle = 'rgba(251,250,246,0.5)';\nctx.lineWidth = 2;\nctx.beginPath(); ctx.moveTo(0, fieldTop); ctx.lineTo(W, fieldTop); ctx.stroke();\nctx.beginPath(); ctx.moveTo(0, nearLine); ctx.lineTo(W, nearLine); ctx.stroke();\nctx.beginPath(); ctx.moveTo(goalLine, fieldTop); ctx.lineTo(goalLine, nearLine); ctx.stroke();\nctx.strokeRect(636, midY - 103, 244, 206);\nctx.strokeRect(800, midY - 60, 80, 120);\nctx.beginPath(); ctx.moveTo(60, fieldTop); ctx.lineTo(60, nearLine); ctx.stroke();\nctx.fillStyle = 'rgba(251,250,246,0.6)';\nctx.beginPath(); ctx.arc(742, midY, 2.4, 0, 6.283); ctx.fill();\n// --- arco minimo: huella plana al nivel de las lineas de cancha (sin red, sin volumen) ---\nvar glx = goalLine, gpt = midY - 56, gpb = midY + 56, gbk = glx + 40;\nctx.strokeStyle = 'rgba(251,250,246,0.5)';\nctx.lineWidth = 2;\nctx.beginPath();\nctx.moveTo(glx, gpt); ctx.lineTo(gbk, gpt); ctx.lineTo(gbk, gpb); ctx.lineTo(glx, gpb);\nctx.stroke();\nctx.fillStyle = '#FBFAF6';\nctx.beginPath(); ctx.arc(glx, gpt, 3.5, 0, 6.283); ctx.fill();\nctx.beginPath(); ctx.arc(glx, gpb, 3.5, 0, 6.283); ctx.fill();\n// --- linea de fuera de juego + zona ---\nif ((s.lineOn || 0) > 0.01) {\n  var lx = s.lineX || 600;\n  var t2 = fieldTop + 4, b2 = nearLine - 4;\n  ctx.save();\n  ctx.globalAlpha = 0.15 * s.lineOn;\n  ctx.fillStyle = '#c44a3e';\n  ctx.fillRect(lx, t2, goalLine - lx, b2 - t2);\n  ctx.restore();\n  ctx.save();\n  ctx.globalAlpha = Math.min(1, s.lineOn);\n  ctx.strokeStyle = '#F4AC1D';\n  ctx.lineWidth = 3;\n  ctx.beginPath(); ctx.moveTo(lx, t2 - 6); ctx.lineTo(lx, b2); ctx.stroke();\n  ctx.fillStyle = '#F4AC1D';\n  ctx.beginPath(); ctx.moveTo(lx - 6, t2 - 6); ctx.lineTo(lx + 6, t2 - 6); ctx.lineTo(lx, t2 + 5); ctx.closePath(); ctx.fill();\n  ctx.restore();\n}\n// --- learners (la escena define onDraw: los dibuja ella, con y-sort) ---\nvar lsd = world.entities.filter(function (e) { return e.type === 'learner'; });\nlsd.sort(function (a, b) { return (a.y || 0) - (b.y || 0); });\nfor (var k = 0; k < lsd.length; k++) world.draw.learner(lsd[k]);\n// --- regla 'un blob': cuanto pasa la linea (durante el congelado) ---\nif ((s.lineOn || 0) > 0.6) {\n  var d = world.byId('delantero');\n  if (d) {\n    var lx2 = s.lineX || 600;\n    var my = 448;\n    ctx.save();\n    ctx.globalAlpha = Math.min(1, (s.lineOn - 0.6) * 2.5);\n    ctx.strokeStyle = '#F4AC1D';\n    ctx.lineWidth = 2;\n    ctx.beginPath();\n    ctx.moveTo(lx2, my - 6); ctx.lineTo(lx2, my + 6);\n    ctx.moveTo(d.x, my - 6); ctx.lineTo(d.x, my + 6);\n    ctx.moveTo(lx2, my); ctx.lineTo(d.x, my);\n    ctx.stroke();\n    var midx = (lx2 + d.x) / 2;\n    world.draw.rrect(midx - 42, my - 31, 84, 18, 5);\n    ctx.fillStyle = '#1F2547'; ctx.fill();\n    ctx.fillStyle = '#F4AC1D';\n    ctx.font = '600 11px \"Plus Jakarta Sans\", ui-sans-serif';\n    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';\n    ctx.fillText('1 Pirulete', midx, my - 22);\n    ctx.restore();\n  }\n}\n// --- balon ---\nif (s.ballX != null) {\n  var bx2 = s.ballX, by2 = s.ballY;\n  ctx.save();\n  ctx.globalAlpha = 0.22;\n  ctx.fillStyle = '#16310f';\n  ctx.beginPath(); ctx.ellipse(bx2, by2 + 8, 8, 3, 0, 0, 6.283); ctx.fill();\n  ctx.restore();\n  ctx.fillStyle = '#fbfaf6';\n  ctx.beginPath(); ctx.arc(bx2, by2, 7, 0, 6.283); ctx.fill();\n  ctx.fillStyle = '#23303f';\n  ctx.beginPath(); ctx.arc(bx2, by2, 2.4, 0, 6.283); ctx.fill();\n  ctx.beginPath(); ctx.arc(bx2 - 4, by2 - 3, 1.5, 0, 6.283); ctx.fill();\n  ctx.beginPath(); ctx.arc(bx2 + 4, by2 - 2, 1.5, 0, 6.283); ctx.fill();\n  ctx.beginPath(); ctx.arc(bx2 - 1, by2 + 4, 1.5, 0, 6.283); ctx.fill();\n  ctx.fillStyle = 'rgba(255,255,255,0.7)';\n  ctx.beginPath(); ctx.arc(bx2 - 2.4, by2 - 2.4, 1.8, 0, 6.283); ctx.fill();\n}\n// --- juez de linea (en la banda): bandera amarilla que sube ---\nvar j = world.byId('juez');\nif (j) {\n  var up = s.flagUp || 0;\n  var hx = j.x + 16, hy = j.y - 6;\n  var ang = -0.4 + up * 1.7;\n  var len = 36;\n  var ex = hx + Math.cos(ang) * len, ey = hy - Math.sin(ang) * len;\n  ctx.strokeStyle = '#d8dbe4';\n  ctx.lineWidth = 2.5;\n  ctx.beginPath(); ctx.moveTo(hx, hy); ctx.lineTo(ex, ey); ctx.stroke();\n  var perpx = Math.cos(ang + 1.5708), perpy = -Math.sin(ang + 1.5708);\n  var bxp = ex - Math.cos(ang) * 22, byp = ey + Math.sin(ang) * 22;\n  ctx.fillStyle = '#f4d21f';\n  ctx.beginPath();\n  ctx.moveTo(ex, ey);\n  ctx.lineTo(bxp + perpx * 16, byp + perpy * 16);\n  ctx.lineTo(bxp, byp);\n  ctx.closePath(); ctx.fill();\n  ctx.fillStyle = '#c44a3e';\n  ctx.beginPath();\n  ctx.moveTo(bxp, byp);\n  ctx.lineTo(bxp + perpx * 16, byp + perpy * 16);\n  ctx.lineTo((bxp + ex) / 2 + perpx * 8, (byp + ey) / 2 + perpy * 8);\n  ctx.closePath(); ctx.fill();\n}",
+    "onClick": "",
+    "onReset": ""
+  }
+}

@@ -1,0 +1,158 @@
+{
+  "meta": { "id": "09-la-caverna", "number": 9, "version": "0.1", "lang": ["es"], "music": "melancholic" },
+  "text": {
+    "es": {
+      "title": "El mito de la caverna en la era de la IA",
+      "body": [
+        "Platón imagina, en el libro VII de <em>La República</em>, a unos prisioneros encadenados desde la infancia frente al fondo de una caverna. A sus espaldas arde un fuego, y entre el fuego y ellos pasan figuras cuyas <strong>sombras</strong> se proyectan en la pared. Como nunca vieron otra cosa, toman esas sombras por la realidad entera: las nombran, anticipan su orden y se reconocen entre sí por saber leerlas.",
+        "Uno de ellos se libera y se da vuelta. La luz del fuego lo enceguece, y el ascenso hasta la salida le duele; afuera, el sol lo deslumbra antes de dejarlo ver. Ese tránsito es la <strong>alegoría de la caverna</strong> (Platón, c. 380 a. C.): el paso de la sombra a la cosa, y del rumor a lo que de verdad sostiene al mundo, que Platón nombra como la idea del Bien.",
+        "Cuando vuelve a contarlo, los que se quedaron no le creen. Acostumbrados a la penumbra, leen las sombras mejor que él y prefieren su mundo conocido a la incomodidad de la luz. Platón sugiere que hasta intentarían hacerle daño. El que sale no recibe gratitud: recibe sospecha.",
+        "La caverna es menos un lugar que una condición, y cada época le levanta su pared. Hoy esa pared puede ser una pantalla: un flujo sin fin de imágenes que un sistema genera y ordena a nuestra medida. Cuando la representación se vuelve más nítida y más cómoda que aquello que representa, empezamos a tomarla por el mundo. Baudrillard llamó <strong>hiperrealidad</strong> a ese estado en que el mapa llega antes que el territorio (Baudrillard, 1981).",
+        "Salir de la caverna nunca salió gratis, y volver para avisar casi nunca se agradece. Esa es la parte del mito que el tiempo no gastó. Lo que conserva intacto es la puerta: sigue ahí, abierta, aunque casi nadie la cruce."
+      ],
+      "references": [
+        { "authors": "Platón", "year": 1988, "title": "La República (libro VII, 514a-520a)", "publisher": "Gredos" },
+        { "authors": "Baudrillard, J.", "year": 1981, "title": "Simulacres et simulation", "publisher": "Galilée" }
+      ]
+    }
+  },
+  "hint": { "es": "lo que tomamos por el mundo puede ser apenas su sombra" },
+  "hintDuration": 4,
+  "canvas": {
+    "w": 880, "h": 520, "bg": "#241f2e", "floor": "cobble",
+    "sky": "dawn", "horizon": 0.6, "safeArea": 20
+  },
+  "sets": [
+    { "id": "cueva", "cx": 400 },
+    { "id": "afuera", "cx": 1200 }
+  ],
+  "ambient": { "saturation": 0.18, "darkness": 0.14, "darknessColor": "#0a1024" },
+  "walls": [],
+  "zones": [],
+  "labels": [],
+  "props": [
+    { "type": "bench", "x": 320, "y": 416 },
+    { "type": "bench", "x": 440, "y": 416 },
+    { "type": "bench", "x": 560, "y": 416 },
+    { "type": "aiorb", "id": "ia", "x": 650, "y": 185, "scale": 3.4, "color": "#5b8def", "light": { "radius": 96, "strength": 0.75 } },
+    { "type": "door", "x": 726, "y": 416 },
+
+    { "type": "sun", "x": 1150, "y": 92, "scale": 2.4, "color": "#f4c45a" },
+    { "type": "tree", "x": 1330, "y": 372 },
+    { "type": "tree", "x": 980, "y": 388, "scale": 1.3 },
+    { "type": "bird", "id": "ave", "x": 1180, "y": 168 },
+    { "type": "flower", "x": 1075, "y": 398, "color": "#e2607a" },
+    { "type": "flower", "x": 1245, "y": 404, "color": "#f4ac1d" },
+    { "type": "flower-cluster", "x": 1400, "y": 406 },
+    { "type": "butterfly", "x": 1090, "y": 318, "color": "#f4ac1d" },
+    { "type": "butterfly", "x": 1290, "y": 296, "color": "#e2607a" }
+  ],
+  "entities": [
+    { "type": "learner", "id": "compA", "x": 320, "y": 392, "scale": 5, "hero": true, "body": "#6e7896", "behavior": null, "sleepable": false, "greets": false, "lookAt": { "x": 124, "y": 300 } },
+    { "type": "learner", "id": "compB", "x": 440, "y": 392, "scale": 5, "hero": true, "body": "#7aa6c0", "behavior": null, "sleepable": false, "greets": false, "lookAt": { "x": 124, "y": 300 } },
+    { "type": "learner", "id": "proto", "x": 560, "y": 392, "scale": 5, "hero": true, "body": "#e0a85f", "behavior": null, "sleepable": false, "greets": false, "lookAt": { "x": 124, "y": 300 } }
+  ],
+  "script": [
+    { "wait": 0.8 },
+    { "caption": "EL MITO DE LA CAVERNA", "style": "title" },
+    { "wait": 2.4 },
+    { "caption": "", "style": "title" },
+
+    { "caption": "Un lugar a oscuras. Una pared de luz. Tres personas que nunca miraron hacia atrás." },
+    { "wait": 3.8 },
+    { "say": "compA", "text": "Ahí va el pájaro. Cruza la pared a esta misma hora.", "duration": 3.4 },
+    { "wait": 3.9 },
+    { "say": "compB", "text": "Lo conozco de memoria. Aquí todo es predecible.", "duration": 3.0 },
+    { "wait": 3.5 },
+
+    { "say": "proto", "text": "¿Y si afuera hay algo más que esto?", "duration": 2.8 },
+    { "wait": 3.3 },
+    { "say": "compA", "text": "Afuera no hay nada. Esto es todo lo que hay para ver.", "duration": 3.4 },
+    { "wait": 3.9 },
+
+    { "caption": "Por primera vez, alguien se pone de pie y se da vuelta." },
+    { "do": "var p=world.byId('proto'); if(p) p.lookAt={x:650,y:190};" },
+    { "wait": 1.2 },
+    { "focus": "ia", "color": "#5b8def", "radius": 74 },
+    { "tone": 330, "dur": 0.5 },
+    { "wait": 1.6 },
+    { "say": "proto", "text": "Las sombras no nacen solas. Algo las proyecta.", "duration": 3.2 },
+    { "wait": 3.7 },
+    { "say": "compB", "text": "Siéntate. Te estás perdiendo lo que viene.", "duration": 2.8 },
+    { "wait": 3.2 },
+    { "focus": "ia", "off": true },
+
+    { "caption": "Camina hacia la puerta que nadie usa." },
+    { "wait": 0.6 },
+    { "walk": "proto", "to": [690, 394] },
+    { "waitFor": "arrive:proto" },
+    { "wait": 0.5 },
+    { "say": "proto", "text": "Voy a ver qué hay del otro lado.", "duration": 2.8 },
+    { "wait": 2.6 },
+
+    { "scene": "afuera", "move": { "proto": [980, 392] } },
+    { "tween": "ambient.darkness", "to": 0, "duration": 1.6, "easing": "easeOutCubic" },
+    { "tween": "ambient.saturation", "to": 1, "duration": 2.0, "easing": "easeOutCubic" },
+    { "camera": { "to": [1080, 300], "zoom": 1.06 } },
+    { "focus": [1150, 95], "color": "#ffd874", "radius": 210 },
+    { "sweep": [330, 880], "dur": 0.9 },
+    { "tone": 659, "dur": 0.5 },
+    { "do": "var p=world.byId('proto'); if(p) p.lookAt={x:1150,y:95};" },
+    { "wait": 0.6 },
+    { "surprise": "proto" },
+    { "tone": 784, "dur": 0.5 },
+    { "weather": "petals" },
+    { "wait": 1.3 },
+    { "caption": "Lo que tomaba por el mundo era apenas su sombra." },
+    { "walk": "proto", "to": [1052, 388] },
+    { "waitFor": "arrive:proto" },
+    { "tone": 988, "dur": 0.45 },
+    { "do": "var p=world.byId('proto'); if(p) world.fx.jump(p, {});" },
+    { "wait": 1.8 },
+    { "focus": [1150, 95], "off": true },
+    { "do": "var p=world.byId('proto'); if(p) p.lookAt={x:1180,y:170};" },
+    { "tone": 880, "dur": 0.3 },
+    { "say": "proto", "text": "El pájaro era de verdad. La pared solo daba su contorno.", "duration": 3.8 },
+    { "wait": 4.2 },
+    { "mood": "proto", "value": "happy", "duration": 4 },
+    { "wait": 1.4 },
+
+    { "caption": "Podría quedarse en la luz. Vuelve a buscar a los otros." },
+    { "wait": 3.0 },
+    { "camera": { "reset": true } },
+    { "walk": "proto", "to": [864, 392] },
+    { "waitFor": "arrive:proto" },
+    { "weather": "none" },
+    { "scene": "cueva", "move": { "proto": [624, 392] } },
+    { "tween": "ambient.darkness", "to": 0.16, "duration": 2.0, "easing": "easeInOutCubic" },
+    { "tween": "ambient.saturation", "to": 0.20, "duration": 2.0, "easing": "easeInOutCubic" },
+    { "do": "var p=world.byId('proto'); if(p) p.lookAt={x:440,y:392};" },
+    { "wait": 1.6 },
+
+    { "walk": "proto", "to": [524, 392] },
+    { "waitFor": "arrive:proto" },
+    { "say": "proto", "text": "Afuera hay color. Esto son sombras de cosas reales.", "duration": 3.4 },
+    { "wait": 3.9 },
+    { "say": "compA", "text": "Estás tapando la pared. Hazte a un lado.", "duration": 3.0 },
+    { "wait": 3.5 },
+    { "say": "compB", "text": "Siempre vuelve alguno diciendo locuras. Nosotros seguimos mirando.", "duration": 3.8 },
+    { "wait": 4.2 },
+    { "mood": "proto", "value": "sad", "duration": 5 },
+    { "do": "var p=world.byId('proto'); if(p) p.lookAt={x:726,y:392};" },
+    { "wait": 2.0 },
+
+    { "caption": "Platón escribió esta caverna hace veinticuatro siglos." },
+    { "wait": 3.4 },
+    { "caption": "No cambió de forma. Solo cambió de pantalla." },
+    { "wait": 3.6 },
+    { "caption": "La sombra es cómoda. Salir cuesta, y se paga con no ser creído. La puerta sigue ahí." },
+    { "wait": 5.4 }
+  ],
+  "hooks": {
+    "onInit": "",
+    "onStep": "",
+    "onDraw": "var t = world.t;\nvar sx = 24, sy = 122, sw = 200, sh = 268;\nvar cx = sx + sw / 2, cy = sy + sh / 2;\n// haz de proyeccion de la IA hacia la pared (sobre las cabezas)\nctx.save();\nctx.globalAlpha = 0.10;\nctx.fillStyle = '#7fb0ff';\nctx.beginPath();\nctx.moveTo(648, 188);\nctx.lineTo(sx + sw, sy + 30);\nctx.lineTo(sx + sw, sy + sh - 30);\nctx.closePath();\nctx.fill();\nctx.restore();\n// marco / bisel de la pantalla\nctx.save();\nworld.draw.rrect(sx - 7, sy - 7, sw + 14, sh + 14, 14);\nctx.fillStyle = '#16131f';\nctx.fill();\nworld.draw.rrect(sx - 7, sy - 7, sw + 14, sh + 14, 14);\nctx.strokeStyle = 'rgba(120,140,180,0.32)';\nctx.lineWidth = 2;\nctx.stroke();\n// superficie\nworld.draw.rrect(sx, sy, sw, sh, 9);\nctx.fillStyle = '#0c1830';\nctx.fill();\n// resplandor frio interno + siluetas (clip a la pantalla)\nctx.save();\nworld.draw.rrect(sx, sy, sw, sh, 9);\nctx.clip();\nvar g = ctx.createRadialGradient(cx, cy - 10, 8, cx, cy, sw * 0.95);\ng.addColorStop(0, 'rgba(96,156,234,0.46)');\ng.addColorStop(0.6, 'rgba(40,82,150,0.22)');\ng.addColorStop(1, 'rgba(12,24,48,0)');\nctx.fillStyle = g;\nctx.fillRect(sx, sy, sw, sh);\nctx.fillStyle = 'rgba(7,11,22,0.82)';\n// silueta: pajaro a la deriva\nvar bx = sx + ((t * 20) % (sw + 70)) - 30;\nvar by = sy + 66 + Math.sin(t * 1.3) * 9;\nctx.save();\nctx.translate(bx, by);\nctx.beginPath();\nctx.moveTo(-16, 0);\nctx.quadraticCurveTo(0, -11, 13, -2);\nctx.quadraticCurveTo(1, 3, -16, 0);\nctx.fill();\nctx.beginPath();\nctx.moveTo(-3, -2);\nctx.quadraticCurveTo(-11, -15, -23, -9 + Math.sin(t * 6) * 4);\nctx.quadraticCurveTo(-9, -5, -3, -2);\nctx.fill();\nctx.restore();\n// silueta: figura de pie\nvar fx = sx + 58 + Math.sin(t * 0.5) * 7;\nvar fy = sy + sh - 30;\nctx.beginPath();\nctx.arc(fx, fy - 30, 11, 0, Math.PI * 2);\nctx.fill();\nctx.fillRect(fx - 9, fy - 20, 18, 30);\n// silueta: arbol\nvar tx2 = sx + sw - 50;\nvar ty2 = sy + sh - 14;\nctx.fillRect(tx2 - 4, ty2 - 42, 8, 42);\nctx.beginPath();\nctx.arc(tx2, ty2 - 50, 22, 0, Math.PI * 2);\nctx.fill();\n// barrido de escaneo\nctx.globalAlpha = 0.09;\nctx.fillStyle = '#bcd6ff';\nvar scan = sy + ((t * 38) % sh);\nctx.fillRect(sx, scan, sw, 2);\nctx.globalAlpha = 1;\nctx.restore();\nctx.restore();\n// luz fria que la pantalla derrama sobre el publico\nvar lg = ctx.createRadialGradient(cx + 30, cy + 24, 18, cx + 30, cy + 24, 380);\nlg.addColorStop(0, 'rgba(96,156,234,0.15)');\nlg.addColorStop(1, 'rgba(96,156,234,0)');\nctx.fillStyle = lg;\nctx.fillRect(0, sy - 50, 660, sh + 140);\n// learners (la escena define onDraw, asi que los dibuja ella)\nfor (var i = 0; i < world.entities.length; i++) {\n  var e = world.entities[i];\n  if (e.type === 'learner') world.draw.learner(e);\n}",
+    "onClick": "",
+    "onReset": ""
+  }
+}

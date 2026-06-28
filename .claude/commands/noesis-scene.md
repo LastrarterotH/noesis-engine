@@ -421,12 +421,12 @@ El engine estampa "noesis." en la esquina inferior derecha de cada lienzo (ver `
   <div class="wordmark">noesis-engine · escena NN · {{slug}}</div>
   <noesis-scene src="../scenes/NN-slug.json" lang="es"></noesis-scene>
 </div>
-<script src="../engine/noesis-engine.js?v=NN-1"></script>
+<script type="module" src="../engine/noesis-engine.js?v=94"></script>
 </body>
 </html>
 ```
 
-The cache-buster version (`?v=...`) should be unique per scene so the browser fetches a fresh engine bytecode bundle when the user reloads.
+**El `type="module"` es obligatorio:** el engine se carga como árbol de ES modules; sin él, el `import` de la primera línea de `noesis-engine.js` lanza `SyntaxError: Cannot use import statement outside a module`, el custom element nunca se registra y `<noesis-scene>` queda inerte (no dibuja nada). El cache-buster (`?v=...`) NO es por-escena: usa el valor unificado vigente del proyecto (hoy `?v=94`, ver la regla de cache busters en `CLAUDE.md`), el mismo que llevan todos los `examples/*.html` y los imports internos de `engine/`. Comprueba el valor actual con `grep -rho '?v=[0-9]*' engine examples | sort -u`.
 
 ## Output format when reporting back
 

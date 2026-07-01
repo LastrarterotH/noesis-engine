@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>noesis · la visión</title>
+<meta name="description" content="La visión de noesis: un motor de animaciones explicativas nativo de Claude. Conceptos que se ven, no que se memorizan.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="topbar is-stuck">
+  <a class="wordmark" href="index.html" aria-label="noesis, inicio"><span class="wm-name">noesis<span class="wm-dot">.</span></span></a>
+  <nav class="topnav">
+    <a href="index.html">Inicio</a>
+    <a href="manual.html">Manual</a>
+    <a class="ghlink" href="https://github.com/LastrarterotH/noesis-engine" target="_blank" rel="noopener">GitHub</a>
+  </nav>
+</header>
+
+<main>
+<article class="doc">
+  <p class="label"><span class="bullet"></span>La visión</p>
+  <h1>Conceptos que se <em>ven</em>,<br>no que se memorizan.</h1>
+  <p class="doc-lead">noesis es un motor de animaciones explicativas nativo de Claude. Cada escena es
+    una pieza de pedagogía: algo que se ve ocurrir, con su texto académico al lado.</p>
+
+  <h2>Qué es</h2>
+  <p>Cada escena es un archivo JSON que el motor renderiza como pixel-art animado, sonido sintetizado
+    y diálogo, junto al texto académico que lo sostiene. <strong>No es un video y no es una diapositiva</strong>:
+    es una simulación que corre en el navegador y ocurre cada vez que la miras.</p>
+
+  <h2>Cómo se usa</h2>
+  <p>Las escenas se construyen a través de la skill <code>/noesis</code>, dialogando con Claude Code.
+    Un <strong>autor</strong>, una persona con criterio, conversa el concepto, elige la mecánica que mejor lo
+    encarna, y Claude arma la escena con el vocabulario del motor, la valida y la previsualiza.</p>
+  <p>Quien encarga la escena aporta el concepto, no escribe el JSON a mano. <strong>La calidad la pone el autor.</strong></p>
+
+  <h2>Para quién es</h2>
+  <p>Para la comunidad académica y para quien sepa manejarlo desde el código y la skill. No es un producto
+    self-serve para usuarios no técnicos: una escena decente pide criterio de diseño y conocimiento del motor.
+    El código está abierto para quien lo maneje.</p>
+
+  <h2>Las nueve mecánicas</h2>
+  <p>El vocabulario de formas que organiza cada escena: el viajero, la población, el umbral, la convergencia,
+    el antes y después, la disección, la analogía, la cadena y la transformación en sitio. Cada escena se
+    construye deliberadamente alrededor de una.</p>
+
+  <h2>Qué sostiene la calidad</h2>
+  <ul>
+    <li><strong>El motor y el validador.</strong> Son el corazón. El validador se autoderiva del motor, así no
+      se desincroniza al agregar props, cielos o moods.</li>
+    <li><strong>El checklist de autoría.</strong> Mostrar, no narrar. Sin signos de exclamación. La fórmula de
+      tiempos. Las restricciones que mantienen el nivel.</li>
+    <li><strong>Las formas.</strong> El motor sabe expandir una mecánica declarada a su guion primitivo,
+      garantizando la columna por construcción.</li>
+  </ul>
+
+  <a class="doc-back" href="index.html" data-hover><span class="bullet"></span>Volver al inicio</a>
+</article>
+</main>
+</body>
+</html>

@@ -2,8 +2,8 @@
 // Per-prop draw functions + dispatch (drawProp). Animated/bespoke props
 // have their own renderer; static props fall through to PROP_SPRITES.
 
-import { PROP_SPRITES } from './prop-sprites.js?v=94';
-import { mixColors } from './util.js?v=94';
+import { PROP_SPRITES } from './prop-sprites.js?v=99';
+import { mixColors } from './util.js?v=99';
 
 // Compute a default collision box for a solid prop: the bottom 60% of the
 // sprite, centered on prop.x. Authors can override with `solidBox: {x,y,w,h}`
@@ -450,6 +450,9 @@ export function drawBonfire(ctx, prop) {
   const s = prop.scale || 4;
   const cx = Math.round(prop.x);
   const cy = Math.round(prop.y);
+  const a = prop.alpha == null ? 1 : Math.max(0, Math.min(1, prop.alpha));
+  if (a <= 0.01) return;
+  const _ga = ctx.globalAlpha; ctx.globalAlpha = _ga * a;
   const log = '#5a4022';
   const logRing = '#7a5530';
   const logHi = '#a17a44';
@@ -525,6 +528,7 @@ export function drawBonfire(ctx, prop) {
   if (flicker2 < 0.5) {
     px(2, -7, 1, 1, f1);
   }
+  ctx.globalAlpha = _ga;
 }
 
 export function drawBee(ctx, prop) {
@@ -585,6 +589,9 @@ export function drawFrog(ctx, prop) {
   const s = prop.scale || 3;
   const cx = Math.round(prop.x);
   const cy = Math.round(prop.y);
+  const a = prop.alpha == null ? 1 : Math.max(0, Math.min(1, prop.alpha));
+  if (a <= 0.01) return;
+  const _ga = ctx.globalAlpha; ctx.globalAlpha = _ga * a;
   const body = prop.color || '#5b9a66';
   const bodyHi = '#7eb78a';
   const dark = '#3e6e47';
@@ -647,6 +654,7 @@ export function drawFrog(ctx, prop) {
   px(-3, 0, 1, 1, dark);
   px(3, 0, 1, 1, dark);
   px(5, 0, 1, 1, dark);
+  ctx.globalAlpha = _ga;
 }
 
 export function drawSwing(ctx, prop) {
@@ -924,6 +932,9 @@ export function drawPond(ctx, prop) {
   const cx = Math.round(prop.x);
   const cy = Math.round(prop.y);
   const t = prop._t || 0;
+  const a = prop.alpha == null ? 1 : Math.max(0, Math.min(1, prop.alpha));
+  if (a <= 0.01) return;
+  const _ga = ctx.globalAlpha; ctx.globalAlpha = _ga * a;
   const deep = prop.color || '#2f6f93';
   const mid = '#4a93bd';
   const lite = '#7cc1de';
@@ -961,7 +972,7 @@ export function drawPond(ctx, prop) {
     const rr = 0.18 + prog * 0.8;
     const alpha = (1 - prog) * 0.45;
     if (alpha < 0.05) continue;
-    ctx.globalAlpha = alpha;
+    ctx.globalAlpha = _ga * a * alpha;
     for (let gy = -Math.ceil(RY * 2) - 1; gy <= 0; gy++) {
       for (let gx = -RX - 1; gx <= RX + 1; gx++) {
         const nx = gx / RX, ny = (gy - ecy) / RY;
@@ -971,6 +982,7 @@ export function drawPond(ctx, prop) {
     }
   }
   ctx.restore();
+  ctx.globalAlpha = _ga;
   // Publica el centro visual y el radio para que el foco (focus) caiga
   // centrado en el agua, no en la base del prop.
   prop._fcy = cy + ecy * u;
@@ -2290,7 +2302,657 @@ export function drawGrinder(ctx, prop) {
   ctx.restore();
 }
 
+// Tower: la torre de cuento (Rapunzel). Sillería en tres tonos con almenas y una
+// ventana arcada en lo alto; `braid` (0..1) es la trenza dorada que cae del
+// alféizar (1 hasta el pie, 0 cortada), ondeando con `_t`; `glow` enciende la
+// ventana. `color` tiñe la piedra, `alpha` la desvanece. (x, y) es la base.
+export function drawTower(ctx, prop) {
+  const s = prop.scale || 3.5;
+  const cx = Math.round(prop.x);
+  const cy = Math.round(prop.y);
+  const a = prop.alpha == null ? 1 : Math.max(0, Math.min(1, prop.alpha));
+  if (a <= 0.01) return;
+  const t = prop._t || 0;
+  const braid = prop.braid == null ? 1 : Math.max(0, Math.min(1, prop.braid));
+  const glow = prop.glow == null ? 0 : Math.max(0, Math.min(1, prop.glow));
+  const stone = prop.color || '#9aa3b0';
+  const stoneD = mixColors(stone, '#1b2030', 0.42);
+  const stoneL = mixColors(stone, '#ffffff', 0.30);
+  const mortar = mixColors(stone, '#1b2030', 0.6);
+  const roof = '#9a3a44';
+  const roofD = mixColors(roof, '#000000', 0.32);
+  const gold = '#e8c34a';
+  const goldD = mixColors(gold, '#7a4a10', 0.5);
+  const goldL = mixColors(gold, '#ffffff', 0.4);
+  const TAU = Math.PI * 2;
+  const HW = 3.2 * s;
+  const shaftTop = cy - 19 * s;
+  ctx.save();
+  ctx.globalAlpha *= a;
+  ctx.fillStyle = 'rgba(8,10,22,0.24)';
+  ctx.beginPath(); ctx.ellipse(cx, cy, HW * 1.5, 1.4 * s, 0, 0, TAU); ctx.fill();
+  // Shaft (stone) with light/shadow sides.
+  ctx.fillStyle = stoneD; ctx.fillRect(cx - HW, shaftTop, HW * 2, cy - shaftTop);
+  ctx.fillStyle = stone;  ctx.fillRect(cx - HW, shaftTop, HW * 1.45, cy - shaftTop);
+  ctx.fillStyle = stoneL; ctx.fillRect(cx - HW, shaftTop, HW * 0.5, cy - shaftTop);
+  // Masonry courses (staggered).
+  ctx.strokeStyle = mortar; ctx.lineWidth = Math.max(1, s * 0.16);
+  for (let i = 1; i * 2.4 * s < (cy - shaftTop); i++) {
+    const yy = shaftTop + i * 2.4 * s;
+    ctx.beginPath(); ctx.moveTo(cx - HW, yy); ctx.lineTo(cx + HW, yy); ctx.stroke();
+    const off = (i % 2) ? HW * 0.5 : -HW * 0.5;
+    ctx.beginPath(); ctx.moveTo(cx + off, yy); ctx.lineTo(cx + off, yy + 2.4 * s); ctx.stroke();
+  }
+  // Battlements (crenellations) at the top.
+  ctx.fillStyle = stoneD; ctx.fillRect(cx - HW - 0.4 * s, shaftTop - 0.4 * s, HW * 2 + 0.8 * s, 0.8 * s);
+  ctx.fillStyle = stone;
+  for (let k = -2; k <= 2; k++) ctx.fillRect(cx + k * 1.4 * s - 0.55 * s, shaftTop - 2 * s, 1.1 * s, 1.8 * s);
+  // Pointed roof above the battlements.
+  ctx.fillStyle = roof;
+  ctx.beginPath();
+  ctx.moveTo(cx - HW - 0.8 * s, shaftTop - 1.9 * s);
+  ctx.lineTo(cx, shaftTop - 7.5 * s);
+  ctx.lineTo(cx + HW + 0.8 * s, shaftTop - 1.9 * s);
+  ctx.closePath(); ctx.fill();
+  ctx.fillStyle = roofD;
+  ctx.beginPath();
+  ctx.moveTo(cx + 0.4 * s, shaftTop - 1.9 * s);
+  ctx.lineTo(cx, shaftTop - 7.5 * s);
+  ctx.lineTo(cx + HW + 0.8 * s, shaftTop - 1.9 * s);
+  ctx.closePath(); ctx.fill();
+  ctx.fillStyle = gold; ctx.beginPath(); ctx.arc(cx, shaftTop - 7.7 * s, 0.6 * s, 0, TAU); ctx.fill();
+  // Arched window high on the shaft.
+  const winY = shaftTop + 3 * s, winW = 1.7 * s, winH = 2.6 * s;
+  ctx.fillStyle = mortar;
+  ctx.beginPath();
+  ctx.moveTo(cx - winW, winY + winH); ctx.lineTo(cx - winW, winY);
+  ctx.arc(cx, winY, winW, Math.PI, 0); ctx.lineTo(cx + winW, winY + winH);
+  ctx.closePath(); ctx.fill();
+  ctx.fillStyle = glow > 0.02 ? mixColors('#3a2a44', '#ffd98a', glow) : '#241c2e';
+  ctx.beginPath();
+  ctx.moveTo(cx - winW * 0.66, winY + winH * 0.9); ctx.lineTo(cx - winW * 0.66, winY);
+  ctx.arc(cx, winY, winW * 0.66, Math.PI, 0); ctx.lineTo(cx + winW * 0.66, winY + winH * 0.9);
+  ctx.closePath(); ctx.fill();
+  if (glow > 0.02) {
+    ctx.save();
+    ctx.globalAlpha = ctx.globalAlpha * glow;
+    const g = ctx.createRadialGradient(cx, winY + winH * 0.3, 0, cx, winY + winH * 0.3, 6 * s);
+    g.addColorStop(0, 'rgba(255,210,130,0.5)'); g.addColorStop(1, 'rgba(255,210,130,0)');
+    ctx.fillStyle = g; ctx.beginPath(); ctx.arc(cx, winY + winH * 0.3, 6 * s, 0, TAU); ctx.fill();
+    ctx.restore();
+  }
+  // Braid: golden hair spilling from the sill, gently waving.
+  if (braid > 0.02) {
+    const sillY = winY + winH;
+    const len = braid * (cy - sillY - 0.5 * s);
+    const segs = 14;
+    ctx.lineCap = 'round';
+    for (let strand = 0; strand < 3; strand++) {
+      ctx.strokeStyle = strand === 1 ? goldL : (strand === 0 ? gold : goldD);
+      ctx.lineWidth = 1.2 * s;
+      ctx.beginPath();
+      for (let i = 0; i <= segs; i++) {
+        const fr = i / segs;
+        const yy = sillY + fr * len;
+        const wob = Math.sin(t * 1.2 + fr * 6 + strand * 2) * 0.7 * s * fr;
+        const xx = cx + wob + (strand - 1) * 0.7 * s * (1 - fr * 0.3);
+        if (i === 0) ctx.moveTo(xx, yy); else ctx.lineTo(xx, yy);
+      }
+      ctx.stroke();
+    }
+    ctx.fillStyle = goldL;
+    for (let i = 2; i < segs; i += 3) {
+      const fr = i / segs, yy = sillY + fr * len;
+      const wob = Math.sin(t * 1.2 + fr * 6 + 2) * 0.7 * s * fr;
+      ctx.beginPath(); ctx.arc(cx + wob, yy, 0.85 * s, 0, TAU); ctx.fill();
+    }
+  }
+  ctx.restore();
+}
+
+// Oven: el horno de la bruja (Hansel y Gretel). Bóveda de ladrillo en tres tonos
+// con boca de arco; `fire` (o `glow`, 0..1) enciende lenguas de fuego y el
+// resplandor que sale por la boca, animadas con `_t`. (x, y) es la base.
+export function drawOven(ctx, prop) {
+  const s = prop.scale || 3.2;
+  const cx = Math.round(prop.x);
+  const cy = Math.round(prop.y);
+  const a = prop.alpha == null ? 1 : Math.max(0, Math.min(1, prop.alpha));
+  if (a <= 0.01) return;
+  const t = prop._t || 0;
+  const fireRaw = prop.fire == null ? (prop.glow == null ? 0 : prop.glow) : prop.fire;
+  const f = Math.max(0, Math.min(1, fireRaw));
+  const brick = prop.color || '#7a4a36';
+  const brickD = mixColors(brick, '#000000', 0.4);
+  const brickL = mixColors(brick, '#ffb070', 0.28);
+  const mortar = mixColors(brick, '#000000', 0.6);
+  const TAU = Math.PI * 2;
+  const HW = 6 * s, H = 9 * s;
+  ctx.save();
+  ctx.globalAlpha *= a;
+  ctx.fillStyle = 'rgba(8,10,22,0.26)';
+  ctx.beginPath(); ctx.ellipse(cx, cy, HW * 1.15, 1.6 * s, 0, 0, TAU); ctx.fill();
+  // Body (arched dome).
+  ctx.fillStyle = brick;
+  ctx.beginPath();
+  ctx.moveTo(cx - HW, cy);
+  ctx.lineTo(cx - HW, cy - 6 * s);
+  ctx.quadraticCurveTo(cx - HW, cy - H, cx, cy - H);
+  ctx.quadraticCurveTo(cx + HW, cy - H, cx + HW, cy - 6 * s);
+  ctx.lineTo(cx + HW, cy);
+  ctx.closePath(); ctx.fill();
+  // Left light band.
+  ctx.fillStyle = brickL;
+  ctx.beginPath();
+  ctx.moveTo(cx - HW, cy);
+  ctx.lineTo(cx - HW, cy - 6 * s);
+  ctx.quadraticCurveTo(cx - HW, cy - H, cx - 1.5 * s, cy - H + 0.4 * s);
+  ctx.lineTo(cx - 2.8 * s, cy);
+  ctx.closePath(); ctx.fill();
+  // Brick courses.
+  ctx.strokeStyle = mortar; ctx.lineWidth = Math.max(1, s * 0.16);
+  for (let i = 1; i <= 4; i++) {
+    const yy = cy - i * 1.7 * s;
+    ctx.beginPath(); ctx.moveTo(cx - HW + 0.4 * s, yy); ctx.lineTo(cx + HW - 0.4 * s, yy); ctx.stroke();
+  }
+  ctx.fillStyle = brickD; ctx.fillRect(cx - HW, cy - 0.7 * s, HW * 2, 0.7 * s);
+  // Mouth (arched opening).
+  const mw = 3.4 * s, my = cy - 0.6 * s, mTop = my - 4.6 * s;
+  ctx.fillStyle = '#150a08';
+  ctx.beginPath();
+  ctx.moveTo(cx - mw, my); ctx.lineTo(cx - mw, mTop + mw);
+  ctx.arc(cx, mTop + mw, mw, Math.PI, 0); ctx.lineTo(cx + mw, my);
+  ctx.closePath(); ctx.fill();
+  // Flames inside the mouth.
+  if (f > 0.02) {
+    ctx.save();
+    ctx.beginPath();
+    ctx.moveTo(cx - mw, my); ctx.lineTo(cx - mw, mTop + mw);
+    ctx.arc(cx, mTop + mw, mw, Math.PI, 0); ctx.lineTo(cx + mw, my);
+    ctx.closePath(); ctx.clip();
+    const cols = ['#a61f1f', '#e0561c', '#f4a01d', '#ffe08a'];
+    for (let i = 0; i < 6; i++) {
+      const bx = cx - mw * 0.78 + (i / 5) * mw * 1.56;
+      const flick = Math.sin(t * 8 + i * 1.9) * 0.5 + 0.5;
+      const hgt = (2.4 * s + 3.2 * s * f) * (0.55 + 0.45 * flick);
+      for (let l = 0; l < cols.length; l++) {
+        const sc = 1 - l * 0.2;
+        const wfl = mw * 0.42 * sc;
+        ctx.fillStyle = cols[l];
+        ctx.beginPath();
+        ctx.moveTo(bx - wfl, my);
+        ctx.quadraticCurveTo(bx - wfl * 0.4, my - hgt * sc * 0.5, bx, my - hgt * sc);
+        ctx.quadraticCurveTo(bx + wfl * 0.4, my - hgt * sc * 0.5, bx + wfl, my);
+        ctx.closePath(); ctx.fill();
+      }
+    }
+    ctx.restore();
+    ctx.save();
+    ctx.globalAlpha = ctx.globalAlpha * f;
+    const g = ctx.createRadialGradient(cx, my - 1.8 * s, 0, cx, my - 1.8 * s, mw * 2.4);
+    g.addColorStop(0, 'rgba(255,150,40,0.5)'); g.addColorStop(1, 'rgba(255,150,40,0)');
+    ctx.fillStyle = g; ctx.beginPath(); ctx.arc(cx, my - 1.8 * s, mw * 2.4, 0, TAU); ctx.fill();
+    ctx.restore();
+  }
+  // Chimney.
+  ctx.fillStyle = brickD; ctx.fillRect(cx + 2.6 * s, cy - H - 1.8 * s, 1.8 * s, 2.4 * s);
+  ctx.fillStyle = brick;  ctx.fillRect(cx + 2.6 * s, cy - H - 1.8 * s, 0.8 * s, 2.4 * s);
+  ctx.restore();
+}
+
+// Candy house: la casa de pan de jengibre (Hansel y Gretel). Paredes de jengibre
+// con glaseado, techo a dos aguas con escamas y caramelos, puerta de chocolate,
+// piruletas y ventanas. `_t` da humo a la chimenea. (x, y) es la base.
+export function drawCandyHouse(ctx, prop) {
+  const s = prop.scale || 3;
+  const cx = Math.round(prop.x);
+  const cy = Math.round(prop.y);
+  const a = prop.alpha == null ? 1 : Math.max(0, Math.min(1, prop.alpha));
+  if (a <= 0.01) return;
+  const t = prop._t || 0;
+  const ginger = prop.color || '#a86a36';
+  const gingerD = mixColors(ginger, '#000000', 0.35);
+  const gingerL = mixColors(ginger, '#ffd9a0', 0.32);
+  const icing = '#fbf3e4';
+  const choco = '#5a3420';
+  const TAU = Math.PI * 2;
+  const HW = 7 * s, WH = 7 * s, wallTop = cy - WH;
+  ctx.save();
+  ctx.globalAlpha *= a;
+  ctx.fillStyle = 'rgba(8,10,22,0.24)';
+  ctx.beginPath(); ctx.ellipse(cx, cy, HW * 1.2, 1.5 * s, 0, 0, TAU); ctx.fill();
+  // Walls.
+  ctx.fillStyle = gingerD; ctx.fillRect(cx - HW, wallTop, HW * 2, WH);
+  ctx.fillStyle = ginger;  ctx.fillRect(cx - HW, wallTop, HW * 1.5, WH);
+  ctx.fillStyle = gingerL; ctx.fillRect(cx - HW, wallTop, HW * 0.5, WH);
+  // Icing drips along the wall top.
+  ctx.fillStyle = icing;
+  for (let i = -3; i <= 3; i++) {
+    const dx = cx + i * (HW * 2 / 7);
+    const drp = 0.8 * s + ((i + 3) % 3) * 0.5 * s, w7 = HW / 7;
+    ctx.beginPath();
+    ctx.moveTo(dx - w7, wallTop); ctx.lineTo(dx + w7, wallTop);
+    ctx.lineTo(dx + w7, wallTop + drp); ctx.arc(dx, wallTop + drp, w7, 0, Math.PI);
+    ctx.closePath(); ctx.fill();
+  }
+  // Gable roof (chocolate).
+  const peak = wallTop - 5.5 * s, eaveX = HW + 1.2 * s;
+  ctx.fillStyle = choco;
+  ctx.beginPath();
+  ctx.moveTo(cx - eaveX, wallTop + 0.4 * s); ctx.lineTo(cx, peak); ctx.lineTo(cx + eaveX, wallTop + 0.4 * s);
+  ctx.closePath(); ctx.fill();
+  // Icing scallops on the roof (rows of arcs that narrow toward the peak).
+  ctx.fillStyle = icing;
+  for (let row = 0; row < 4; row++) {
+    const ry = wallTop - row * 1.25 * s;
+    const half = eaveX * (1 - row / 4.3);
+    for (let xx = cx - half; xx < cx + half - 0.2 * s; xx += 1.5 * s) {
+      ctx.beginPath(); ctx.arc(xx + 0.75 * s, ry, 0.75 * s, Math.PI, 0); ctx.fill();
+    }
+  }
+  // Gumdrops along the eaves.
+  const candyCols = ['#e0445f', '#4f8fe0', '#5fae5f', '#F4AC1D', '#9a5bd0'];
+  for (let i = 0; i < 5; i++) {
+    const fr = i / 4, gx = cx - eaveX + fr * eaveX * 2;
+    const gy = (wallTop + 0.4 * s) + (peak - wallTop - 0.4 * s) * (1 - Math.abs(gx - cx) / eaveX) - 0.6 * s;
+    ctx.fillStyle = candyCols[i];
+    ctx.beginPath(); ctx.arc(gx, gy, 0.9 * s, 0, TAU); ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,0.5)';
+    ctx.beginPath(); ctx.arc(gx - 0.3 * s, gy - 0.3 * s, 0.32 * s, 0, TAU); ctx.fill();
+  }
+  // Windows with icing frames.
+  for (const sx of [-1, 1]) {
+    const wx = cx + sx * 4 * s, wy = wallTop + 2.6 * s;
+    ctx.fillStyle = '#f4d98a'; ctx.fillRect(wx - 1.2 * s, wy - 1.2 * s, 2.4 * s, 2.4 * s);
+    ctx.strokeStyle = icing; ctx.lineWidth = Math.max(1, 0.3 * s);
+    ctx.strokeRect(wx - 1.2 * s, wy - 1.2 * s, 2.4 * s, 2.4 * s);
+    ctx.beginPath(); ctx.moveTo(wx, wy - 1.2 * s); ctx.lineTo(wx, wy + 1.2 * s);
+    ctx.moveTo(wx - 1.2 * s, wy); ctx.lineTo(wx + 1.2 * s, wy); ctx.stroke();
+  }
+  // Door (chocolate, arched) with icing trim.
+  const dw = 1.9 * s, dTop = cy - 3.6 * s;
+  ctx.fillStyle = choco;
+  ctx.beginPath();
+  ctx.moveTo(cx - dw, cy); ctx.lineTo(cx - dw, dTop + dw);
+  ctx.arc(cx, dTop + dw, dw, Math.PI, 0); ctx.lineTo(cx + dw, cy);
+  ctx.closePath(); ctx.fill();
+  ctx.strokeStyle = icing; ctx.lineWidth = Math.max(1, 0.32 * s);
+  ctx.beginPath();
+  ctx.moveTo(cx - dw, cy); ctx.lineTo(cx - dw, dTop + dw);
+  ctx.arc(cx, dTop + dw, dw, Math.PI, 0); ctx.lineTo(cx + dw, cy);
+  ctx.stroke();
+  ctx.fillStyle = '#F4AC1D'; ctx.beginPath(); ctx.arc(cx + dw * 0.5, cy - 1.8 * s, 0.3 * s, 0, TAU); ctx.fill();
+  // Lollipops flanking the door.
+  for (const sx of [-1, 1]) {
+    const lx = cx + sx * (dw + 1.7 * s);
+    ctx.strokeStyle = '#f3ead8'; ctx.lineWidth = 0.5 * s; ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo(lx, cy); ctx.lineTo(lx, cy - 3 * s); ctx.stroke();
+    ctx.fillStyle = sx < 0 ? '#e0445f' : '#4f8fe0';
+    ctx.beginPath(); ctx.arc(lx, cy - 3.6 * s, 1.1 * s, 0, TAU); ctx.fill();
+    ctx.strokeStyle = '#fbf3e4'; ctx.lineWidth = 0.3 * s;
+    ctx.beginPath(); ctx.arc(lx, cy - 3.6 * s, 0.6 * s, t + sx, t + sx + 4.2); ctx.stroke();
+  }
+  // Chimney + drifting smoke.
+  const chx = cx + 3 * s, chy = peak + 2.2 * s;
+  ctx.fillStyle = choco; ctx.fillRect(chx - 0.8 * s, chy - 2.4 * s, 1.6 * s, 2.4 * s);
+  ctx.fillStyle = icing; ctx.fillRect(chx - 0.95 * s, chy - 2.6 * s, 1.9 * s, 0.5 * s);
+  ctx.fillStyle = '#d8d2c4';
+  for (let i = 0; i < 3; i++) {
+    const pf = (t * 0.4 + i / 3) % 1;
+    ctx.save();
+    ctx.globalAlpha = ctx.globalAlpha * 0.4 * (1 - pf);
+    ctx.beginPath(); ctx.arc(chx + Math.sin(pf * 6) * s, chy - 2.6 * s - pf * 5 * s, (0.5 + pf * 1.2) * s, 0, TAU); ctx.fill();
+    ctx.restore();
+  }
+  ctx.restore();
+}
+
+// Shoe: el zapato del baile (Cenicienta). Zapatilla de tacón estilizada; `color`
+// la tiñe (oro, o rojo cuando la sangre la llena), `glass` (0..1) la vuelve
+// translúcida (la de cristal), `alpha`. (x, y) es la base.
+export function drawShoe(ctx, prop) {
+  const s = prop.scale || 2.2;
+  const cx = Math.round(prop.x);
+  const cy = Math.round(prop.y);
+  const a = prop.alpha == null ? 1 : Math.max(0, Math.min(1, prop.alpha));
+  if (a <= 0.01) return;
+  const glass = prop.glass == null ? 0 : Math.max(0, Math.min(1, prop.glass));
+  const base = prop.color || '#e8c34a';
+  const baseD = mixColors(base, '#000000', 0.35);
+  const baseL = mixColors(base, '#ffffff', 0.45);
+  const TAU = Math.PI * 2;
+  ctx.save();
+  ctx.globalAlpha *= a * (glass > 0.5 ? 0.72 : 1);
+  ctx.fillStyle = 'rgba(8,10,22,0.22)';
+  ctx.beginPath(); ctx.ellipse(cx, cy, 4.2 * s, 1.0 * s, 0, 0, TAU); ctx.fill();
+  // Heel.
+  ctx.fillStyle = baseD;
+  ctx.beginPath();
+  ctx.moveTo(cx + 2.0 * s, cy - 0.4 * s); ctx.lineTo(cx + 3.0 * s, cy);
+  ctx.lineTo(cx + 2.5 * s, cy); ctx.lineTo(cx + 1.7 * s, cy - 0.4 * s);
+  ctx.closePath(); ctx.fill();
+  // Body (a curved pump).
+  ctx.fillStyle = base;
+  ctx.beginPath();
+  ctx.moveTo(cx - 3.4 * s, cy - 0.5 * s);
+  ctx.quadraticCurveTo(cx - 3.9 * s, cy - 1.7 * s, cx - 2.6 * s, cy - 2.0 * s);
+  ctx.quadraticCurveTo(cx - 0.6 * s, cy - 2.3 * s, cx + 0.6 * s, cy - 3.4 * s);
+  ctx.quadraticCurveTo(cx + 1.2 * s, cy - 4.0 * s, cx + 2.0 * s, cy - 3.3 * s);
+  ctx.quadraticCurveTo(cx + 2.5 * s, cy - 1.9 * s, cx + 2.2 * s, cy - 0.5 * s);
+  ctx.closePath(); ctx.fill();
+  // Inner topline shadow.
+  ctx.fillStyle = baseD;
+  ctx.beginPath();
+  ctx.moveTo(cx + 0.7 * s, cy - 3.2 * s);
+  ctx.quadraticCurveTo(cx + 1.2 * s, cy - 3.7 * s, cx + 1.9 * s, cy - 3.2 * s);
+  ctx.quadraticCurveTo(cx + 1.2 * s, cy - 2.7 * s, cx + 0.7 * s, cy - 3.2 * s);
+  ctx.closePath(); ctx.fill();
+  // Specular highlight.
+  ctx.fillStyle = baseL;
+  ctx.beginPath(); ctx.ellipse(cx - 1.5 * s, cy - 1.4 * s, 0.9 * s, 0.42 * s, -0.4, 0, TAU); ctx.fill();
+  if (glass > 0.3) {
+    ctx.fillStyle = 'rgba(255,255,255,0.5)';
+    ctx.beginPath(); ctx.ellipse(cx - 0.3 * s, cy - 2.1 * s, 0.45 * s, 1.0 * s, -0.5, 0, TAU); ctx.fill();
+  }
+  ctx.restore();
+}
+
+// Mirror: el espejo mágico (Blancanieves). Óvalo reflectante con marco dorado
+// sobre un pie; `glow` (0..1) enciende el aura mágica y un destello que recorre
+// el cristal con `_t`. `color` tiñe el marco, `alpha` lo desvanece. (x, y) base.
+export function drawMirror(ctx, prop) {
+  const s = prop.scale || 3;
+  const cx = Math.round(prop.x);
+  const cy = Math.round(prop.y);
+  const a = prop.alpha == null ? 1 : Math.max(0, Math.min(1, prop.alpha));
+  if (a <= 0.01) return;
+  const t = prop._t || 0;
+  const glow = prop.glow == null ? 0 : Math.max(0, Math.min(1, prop.glow));
+  const gold = prop.color || '#d8a850';
+  const goldD = mixColors(gold, '#5a3a10', 0.5);
+  const goldL = mixColors(gold, '#ffffff', 0.45);
+  const TAU = Math.PI * 2;
+  const ovY = cy - 9 * s, rx = 4.2 * s, ry = 5.6 * s;
+  ctx.save();
+  ctx.globalAlpha *= a;
+  ctx.fillStyle = 'rgba(8,10,22,0.22)';
+  ctx.beginPath(); ctx.ellipse(cx, cy, 3.4 * s, 1.0 * s, 0, 0, TAU); ctx.fill();
+  // Stand.
+  ctx.fillStyle = goldD;
+  ctx.beginPath();
+  ctx.moveTo(cx - 0.7 * s, ovY + ry * 0.7); ctx.lineTo(cx - 2.4 * s, cy);
+  ctx.lineTo(cx + 2.4 * s, cy); ctx.lineTo(cx + 0.7 * s, ovY + ry * 0.7);
+  ctx.closePath(); ctx.fill();
+  ctx.fillStyle = gold; ctx.fillRect(cx - 2.7 * s, cy - 0.6 * s, 5.4 * s, 0.6 * s);
+  // Magic aura.
+  if (glow > 0.02) {
+    ctx.save();
+    ctx.globalAlpha = ctx.globalAlpha * glow;
+    const g = ctx.createRadialGradient(cx, ovY, rx * 0.3, cx, ovY, rx * 2.2);
+    g.addColorStop(0, 'rgba(150,210,255,0.45)'); g.addColorStop(1, 'rgba(150,210,255,0)');
+    ctx.fillStyle = g; ctx.beginPath(); ctx.ellipse(cx, ovY, rx * 2.2, ry * 1.8, 0, 0, TAU); ctx.fill();
+    ctx.restore();
+  }
+  // Frame.
+  ctx.fillStyle = goldD; ctx.beginPath(); ctx.ellipse(cx, ovY, rx + 0.9 * s, ry + 0.9 * s, 0, 0, TAU); ctx.fill();
+  ctx.fillStyle = gold;  ctx.beginPath(); ctx.ellipse(cx, ovY, rx + 0.5 * s, ry + 0.5 * s, 0, 0, TAU); ctx.fill();
+  ctx.fillStyle = goldL;
+  ctx.beginPath(); ctx.ellipse(cx, ovY, rx + 0.5 * s, ry + 0.5 * s, 0, Math.PI * 0.95, Math.PI * 1.5); ctx.lineTo(cx, ovY); ctx.closePath(); ctx.fill();
+  // Glass.
+  const dark = glow > 0.02 ? mixColors('#2a3a52', '#bfe0ff', glow * 0.6) : '#33405a';
+  const gl = ctx.createLinearGradient(cx - rx, ovY - ry, cx + rx, ovY + ry);
+  gl.addColorStop(0, mixColors(dark, '#ffffff', 0.25));
+  gl.addColorStop(0.5, dark);
+  gl.addColorStop(1, mixColors(dark, '#000000', 0.2));
+  ctx.fillStyle = gl;
+  ctx.beginPath(); ctx.ellipse(cx, ovY, rx, ry, 0, 0, TAU); ctx.fill();
+  // Moving sheen.
+  ctx.save();
+  ctx.beginPath(); ctx.ellipse(cx, ovY, rx, ry, 0, 0, TAU); ctx.clip();
+  ctx.globalAlpha = ctx.globalAlpha * 0.5;
+  ctx.strokeStyle = 'rgba(255,255,255,0.6)'; ctx.lineWidth = 1.1 * s;
+  const sh = Math.sin(t * 0.8) * rx;
+  ctx.beginPath(); ctx.moveTo(cx + sh - 1.4 * s, ovY - ry); ctx.lineTo(cx + sh + 1.4 * s, ovY + ry); ctx.stroke();
+  ctx.restore();
+  ctx.restore();
+}
+
+// Dove: paloma blanca de alas que baten (`_t`). No se traslada sola: se mueve con
+// `tween` de x/y o `path` (como la tortuga), para coreografiar un descenso. `dir`
+// la espeja, `color` tiñe el plumaje, `alpha` la desvanece. (x, y) es el centro.
+export function drawDove(ctx, prop) {
+  const s = prop.scale || 2.5;
+  const cx = Math.round(prop.x);
+  const cy = Math.round(prop.y);
+  const a = prop.alpha == null ? 1 : Math.max(0, Math.min(1, prop.alpha));
+  if (a <= 0.01) return;
+  const t = prop._t || 0;
+  const dir = prop.dir || 1;
+  const body = prop.color || '#f4f6fb';
+  const shade = mixColors(body, '#9aa6c0', 0.5);
+  const beak = '#e8a838';
+  const eyeC = '#26304a';
+  const TAU = Math.PI * 2;
+  const flap = Math.sin(t * 10);
+  ctx.save();
+  ctx.globalAlpha *= a;
+  ctx.translate(cx, cy);
+  ctx.scale(dir, 1);
+  // Body.
+  ctx.fillStyle = body;
+  ctx.beginPath(); ctx.ellipse(0, 0, 3.2 * s, 2.2 * s, -0.15, 0, TAU); ctx.fill();
+  ctx.fillStyle = shade;
+  ctx.beginPath(); ctx.ellipse(0.3 * s, 0.9 * s, 2.5 * s, 1.3 * s, -0.1, 0, TAU); ctx.fill();
+  ctx.fillStyle = body;
+  ctx.beginPath(); ctx.ellipse(-0.2 * s, -0.4 * s, 3.0 * s, 1.8 * s, -0.15, 0, TAU); ctx.fill();
+  // Tail.
+  ctx.beginPath();
+  ctx.moveTo(-2.6 * s, -0.2 * s);
+  ctx.lineTo(-5.2 * s, -1.2 * s + flap * 0.4 * s);
+  ctx.lineTo(-5.0 * s, 0.7 * s + flap * 0.4 * s);
+  ctx.closePath(); ctx.fill();
+  // Head.
+  ctx.beginPath(); ctx.arc(2.6 * s, -1.5 * s, 1.5 * s, 0, TAU); ctx.fill();
+  // Beak.
+  ctx.fillStyle = beak;
+  ctx.beginPath();
+  ctx.moveTo(3.9 * s, -1.7 * s); ctx.lineTo(5.3 * s, -1.3 * s); ctx.lineTo(3.9 * s, -1.0 * s);
+  ctx.closePath(); ctx.fill();
+  // Eye.
+  ctx.fillStyle = eyeC;
+  ctx.beginPath(); ctx.arc(3.0 * s, -1.8 * s, 0.42 * s, 0, TAU); ctx.fill();
+  // Wing (flapping around the shoulder).
+  ctx.save();
+  ctx.translate(0.2 * s, -0.7 * s);
+  ctx.rotate(flap * 0.6 - 0.2);
+  ctx.fillStyle = mixColors(body, '#ffffff', 0.3);
+  ctx.beginPath();
+  ctx.moveTo(0, 0);
+  ctx.quadraticCurveTo(-1.5 * s, -3.4 * s, 1.4 * s, -4.0 * s);
+  ctx.quadraticCurveTo(2.6 * s, -2.0 * s, 1.2 * s, 0);
+  ctx.closePath(); ctx.fill();
+  ctx.strokeStyle = shade; ctx.lineWidth = 0.3 * s;
+  ctx.beginPath(); ctx.moveTo(0.6 * s, -0.4 * s); ctx.lineTo(1.3 * s, -3.0 * s); ctx.stroke();
+  ctx.restore();
+  ctx.restore();
+}
+
+// Wall: muro de piedra del castillo (la pared contra la que se estrella la rana
+// en El Rey Rana). Sillería en tres tonos con cornisa y una saetera. `color`
+// tiñe la piedra, `alpha` la desvanece. (x, y) es la base.
+export function drawWall(ctx, prop) {
+  const s = prop.scale || 4;
+  const cx = Math.round(prop.x);
+  const cy = Math.round(prop.y);
+  const a = prop.alpha == null ? 1 : Math.max(0, Math.min(1, prop.alpha));
+  if (a <= 0.01) return;
+  const stone = prop.color || '#9aa3b0';
+  const stoneD = mixColors(stone, '#1b2030', 0.42);
+  const stoneL = mixColors(stone, '#ffffff', 0.26);
+  const mortar = mixColors(stone, '#1b2030', 0.6);
+  const TAU = Math.PI * 2;
+  const HW = 4.5 * s, H = 13 * s, top = cy - H;
+  ctx.save();
+  ctx.globalAlpha *= a;
+  // Contact shadow.
+  ctx.fillStyle = 'rgba(8,10,22,0.24)';
+  ctx.beginPath(); ctx.ellipse(cx, cy, HW * 1.2, 1.3 * s, 0, 0, TAU); ctx.fill();
+  // Body with light/shadow sides.
+  ctx.fillStyle = stoneD; ctx.fillRect(cx - HW, top, HW * 2, H);
+  ctx.fillStyle = stone;  ctx.fillRect(cx - HW, top, HW * 1.58, H);
+  ctx.fillStyle = stoneL; ctx.fillRect(cx - HW, top, HW * 0.42, H);
+  // Masonry: horizontal courses + staggered vertical joints.
+  ctx.strokeStyle = mortar; ctx.lineWidth = Math.max(1, s * 0.16);
+  const courseH = 2.2 * s;
+  let row = 0;
+  for (let yy = top + courseH; yy < cy - 1; yy += courseH, row++) {
+    ctx.beginPath(); ctx.moveTo(cx - HW, yy); ctx.lineTo(cx + HW, yy); ctx.stroke();
+    const off = (row % 2) ? HW * 0.5 : -HW * 0.5;
+    ctx.beginPath(); ctx.moveTo(cx + off, yy - courseH); ctx.lineTo(cx + off, yy); ctx.stroke();
+    const off2 = (row % 2) ? -HW * 0.5 : HW * 0.5;
+    ctx.beginPath(); ctx.moveTo(cx + off2, yy - courseH); ctx.lineTo(cx + off2, yy); ctx.stroke();
+  }
+  // Coping stone (top course, slightly wider).
+  ctx.fillStyle = stoneD; ctx.fillRect(cx - HW - 0.7 * s, top - 1.5 * s, HW * 2 + 1.4 * s, 1.7 * s);
+  ctx.fillStyle = mixColors(stone, '#ffffff', 0.14); ctx.fillRect(cx - HW - 0.7 * s, top - 1.5 * s, HW * 2 + 1.4 * s, 0.5 * s);
+  // Arrow-slit (saetera).
+  ctx.fillStyle = '#16121f';
+  ctx.fillRect(cx - 0.55 * s, top + 3 * s, 1.1 * s, 4.2 * s);
+  ctx.fillStyle = mortar;
+  ctx.fillRect(cx - 0.95 * s, top + 2.6 * s, 1.9 * s, 0.5 * s);
+  ctx.restore();
+}
+
+// Tome: libro de cuentos abierto y grande (el cierre de la escena 11). Dos
+// páginas crema con renglones y una tapa de `color`; un marcapáginas que se mece
+// (`_t`) y un acento que muta con `glow` (0..1): de una mancha de sangre (lo
+// crudo) a un corazón dorado con destellos y resplandor cálido (lo dulce).
+// `label` rotula la edición (año) bajo el libro. `alpha`. (x, y) es la base.
+export function drawTome(ctx, prop) {
+  const s = prop.scale || 4;
+  const cx = Math.round(prop.x);
+  const cy = Math.round(prop.y);
+  const a = prop.alpha == null ? 1 : Math.max(0, Math.min(1, prop.alpha));
+  if (a <= 0.01) return;
+  const t = prop._t || 0;
+  const glow = prop.glow == null ? 0 : Math.max(0, Math.min(1, prop.glow));
+  const cover = prop.color || '#7a2e34';
+  const coverD = mixColors(cover, '#000000', 0.4);
+  const page = '#f2ead6';
+  const pageHi = '#fbf6e8';
+  const pageSh = '#d6c9ac';
+  const ink = '#8a7c5e';
+  const TAU = Math.PI * 2;
+  const HW = 9 * s, H = 10 * s;
+  const topOut = cy - H, topMid = cy - H + 2.4 * s;
+  const botOut = cy - 1.6 * s, botMid = cy;
+  ctx.save();
+  ctx.globalAlpha *= a;
+  // Sweet warm glow aura behind the book.
+  if (glow > 0.02) {
+    ctx.save();
+    ctx.globalAlpha = ctx.globalAlpha * glow * 0.85;
+    const g = ctx.createRadialGradient(cx, cy - H * 0.45, 2 * s, cx, cy - H * 0.45, HW * 1.8);
+    g.addColorStop(0, 'rgba(255,208,120,0.55)'); g.addColorStop(1, 'rgba(255,208,120,0)');
+    ctx.fillStyle = g;
+    ctx.beginPath(); ctx.ellipse(cx, cy - H * 0.45, HW * 1.8, H * 1.05, 0, 0, TAU); ctx.fill();
+    ctx.restore();
+  }
+  const leaf = (sign, fill, ext) => {
+    const hw = HW + ext;
+    ctx.beginPath();
+    ctx.moveTo(cx, topMid - ext * 0.4);
+    ctx.quadraticCurveTo(cx + sign * hw * 0.5, topOut - ext * 0.7 - 0.4 * s, cx + sign * hw, topOut - ext * 0.3);
+    ctx.lineTo(cx + sign * hw, botOut + ext * 0.4);
+    ctx.quadraticCurveTo(cx + sign * hw * 0.5, botMid + 0.8 * s + ext * 0.4, cx, botMid + ext * 0.4);
+    ctx.closePath();
+    ctx.fillStyle = fill; ctx.fill();
+  };
+  // Soft floating shadow.
+  ctx.save();
+  ctx.globalAlpha = ctx.globalAlpha * 0.18;
+  ctx.fillStyle = '#0a0c18';
+  ctx.beginPath(); ctx.ellipse(cx, cy + 1.4 * s, HW * 0.95, 1.4 * s, 0, 0, TAU); ctx.fill();
+  ctx.restore();
+  // Cover (binding peeks around the pages).
+  leaf(-1, coverD, 1.5 * s); leaf(1, coverD, 1.5 * s);
+  leaf(-1, cover, 0.9 * s);  leaf(1, cover, 0.9 * s);
+  // Pages.
+  leaf(-1, page, 0); leaf(1, page, 0);
+  ctx.save(); ctx.globalAlpha = ctx.globalAlpha * 0.4; leaf(-1, pageHi, -1.4 * s); ctx.restore();
+  // Gutter shadow.
+  ctx.strokeStyle = pageSh; ctx.lineWidth = Math.max(1, s * 0.55);
+  ctx.beginPath(); ctx.moveTo(cx, topMid); ctx.lineTo(cx, botMid - 0.3 * s); ctx.stroke();
+  // Text lines on both pages.
+  ctx.strokeStyle = ink; ctx.lineWidth = Math.max(1, s * 0.16);
+  for (let i = 0; i < 5; i++) {
+    const fy = topMid + (1.6 + i * 1.4) * s;
+    ctx.beginPath(); ctx.moveTo(cx - HW * 0.74, fy + 0.5 * s); ctx.lineTo(cx - HW * 0.16, fy); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(cx + HW * 0.16, fy); ctx.lineTo(cx + HW * 0.74, fy + 0.5 * s); ctx.stroke();
+  }
+  // Blood stain (crude), fades out as glow rises.
+  const stainA = 1 - glow;
+  if (stainA > 0.02) {
+    ctx.save();
+    ctx.globalAlpha = ctx.globalAlpha * stainA;
+    ctx.fillStyle = '#8c1f24';
+    const sx = cx + HW * 0.4, sy = topMid + 4.4 * s;
+    ctx.beginPath(); ctx.ellipse(sx, sy, 1.9 * s, 1.4 * s, 0.3, 0, TAU); ctx.fill();
+    ctx.beginPath(); ctx.arc(sx - 1.5 * s, sy + 0.7 * s, 0.6 * s, 0, TAU); ctx.fill();
+    ctx.beginPath(); ctx.arc(sx + 1.3 * s, sy - 0.8 * s, 0.45 * s, 0, TAU); ctx.fill();
+    ctx.fillRect(sx - 0.2 * s, sy + 0.5 * s, 0.45 * s, 2.0 * s);
+    ctx.restore();
+  }
+  // Sweet golden heart + sparkles, fades in with glow.
+  if (glow > 0.02) {
+    ctx.save();
+    ctx.globalAlpha = ctx.globalAlpha * glow;
+    const hx = cx + HW * 0.38, hy = topMid + 4.2 * s, hs = 1.4 * s;
+    ctx.fillStyle = '#e8b43a';
+    ctx.beginPath();
+    ctx.moveTo(hx, hy + hs * 0.9);
+    ctx.bezierCurveTo(hx - hs * 1.3, hy - hs * 0.2, hx - hs * 0.5, hy - hs * 1.1, hx, hy - hs * 0.3);
+    ctx.bezierCurveTo(hx + hs * 0.5, hy - hs * 1.1, hx + hs * 1.3, hy - hs * 0.2, hx, hy + hs * 0.9);
+    ctx.closePath(); ctx.fill();
+    ctx.fillStyle = '#fff2c8';
+    for (let k = 0; k < 4; k++) {
+      const tw = Math.sin(t * 3 + k * 1.7) * 0.5 + 0.5;
+      const spx = cx + (k % 2 ? 1 : -1) * HW * (0.3 + 0.12 * k);
+      const spy = topMid + (1.5 + k * 1.5) * s;
+      ctx.beginPath(); ctx.arc(spx, spy, (0.3 + 0.4 * tw) * s, 0, TAU); ctx.fill();
+    }
+    ctx.restore();
+  }
+  // Bookmark ribbon (sways with _t).
+  const sway = Math.sin(t * 1.6) * 0.8 * s;
+  ctx.fillStyle = glow > 0.5 ? '#e0b04a' : '#b0444e';
+  ctx.beginPath();
+  ctx.moveTo(cx - 0.7 * s, topMid + 0.2 * s);
+  ctx.lineTo(cx + 0.7 * s, topMid + 0.2 * s);
+  ctx.lineTo(cx + 0.7 * s + sway, topMid + 4.6 * s);
+  ctx.lineTo(cx - 0.7 * s + sway, topMid + 4.6 * s);
+  ctx.closePath(); ctx.fill();
+  // Edition label under the book (papel sobre fondo apagado, con sombra).
+  if (prop.label) {
+    ctx.font = '700 ' + Math.round(2.8 * s) + 'px "Plus Jakarta Sans", ui-sans-serif';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+    ctx.fillStyle = 'rgba(12,14,28,0.55)';
+    ctx.fillText(String(prop.label), cx + 1, cy + 2.4 * s + 1);
+    ctx.fillStyle = '#f3ecdc';
+    ctx.fillText(String(prop.label), cx, cy + 2.4 * s);
+  }
+  ctx.restore();
+}
+
 export function drawProp(ctx, prop) {
+  if (prop.type === 'tome') return drawTome(ctx, prop);
+  if (prop.type === 'wall') return drawWall(ctx, prop);
+  if (prop.type === 'dove') return drawDove(ctx, prop);
+  if (prop.type === 'tower') return drawTower(ctx, prop);
+  if (prop.type === 'oven') return drawOven(ctx, prop);
+  if (prop.type === 'candy-house') return drawCandyHouse(ctx, prop);
+  if (prop.type === 'shoe') return drawShoe(ctx, prop);
+  if (prop.type === 'mirror') return drawMirror(ctx, prop);
   if (prop.type === 'grinder') return drawGrinder(ctx, prop);
   if (prop.type === 'turtle') return drawTurtle(ctx, prop);
   if (prop.type === 'pasture') return drawPasture(ctx, prop);

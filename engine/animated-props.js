@@ -82,7 +82,9 @@ export function tickAnimatedProps(world, dt) {
       }
       p._flameT += dt * 4;
       p._nextSpark -= dt;
-      if (p._nextSpark <= 0) {
+      // Al desvanecerse (alpha bajo), deja de emitir chispas para que el fade out
+      // sea limpio y no queden partículas sueltas tras apagar el fuego.
+      if (p._nextSpark <= 0 && (p.alpha == null || p.alpha > 0.25)) {
         world._fx.push({
           type: 'particle', x: p.x + (world.rng() - 0.5) * 8, y: p.y - 18,
           vx: (world.rng() - 0.5) * 12, vy: -30 - world.rng() * 25,
@@ -217,6 +219,12 @@ export function tickAnimatedProps(world, dt) {
       p._t += dt;
     } else if (p.type === 'turtle') {
       // Reloj para la cabeza que asoma y el balanceo de patas.
+      if (p._t == null) p._t = world.rng() * Math.PI * 2;
+      p._t += dt;
+    } else if (p.type === 'tower' || p.type === 'oven' || p.type === 'candy-house' || p.type === 'mirror' || p.type === 'dove' || p.type === 'tome') {
+      // Reloj propio: trenza que ondea, llamas del horno, humo de la chimenea, el
+      // destello del espejo y el aleteo de la paloma. La paloma no se traslada
+      // sola (se coreografía con tween de x/y), solo bate las alas.
       if (p._t == null) p._t = world.rng() * Math.PI * 2;
       p._t += dt;
     } else if (p.type === 'bird') {

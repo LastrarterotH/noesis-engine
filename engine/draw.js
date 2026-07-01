@@ -2,9 +2,9 @@
 // Pixel-art draw primitives: learner blob, eye geometry, mood-routing,
 // accessories overlay. Instantiated once per World.
 
-import { mixColors } from './util.js?v=94';
-import { drawMoodOverlays } from './mood.js?v=94';
-import { drawAccessories } from './accessories.js?v=94';
+import { mixColors } from './util.js?v=99';
+import { drawMoodOverlays } from './mood.js?v=99';
+import { drawAccessories } from './accessories.js?v=99';
 
 export class Draw {
   constructor(world) { this.world = world; }
@@ -103,6 +103,12 @@ export class Draw {
     const prevAlpha = ctx.globalAlpha;
     if (alpha < 1) ctx.globalAlpha = prevAlpha * alpha;
 
+    // Mirada declarada por la entidad (efecto narrativo): `entity.look = 'blank'`
+    // suprime las pupilas y deja solo la esclerótica (un personaje cegado), y
+    // manda sobre el motion/lookAt de abajo. Vale también un vector {x, y}.
+    if (opts.look == null && entity && entity.look != null) {
+      opts = { ...opts, look: entity.look };
+    }
     // Gaze rule: eyes follow the blob's motion vector. If moving, both
     // pupils point in the direction of motion. If not moving, idle.
     // `opts.look = 'blank'` still suppresses pupils for narrative effect.

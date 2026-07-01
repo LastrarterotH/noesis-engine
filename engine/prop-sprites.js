@@ -1287,6 +1287,8 @@ export const PROP_NATURAL_SCALE = {
   pasture: 3, sheep: 3, fence: 3.5,
   // paradoja de Zenón
   turtle: 2.8,
+  // cuentos de los Grimm
+  tower: 4, oven: 3.2, 'candy-house': 3.2, shoe: 2.2, mirror: 3, dove: 2.5, wall: 4, tome: 5,
   // urbano / estructuras
   building: 3.5, streetlamp: 3, lighthouse: 3.5, boat: 2.8, door: 3, sign: 2.4, bench: 2.6,
   // animados / interactivos

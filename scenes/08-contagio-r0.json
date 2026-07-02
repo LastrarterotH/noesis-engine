@@ -1,0 +1,265 @@
+{
+  "meta": {
+    "id": "08-contagio-r0",
+    "number": 8,
+    "version": "0.1",
+    "lang": [
+      "es"
+    ],
+    "music": "tension"
+  },
+  "text": {
+    "es": {
+      "title": "El contagio y el R_0",
+      "body": [
+        "Una enfermedad contagiosa avanza de persona a persona. Lo que decide si un brote crece o se apaga es, sobre todo, un número: a cuántas personas infecta en promedio cada contagiado.",
+        "Ese número es el <strong>número reproductivo básico</strong>, R_0 (Anderson y May, 1991): los contagios promedio que causa un infectado en una población donde todos son susceptibles. Con R_0 mayor que 1, cada caso deja más de un caso y la cadena se sostiene; con R_0 menor que 1, se extingue.",
+        "El primer modelo que separó a una población en susceptibles, infectados y recuperados lo formularon <strong>Kermack y McKendrick</strong> en 1927. De ahí viene la forma de la curva epidémica: sube mientras haya a quién contagiar, y baja cuando el combustible se agota.",
+        "Bajar el número no exige tocar el germen. Si una parte de la población es inmune, muchos contagios chocan con alguien que ya no puede enfermar, y la cadena pierde fuerza. Cuando esa fracción alcanza <strong>1 - 1/R_0</strong>, el brote no se sostiene aunque queden susceptibles: es la <strong>inmunidad de grupo</strong> (Fine, Eames y Heymann, 2011). Para R_0 = 2, el umbral es la mitad.",
+        "R_0 tampoco es una constante fija del patógeno. Depende de cuánto y cómo nos relacionamos, de la densidad, del clima, de las medidas. Lo que se observa en un brote real es el <em>número reproductivo efectivo</em>, y sobre él sí se puede actuar (Delamater et al., 2019).",
+        "Cada barrera (ventilar, distanciar, lavarse las manos, vacunar) baja ese número. Y cuando cae por debajo de 1, hasta el brote más veloz se apaga solo."
+      ],
+      "references": [
+        {
+          "authors": "Kermack, W. O., y McKendrick, A. G.",
+          "year": 1927,
+          "title": "A contribution to the mathematical theory of epidemics",
+          "journal": "Proceedings of the Royal Society of London A",
+          "volume": "115(772)",
+          "pages": "700-721",
+          "doi": "10.1098/rspa.1927.0118"
+        },
+        {
+          "authors": "Anderson, R. M., y May, R. M.",
+          "year": 1991,
+          "title": "Infectious diseases of humans: Dynamics and control",
+          "publisher": "Oxford University Press"
+        },
+        {
+          "authors": "Fine, P., Eames, K., y Heymann, D. L.",
+          "year": 2011,
+          "title": "\"Herd immunity\": A rough guide",
+          "journal": "Clinical Infectious Diseases",
+          "volume": "52(7)",
+          "pages": "911-916",
+          "doi": "10.1093/cid/cir007"
+        },
+        {
+          "authors": "Delamater, P. L., Street, E. J., Leslie, T. F., Yang, Y. T., y Jacobsen, K. H.",
+          "year": 2019,
+          "title": "Complexity of the basic reproduction number (R0)",
+          "journal": "Emerging Infectious Diseases",
+          "volume": "25(1)",
+          "pages": "1-4",
+          "doi": "10.3201/eid2501.171901"
+        }
+      ]
+    }
+  },
+  "hint": {
+    "es": "Activa el sonido y observa la cadena ramificarse, y luego cómo los inmunes la detienen."
+  },
+  "canvas": {
+    "w": 940,
+    "h": 580,
+    "bg": "#d6cfbf",
+    "floor": "cobble",
+    "safeArea": 20
+  },
+  "ambient": {
+    "darkness": 0,
+    "darknessColor": "#0f1428"
+  },
+  "props": [
+    {
+      "type": "virus",
+      "id": "v0",
+      "x": 474,
+      "y": 210,
+      "scale": 3,
+      "color": "#c9463a",
+      "alpha": 0,
+      "glow": 0,
+      "z": 50
+    }
+  ],
+  "entities": [],
+  "script": [
+    {
+      "wait": 0.8
+    },
+    {
+      "caption": "EL CONTAGIO Y EL R_0",
+      "style": "title"
+    },
+    {
+      "wait": 2.6
+    },
+    {
+      "caption": "",
+      "style": "title"
+    },
+    {
+      "caption": "Una comunidad. Cada figura, una persona que puede enfermar o proteger a otras."
+    },
+    {
+      "wait": 4.5
+    },
+    {
+      "caption": "Todo brote empieza con una sola. La llamamos el caso cero."
+    },
+    {
+      "do": "world.state.seed(world.state.zero);"
+    },
+    {
+      "do": "world.state.showVirus();"
+    },
+    {
+      "music": {
+        "volume": 0.55,
+        "duration": 1.5
+      }
+    },
+    {
+      "tone": 90,
+      "dur": 0.6
+    },
+    {
+      "wait": 4.2
+    },
+    {
+      "caption": "Cada infectado contagia, en promedio, a R_0 personas sanas. Aquí, R_0 = 2."
+    },
+    {
+      "tween": "showR0",
+      "to": 1,
+      "duration": 0.6
+    },
+    {
+      "wait": 4.6
+    },
+    {
+      "caption": "Con R_0 mayor que 1, la cadena se ramifica: uno, dos, cuatro, ocho."
+    },
+    {
+      "tween": "showR0",
+      "to": 0,
+      "duration": 0.5
+    },
+    {
+      "tween": "showCount",
+      "to": 1,
+      "duration": 0.8
+    },
+    {
+      "do": "world.state.sim = true;"
+    },
+    {
+      "music": "stinger"
+    },
+    {
+      "music": {
+        "volume": 1,
+        "duration": 6
+      }
+    },
+    {
+      "tween": "ambient.darkness",
+      "to": 0.2,
+      "duration": 6
+    },
+    {
+      "wait": 7.5
+    },
+    {
+      "caption": "En segundos, casi nadie queda en pie. La duplicación no perdona."
+    },
+    {
+      "wait": 4.2
+    },
+    {
+      "do": "var s=world.state; s.sim=false; s.build(); s.vaccinate(0.5); s.showCount=0;"
+    },
+    {
+      "do": "world.state.hideVirus();"
+    },
+    {
+      "tween": "ambient.darkness",
+      "to": 0,
+      "duration": 1.5
+    },
+    {
+      "music": {
+        "mood": "warm",
+        "duration": 2.2
+      }
+    },
+    {
+      "caption": "Ahora protegemos a la mitad. Los inmunes, en azul, ya no pueden enfermar."
+    },
+    {
+      "wait": 4.6
+    },
+    {
+      "caption": "El mismo virus. El mismo R_0 = 2. El mismo caso cero."
+    },
+    {
+      "do": "world.state.seed(world.state.zero);"
+    },
+    {
+      "do": "world.state.showVirus();"
+    },
+    {
+      "do": "world.state.sim = true;"
+    },
+    {
+      "wait": 6.8
+    },
+    {
+      "do": "world.state.hideVirus();"
+    },
+    {
+      "caption": "La cadena arranca, choca con los inmunes y se apaga. La mayoría nunca se contagia."
+    },
+    {
+      "wait": 5
+    },
+    {
+      "caption": "Es la inmunidad de rebaño: con R_0 = 2, basta proteger a 1 - 1/R_0, la mitad."
+    },
+    {
+      "wait": 5.5
+    },
+    {
+      "caption": "R_0 no es un destino. Ventilar, distanciar, lavarse las manos, vacunar: cada barrera baja el número."
+    },
+    {
+      "music": {
+        "volume": 1.2,
+        "duration": 3
+      }
+    },
+    {
+      "wait": 5.5
+    },
+    {
+      "caption": "Cuando el número efectivo cae por debajo de 1, cualquier brote se apaga solo."
+    },
+    {
+      "wait": 5
+    },
+    {
+      "caption": ""
+    },
+    {
+      "wait": 3
+    }
+  ],
+  "hooks": {
+    "onInit": "var s = world.state;\nvar COLS = 7, ROWS = 4;\nvar X0 = 210, DX = 90, Y0 = 175, DY = 80;\ns.zero = 1 * COLS + 3;            // caso cero: fila 1, columna 3 (centro-arriba)\ns.R0 = 2;\ns.showR0 = 0; s.showCount = 0; s.count = 0;\ns.sim = false; s.formulaOn = 0;\n\n// Colores de estado.\ns.C_SANO = '#d8a878';\ns.C_INF = '#c9463a';\ns.C_REC = '#8a94a8';\ns.C_VAX = '#4f86d6';\ns.C_SHIELD = '#a9cbf0';\n\n// (Re)construye la comunidad sana. Jitter determinista por índice (sin rng),\n// así el replay reproduce exactamente la misma malla.\ns.build = function () {\n  var p = [];\n  for (var r = 0; r < ROWS; r++) {\n    for (var c = 0; c < COLS; c++) {\n      var i = r * COLS + c;\n      var jx = Math.sin(i * 12.9898) * 7;\n      var jy = Math.cos(i * 4.1414) * 6;\n      p.push({\n        x: X0 + c * DX + jx,\n        y: Y0 + r * DY + jy,\n        st: 0,        // 0 sano, 1 infectado, 2 recuperado\n        vax: false,\n        it: 0,        // segundos desde que se infectó\n        fired: false, // ya lanzó sus contagios\n        ph: i * 0.7,  // fase de respiración\n      });\n    }\n  }\n  s.people = p;\n  s.edges = [];\n  s.count = 0;\n};\n\n// Infecta al caso cero.\ns.seed = function (idx) {\n  var q = s.people[idx];\n  if (q) { q.st = 1; q.it = 0; q.fired = false; s.count = 1; }\n};\n\n// Inmuniza a la mitad de la población formando una MURALLA alrededor del foco:\n// deja sanos unos pocos vecinos inmediatos del caso cero (el combustible que\n// arrancará el brote), inmuniza la franja siguiente (el cinturón que lo\n// contiene) y deja sanos a los lejanos (protegidos por el rebaño, aunque no\n// estén vacunados: esa es la joya de la inmunidad de grupo). Total ~50%, el\n// umbral teórico 1 - 1/R0 = 0.5 para R0 = 2.\ns.vaccinate = function (frac) {\n  var zero = s.people[s.zero];\n  var order = [];\n  for (var i = 0; i < s.people.length; i++) {\n    if (i === s.zero) continue;\n    var d = Math.hypot(s.people[i].x - zero.x, s.people[i].y - zero.y);\n    order.push({ i: i, d: d });\n  }\n  order.sort(function (a, b) { return a.d - b.d; });\n  var FUEL = 3;                                   // sanos cercanos (combustible)\n  var wall = Math.round(s.people.length * (frac == null ? 0.5 : frac));\n  for (var k = FUEL; k < FUEL + wall && k < order.length; k++) {\n    s.people[order[k].i].vax = true;\n  }\n};\n\n// El ícono del virus (prop v0) sobre la cabeza del caso cero.\ns.showVirus = function () {\n  var z = s.people[s.zero];\n  var v = world.props.find(function (q) { return q.id === 'v0'; });\n  if (v && z) { v.x = z.x; v.y = z.y - 46; world.tween(v, 'alpha', 1, { duration: 0.7 }); world.tween(v, 'glow', 1, { duration: 1.2 }); }\n};\ns.hideVirus = function () {\n  var v = world.props.find(function (q) { return q.id === 'v0'; });\n  if (v) { world.tween(v, 'alpha', 0, { duration: 0.6 }); world.tween(v, 'glow', 0, { duration: 0.6 }); }\n};\n\ns.build();\n",
+    "onStep": "var s = world.state;\nif (!s.people) return;\nvar FIRE_DELAY = 0.55;   // s desde infectarse hasta lanzar contagios\nvar EDGE_TIME = 0.5;     // s que tarda una línea de contagio en cruzar\nvar RADIUS = 132;        // alcance de contagio (cubre vecinos cercanos)\n\n// Avanzar las líneas de contagio en vuelo.\nif (s.edges) {\n  for (var e = 0; e < s.edges.length; e++) {\n    var ed = s.edges[e];\n    if (ed.done) { ed.age = (ed.age || 0) + dt; continue; }\n    ed.p += dt / EDGE_TIME;\n    if (ed.p >= 1) {\n      ed.p = 1; ed.done = true; ed.age = 0;\n      var tgt = s.people[ed.to];\n      if (tgt && !ed.blocked && tgt.st === 0 && !tgt.vax) {\n        tgt.st = 1; tgt.it = 0; tgt.fired = false;\n        s.count = (s.count || 0) + 1;\n        world.fx.particles(tgt.x, tgt.y, { count: 8, color: '#e0663a', speed: 60, duration: 0.7, size: 2, spread: 6.28 });\n      } else if (ed.blocked) {\n        world.fx.particles(ed.hx, ed.hy, { count: 7, color: '#a9cbf0', speed: 55, duration: 0.6, size: 2, spread: 6.28 });\n      }\n    }\n  }\n  // descartar líneas resueltas tras un breve resplandor\n  s.edges = s.edges.filter(function (x) { return !(x.done && x.age > 0.45); });\n}\n\nif (!s.sim) return;\n\n// Propagación: cada infectado que ya cumplió su retardo lanza hasta R0\n// contagios hacia los vecinos sanos-no-vacunados más cercanos; si en su\n// radio solo quedan vacunados, la línea sale igual y rebota en el escudo (la\n// cadena se ve chocar y detenerse).\nfor (var i = 0; i < s.people.length; i++) {\n  var p = s.people[i];\n  if (p.st !== 1) continue;\n  p.it += dt;   // reloj del infectado (alimenta el pulso de recién contagiado)\n  // Sin recuperación automática: el infectado queda rojo toda la escena, para\n  // que la marea del brote (y su contraste con la contención) se LEA en cada\n  // foto. Deja de contagiar por sí solo cuando ya disparó (fired).\n  if (p.fired || p.it < FIRE_DELAY) continue;\n  p.fired = true;\n  // candidatos: sanos aún no reservados por otra línea, más los vacunados\n  // cercanos (posibles choques) si no hay sanos suficientes.\n  var open = [], shields = [];\n  for (var j = 0; j < s.people.length; j++) {\n    if (j === i) continue;\n    var q = s.people[j];\n    var d = Math.hypot(q.x - p.x, q.y - p.y);\n    if (d > RADIUS) continue;\n    if (q.st === 0 && !q.vax && !q._targeted) open.push({ j: j, d: d });\n    else if (q.vax) shields.push({ j: j, d: d });\n  }\n  open.sort(function (a, b) { return a.d - b.d; });\n  shields.sort(function (a, b) { return a.d - b.d; });\n  var picks = [];\n  for (var o = 0; o < open.length && picks.length < s.R0; o++) picks.push({ j: open[o].j, vax: false });\n  // completar el cupo de R0 con escudos cercanos (la cadena choca y se ve)\n  for (var sh = 0; sh < shields.length && picks.length < s.R0; sh++) picks.push({ j: shields[sh].j, vax: true });\n  for (var c = 0; c < picks.length; c++) {\n    var q2 = s.people[picks[c].j];\n    var ang = Math.atan2(q2.y - p.y, q2.x - p.x);\n    var stopR = picks[c].vax ? 27 : 15;\n    var hx = q2.x - Math.cos(ang) * stopR;\n    var hy = q2.y - Math.sin(ang) * stopR;\n    s.edges.push({ fx: p.x, fy: p.y, to: picks[c].j, p: 0, done: false, blocked: picks[c].vax, hx: hx, hy: hy });\n    if (!picks[c].vax) q2._targeted = true;\n  }\n}\n",
+    "onDraw": "var s = world.state;\nif (!s.people) return;\nvar T = world.t;\nvar UIQ = '\"Plus Jakarta Sans\", ui-sans-serif, system-ui, sans-serif';\n\n// --- líneas de contagio (debajo de la gente) ---\nif (s.edges) {\n  for (var e = 0; e < s.edges.length; e++) {\n    var ed = s.edges[e];\n    var ex = ed.fx + (ed.hx - ed.fx) * Math.min(1, ed.p);\n    var ey = ed.fy + (ed.hy - ed.fy) * Math.min(1, ed.p);\n    ctx.save();\n    var fade = ed.done ? Math.max(0, 1 - (ed.age || 0) / 0.45) : 1;\n    ctx.globalAlpha = 0.9 * fade;\n    ctx.strokeStyle = ed.blocked ? '#7fa8dc' : '#d8543f';\n    ctx.lineWidth = 2.4;\n    ctx.lineCap = 'round';\n    if (ed.blocked) ctx.setLineDash([4, 4]);\n    ctx.beginPath();\n    ctx.moveTo(ed.fx, ed.fy);\n    ctx.lineTo(ex, ey);\n    ctx.stroke();\n    ctx.setLineDash([]);\n    // cabeza de la línea en vuelo\n    if (!ed.done) {\n      ctx.fillStyle = ed.blocked ? '#a9cbf0' : '#f0784f';\n      ctx.beginPath(); ctx.arc(ex, ey, 3.2, 0, 6.283); ctx.fill();\n    }\n    ctx.restore();\n  }\n}\n\n// --- personas ---\nvar HW = 13, HH = 15;\nfor (var i = 0; i < s.people.length; i++) {\n  var p = s.people[i];\n  var breath = Math.sin(T * 1.6 + p.ph) * 1.1;\n  var cx = p.x, cy = p.y + breath;\n  var col = s.C_SANO;\n  if (p.vax && p.st !== 1) col = s.C_VAX;\n  if (p.st === 1) col = s.C_INF;\n  else if (p.st === 2) col = s.C_REC;\n\n  // escudo de vacunado\n  if (p.vax && p.st !== 1) {\n    var sp = 0.5 + 0.5 * Math.sin(T * 2.2 + p.ph);\n    ctx.save();\n    ctx.globalAlpha = 0.32 + 0.16 * sp;\n    ctx.strokeStyle = s.C_SHIELD;\n    ctx.lineWidth = 2.2;\n    ctx.beginPath(); ctx.arc(cx, cy - 1, HW + 8, 0, 6.283); ctx.stroke();\n    ctx.globalAlpha = 0.10 + 0.06 * sp;\n    ctx.fillStyle = s.C_SHIELD;\n    ctx.beginPath(); ctx.arc(cx, cy - 1, HW + 8, 0, 6.283); ctx.fill();\n    ctx.restore();\n  }\n\n  // pulso de recién infectado\n  if (p.st === 1 && p.it < 0.9) {\n    var pr = p.it / 0.9;\n    ctx.save();\n    ctx.globalAlpha = (1 - pr) * 0.5;\n    ctx.strokeStyle = s.C_INF; ctx.lineWidth = 2.5;\n    ctx.beginPath(); ctx.arc(cx, cy - 1, HW + 4 + pr * 16, 0, 6.283); ctx.stroke();\n    ctx.restore();\n  }\n\n  // sombra de contacto\n  ctx.fillStyle = 'rgba(20,24,38,0.16)';\n  ctx.beginPath(); ctx.ellipse(p.x, p.y + HH - 1, HW * 0.82, 3.2, 0, 0, 6.283); ctx.fill();\n\n  // cuerpo\n  world.draw.rrect(cx - HW, cy - HH, HW * 2, HH * 2, 10);\n  ctx.fillStyle = col; ctx.fill();\n  // panza (tono claro)\n  ctx.fillStyle = 'rgba(255,255,255,0.14)';\n  world.draw.rrect(cx - HW, cy + 1, HW * 2, HH - 2, 8); ctx.fill();\n  // ojos\n  var ee = p.st === 1 ? 3.4 : 3.0;\n  ctx.fillStyle = '#fbfaf6';\n  ctx.beginPath(); ctx.arc(cx - 4.6, cy - 4, ee, 0, 6.283); ctx.fill();\n  ctx.beginPath(); ctx.arc(cx + 4.6, cy - 4, ee, 0, 6.283); ctx.fill();\n  ctx.fillStyle = '#20242f';\n  var pd = 1.5;\n  ctx.beginPath(); ctx.arc(cx - 4.6, cy - 3.4, pd, 0, 6.283); ctx.fill();\n  ctx.beginPath(); ctx.arc(cx + 4.6, cy - 3.4, pd, 0, 6.283); ctx.fill();\n  // boca preocupada del infectado\n  if (p.st === 1) {\n    ctx.strokeStyle = '#5a1a14'; ctx.lineWidth = 1.4; ctx.lineCap = 'round';\n    ctx.beginPath(); ctx.arc(cx, cy + 6, 3, Math.PI * 1.15, Math.PI * 1.85); ctx.stroke();\n  }\n}\n\n// --- contador exponencial ---\nif (s.showCount > 0.01) {\n  ctx.save();\n  ctx.globalAlpha = Math.min(1, s.showCount);\n  ctx.textAlign = 'center';\n  ctx.fillStyle = '#c9463a';\n  ctx.font = '700 44px ' + UIQ;\n  ctx.fillText(String(s.count || 0), world.W / 2, 92);\n  ctx.fillStyle = '#6E7896';\n  ctx.font = '600 12px ' + UIQ;\n  ctx.fillText('CONTAGIADOS', world.W / 2, 110);\n  ctx.restore();\n}\n\n// --- etiqueta R0 sobre el caso cero ---\nif (s.showR0 > 0.01) {\n  var z = s.people[s.zero];\n  ctx.save();\n  ctx.globalAlpha = Math.min(1, s.showR0);\n  ctx.textAlign = 'center';\n  ctx.fillStyle = '#1F2547';\n  world.draw.rrect(z.x - 46, z.y - 78, 92, 26, 7); ctx.fill();\n  ctx.fillStyle = '#F4AC1D';\n  ctx.font = '700 15px ' + UIQ;\n  ctx.textBaseline = 'middle';\n  ctx.fillText('R₀ = ' + (s.R0 || 2), z.x, z.y - 64);\n  ctx.restore();\n}\n",
+    "onClick": "",
+    "onReset": ""
+  }
+}

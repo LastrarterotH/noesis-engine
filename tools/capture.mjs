@@ -27,6 +27,7 @@ const SCENES = [
   { slug: '05-persefone-demeter', wait: 30 },
   { slug: '06-basilisco-roko', wait: 34 },
   { slug: '07-tragedia-de-los-comunes', wait: 40 },
+  { slug: '08-contagio-r0', wait: 28 },
   { slug: '09-la-caverna', wait: 14 },
   { slug: '10-fuera-de-juego', wait: 20 },
   { slug: '11-cuentos-grimm', wait: 114 },

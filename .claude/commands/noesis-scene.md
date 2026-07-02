@@ -256,6 +256,8 @@ If `behavior` is set, engine auto-applies velocity, bounces off canvas edges, se
 
 **Símbolos didácticos**: `lightbulb`, `hourglass`, `scale`, `magnifier`, `key`, `trophy`, `flag` (color), `flask` (color = líquido), `globe`, `scroll`, `gear`; paisaje: `mountain`.
 
+**Epidemiología (bespoke)**: `virus` (patógeno: cápside central con material genético que gira y una corona de spikes que rota sola; `color` tiñe la cápside, `glow` 0..1 enciende un halo rojizo de contagio que late, `alpha`; flota, no se apoya en el suelo. Ícono del contagio, para el caso cero).
+
 **Notación científica/matemática**: en cualquier texto (captions, diálogos, título, body, labels) usa `_` para subíndice y `^` para superíndice: `CO_2`, `H_2O`, `x^2`, `m^3`, o varios caracteres entre llaves: `SO_4^{2-}`, `10^{-9}`, `E = mc^2`. Nunca escribas «CO2» plano. Para una ecuación con notación LaTeX completa (fracciones apiladas, raíces, griegas, operadores) envuélvela en `$...$` y usa el subconjunto LaTeX (`\frac{}{}`, `\sqrt{}`, `\Delta`, `\ln`, `\le`, `\to`, `\cdot`...): `$\Delta S = nR\ln\frac{V_f}{V_i} > 0$`. Lo natural es ponerla en un `label` y revelarla con `showLabel`.
 
 **Conceptual / morph**: `field` (campo de partículas orden→desorden: `w`, `h`, `cols`, `rows`, `color`/`color2`, y `disorder` 0..1 animable con `tween "id.disorder"`; opcionales `homeFrac` = el orden ocupa solo esa fracción izquierda y el desorden esparce por todo, para un gas confinado que se expande, y `jitter` = tembleque base de gas). Para entropía, mezcla, difusión, cambio de fase, expansión libre. El desorden se ve en las partículas: no le pongas una barra.

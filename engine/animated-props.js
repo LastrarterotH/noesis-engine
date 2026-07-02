@@ -179,6 +179,10 @@ export function tickAnimatedProps(world, dt) {
       // Reloj para la rotación del anillo y el pulso del núcleo.
       if (p._t == null) p._t = world.rng() * Math.PI * 2;
       p._t += dt;
+    } else if (p.type === 'virus') {
+      // Reloj para la corona de spikes que rota y el latido de la cápside.
+      if (p._t == null) p._t = world.rng() * Math.PI * 2;
+      p._t += dt;
     } else if (p.type === 'notebook') {
       // Reloj para el pulso del resplandor cuando la IA procesa.
       if (p._t == null) p._t = world.rng() * Math.PI * 2;

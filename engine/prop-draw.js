@@ -2,8 +2,8 @@
 // Per-prop draw functions + dispatch (drawProp). Animated/bespoke props
 // have their own renderer; static props fall through to PROP_SPRITES.
 
-import { PROP_SPRITES } from './prop-sprites.js?v=115';
-import { mixColors } from './util.js?v=115';
+import { PROP_SPRITES } from './prop-sprites.js?v=116';
+import { mixColors } from './util.js?v=116';
 
 // Compute a default collision box for a solid prop: the bottom 60% of the
 // sprite, centered on prop.x. Authors can override with `solidBox: {x,y,w,h}`
@@ -2986,6 +2986,7 @@ export function drawProp(ctx, prop) {
   if (prop.type === 'frog') return drawFrog(ctx, prop);
   if (prop.type === 'swing') return drawSwing(ctx, prop);
   if (prop.type === 'clock') return drawClock(ctx, prop);
+  if (prop.type === 'virus') return drawVirus(ctx, prop);
   const def = PROP_SPRITES[prop.type];
   if (!def) return;
   // alpha animable también para sprites (flores que brotan/marchitan, etc.).
@@ -3065,4 +3066,88 @@ export function drawProp(ctx, prop) {
     ctx.arc(prop.x, flickerY, s * 4, 0, Math.PI * 2);
     ctx.fill();
   }
+}
+
+// Virus (patógeno): cápside central con corona de spikes que rota sola y una
+// cápside que late. Ícono del contagio. FLOTA (translate al centro, sin sombra
+// de contacto). `color` tiñe la cápside, `glow` 0..1 enciende un halo rojizo de
+// contagio, `alpha` para aparecer/desvanecer. La corona es el emblema del
+// coronavirus: tallos radiales con una bolita en la punta.
+export function drawVirus(ctx, prop) {
+  const s = prop.scale || 2.6;
+  const cx = Math.round(prop.x);
+  const cy = Math.round(prop.y);
+  const a = prop.alpha == null ? 1 : Math.max(0, Math.min(1, prop.alpha));
+  if (a <= 0.01) return;
+  const t = prop._t || 0;
+  const glow = prop.glow == null ? 0 : Math.max(0, Math.min(1, prop.glow));
+  const col = prop.color || '#c9463a';
+  const colD = mixColors(col, '#000000', 0.45);
+  const colL = mixColors(col, '#ffffff', 0.5);
+  const TAU = Math.PI * 2;
+  const pulse = 0.9 + 0.1 * Math.sin(t * 3);
+  const R = 2.3 * s * pulse;            // radio de la cápside
+  const spikeLen = 1.2 * s;
+  const SPIKES = 12;
+  ctx.save();
+  ctx.globalAlpha *= a;
+  ctx.translate(cx, cy);
+  // Halo de contagio (glow): aura rojiza que late.
+  if (glow > 0.02) {
+    ctx.save();
+    ctx.globalAlpha = ctx.globalAlpha * glow * (0.6 + 0.4 * Math.sin(t * 2.4));
+    const g = ctx.createRadialGradient(0, 0, R * 0.4, 0, 0, R * 3.2);
+    g.addColorStop(0, mixColors(col, '#ffffff', 0.1));
+    g.addColorStop(1, 'rgba(201,70,58,0)');
+    ctx.fillStyle = g;
+    ctx.beginPath(); ctx.arc(0, 0, R * 3.2, 0, TAU); ctx.fill();
+    ctx.restore();
+  }
+  // Corona de spikes que rota (tallo + bolita en la punta).
+  ctx.save();
+  ctx.rotate(t * 0.5);
+  for (let k = 0; k < SPIKES; k++) {
+    const ang = k * TAU / SPIKES;
+    const dx = Math.cos(ang), dy = Math.sin(ang);
+    ctx.strokeStyle = colD;
+    ctx.lineWidth = Math.max(1, s * 0.42);
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(dx * R * 0.92, dy * R * 0.92);
+    ctx.lineTo(dx * (R + spikeLen), dy * (R + spikeLen));
+    ctx.stroke();
+    ctx.fillStyle = col;
+    ctx.beginPath();
+    ctx.arc(dx * (R + spikeLen), dy * (R + spikeLen), 0.55 * s, 0, TAU);
+    ctx.fill();
+    ctx.fillStyle = colL;
+    ctx.beginPath();
+    ctx.arc(dx * (R + spikeLen) - 0.15 * s, dy * (R + spikeLen) - 0.15 * s, 0.22 * s, 0, TAU);
+    ctx.fill();
+  }
+  ctx.restore();
+  // Cápside: sombra, cuerpo, highlight superior.
+  ctx.fillStyle = colD;
+  ctx.beginPath(); ctx.arc(0, 0, R + 0.5 * s, 0, TAU); ctx.fill();
+  ctx.fillStyle = col;
+  ctx.beginPath(); ctx.arc(0, 0, R, 0, TAU); ctx.fill();
+  ctx.fillStyle = colL;
+  ctx.beginPath();
+  ctx.ellipse(-0.5 * s, -0.6 * s, R * 0.55, R * 0.42, -0.5, 0, TAU);
+  ctx.fill();
+  // Material genético interno: pequeños receptores que giran al revés.
+  ctx.save();
+  ctx.rotate(-t * 0.35);
+  ctx.fillStyle = colD;
+  for (let k = 0; k < 5; k++) {
+    const ang = k * TAU / 5 + 0.4;
+    const rr = R * 0.5;
+    ctx.beginPath();
+    ctx.arc(Math.cos(ang) * rr, Math.sin(ang) * rr, 0.32 * s, 0, TAU);
+    ctx.fill();
+  }
+  ctx.fillStyle = mixColors(col, '#000000', 0.25);
+  ctx.beginPath(); ctx.arc(0, 0, 0.5 * s, 0, TAU); ctx.fill();
+  ctx.restore();
+  ctx.restore();
 }

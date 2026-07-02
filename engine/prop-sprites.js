@@ -1297,4 +1297,6 @@ export const PROP_NATURAL_SCALE = {
   // símbolos didácticos
   lightbulb: 2, hourglass: 2, scale: 2.2, magnifier: 2, key: 2, trophy: 2,
   flag: 2.2, flask: 2, globe: 2.2, scroll: 2, gear: 2, mountain: 4,
+  // epidemiología
+  virus: 2.6,
 };

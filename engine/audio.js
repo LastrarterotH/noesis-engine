@@ -522,7 +522,8 @@ const MUSIC_PRESETS = {
     chordDur: 8,
     arp: [ { v: 2, oct: 2 }, { v: 3, oct: 2 }, { v: 1, oct: 2 }, { v: 0, oct: 2 }, { v: 3, oct: 1 }, { v: 1, oct: 2 } ],
     arpType: 'triangle', arpStep: 0.5, arpDur: 0.5, arpVol: 0.14, arpRest: 0.12,
-    drums: 'k.hs..h.k.hs..ss', drumStep: 0.25, drumVol: 0.5,
+    drums: 'k.hs..h.k.hs..ss', drumStep: 0.25, drumVol: 0.65,
+    drumAccent: [1, 0.55, 0.75, 0.6], drumFill: 'k.hs..h.k.ssssss', fillEvery: 4,
   },
   // Tambores rituales: quintas dóricas sobre Re (sin terceras, como ancient),
   // toms graves en patrón ancestral y hats como semillas. El pariente rítmico
@@ -539,7 +540,8 @@ const MUSIC_PRESETS = {
     chordDur: 9.6,
     arp: [ { v: 3, oct: 2 }, { v: 2, oct: 2 }, { v: 3, oct: 1 }, { v: 1, oct: 2 } ],
     arpType: 'triangle', arpStep: 0.9, arpDur: 1.2, arpVol: 0.12, arpRest: 0.3,
-    drums: 't..t..tt..t..th.', drumStep: 0.3, drumVol: 0.55,
+    drums: 't..t..tt..t..th.', drumStep: 0.3, drumVol: 0.7,
+    swing: 0.08, drumAccent: [1, 0.6, 0.8, 0.65], drumFill: 't..t..tt.ttttttt', fillEvery: 4,
   },
   // Beat sereno: Am7 - Fmaj7 - Cmaj7 - G, bombo suave, hats en corcheas y
   // caja relajada sobre un pad sine. Para tecnología cotidiana, datos,
@@ -556,7 +558,8 @@ const MUSIC_PRESETS = {
     chordDur: 7.7,
     arp: [ { v: 1, oct: 2 }, { v: 2, oct: 2 }, { v: 3, oct: 1 }, { v: 2, oct: 2 }, { v: 1, oct: 2 }, { v: 3, oct: 2 } ],
     arpType: 'sine', arpStep: 0.48, arpDur: 0.6, arpVol: 0.13, arpRest: 0.15,
-    drums: 'k.h.s.h.k.hks.hH', drumStep: 0.24, drumVol: 0.45,
+    drums: 'k.h.s.h.k.hks.hH', drumStep: 0.24, drumVol: 0.6,
+    swing: 0.18, drumAccent: [1, 0.55, 0.8, 0.6], arpAccent: [1, 0.7, 0.85, 0.7, 0.9, 0.75], drumFill: 'k.h.s.h.ks.s.ssH', fillEvery: 4,
   },
   // Rock de arena, alla Muse: menor armónica Em - C - Am - B, riff de bajo
   // en sierra que bombea semicorcheas (nota repetida + salto), batería
@@ -575,7 +578,8 @@ const MUSIC_PRESETS = {
     chordDur: 5.12,
     arp: [ { v: 0, oct: 1 }, { v: 0, oct: 1 }, { v: 1, oct: 1 }, { v: 0, oct: 1 }, { v: 2, oct: 1 }, { v: 1, oct: 1 }, { v: 3, oct: 1 }, { v: 1, oct: 1 } ],
     arpType: 'sawtooth', arpStep: 0.16, arpDur: 0.18, arpVol: 0.10, arpRest: 0.02,
-    drums: 'k.h.s.h.kkh.s.hH', drumStep: 0.16, drumVol: 0.5,
+    drums: 'k.h.s.h.kkh.s.hH', drumStep: 0.16, drumVol: 0.65,
+    drumAccent: [1, 0.6, 0.85, 0.6], arpAccent: [1, 0.72, 0.85, 0.72, 1, 0.78, 0.9, 0.78], drumFill: 'k.h.s.h.ssttssts', fillEvery: 4,
     grow: true, growDur: 30, elecStep: 0.32, elecVol: 0.12,
   },
   // Burlona: el sneak de cartoon. Bajo cromático C6 - C#dim7 - Dm6 - G7,
@@ -593,7 +597,8 @@ const MUSIC_PRESETS = {
     chordDur: 4.8,
     arp: [ { v: 2, oct: 2 }, { v: 1, oct: 2 }, { v: 3, oct: 2 }, { v: 2, oct: 2 }, { v: 1, oct: 2 }, { v: 0, oct: 1 } ],
     arpType: 'triangle', arpStep: 0.3, arpDur: 0.22, arpVol: 0.18, arpRest: 0.15,
-    drums: 'k..h..s...hh..s.', drumStep: 0.3, drumVol: 0.35,
+    drums: 'k..h..s...hh..s.', drumStep: 0.3, drumVol: 0.45,
+    swing: 0.25, drumAccent: [1, 0.6, 0.85, 0.6], arpAccent: [1, 0.8, 0.9, 0.85, 0.7, 0.6], drumFill: 'k..h..s...ss.sss', fillEvery: 4,
   },
   // Operática / sinfónica: cuerdas de sierra en Do menor con sexta
   // napolitana (Cm - Ab - Db - G, el bajo cae en tritono Db->G), melodía
@@ -610,7 +615,8 @@ const MUSIC_PRESETS = {
     chordDur: 10.24,
     arp: [ { v: 3, oct: 2 }, { v: 2, oct: 2 }, { v: 1, oct: 4 }, { v: 3, oct: 2 }, { v: 0, oct: 4 }, { v: 2, oct: 2 } ],
     arpType: 'triangle', arpStep: 0.85, arpDur: 1.6, arpVol: 0.13, arpRest: 0.12,
-    drums: 'tH......t.....tt', drumStep: 0.32, drumVol: 0.5,
+    drums: 'tH......t.....tt', drumStep: 0.32, drumVol: 0.65,
+    drumAccent: [1, 0.65, 0.8, 0.65], drumFill: 't.t.t.t.tttttttt', fillEvery: 4,
   },
 };
 
@@ -704,12 +710,16 @@ export function createAmbientMusic(mood, volume) {
   // así arp y batería quedan encajados cuando sus pasos son múltiplos. Si el
   // tab se durmió, los pasos perdidos se saltan sin sonar (nada de ráfagas).
   const gridStart = ac.currentTime + 0.1;
-  const schedule = (stepSec, fn) => {
+  // `swing` (0..1, fracción del paso) retrasa los pasos IMPARES: la grilla
+  // sigue avanzando uniforme (los compases no se corren), solo el instante
+  // del golpe a contratiempo se atrasa. 0.18 ≈ lo-fi, 0.25 ≈ socarrón.
+  const schedule = (stepSec, fn, swing) => {
     let i = 0;
     let nextT = gridStart;
+    const sw = (swing || 0) * stepSec;
     timers.push(setInterval(() => {
       while (nextT < ac.currentTime) { nextT += stepSec; i++; }
-      while (nextT < ac.currentTime + 0.25) { fn(i, nextT); i++; nextT += stepSec; }
+      while (nextT < ac.currentTime + 0.25) { fn(i, nextT + (i % 2 ? sw : 0)); i++; nextT += stepSec; }
     }, 100));
   };
 
@@ -846,12 +856,15 @@ export function createAmbientMusic(mood, volume) {
       const ch = chords ? chords[chordIdx] : preset.freqs;
       const p = preset.arp[i % preset.arp.length];
       // Humanizacion: silencios ocasionales (arpRest, default 10%) y dinamica
-      // variable por nota, para que el patron no suene a secuenciador en bucle.
-      // La dinamica varia; el tiempo va clavado a la grilla.
+      // por nota. Con `arpAccent` (array ciclico) la dinamica es un mapa
+      // DETERMINISTA por paso (lo que hace sonar el patron "tocado" y no
+      // secuenciado) mas un ±10% humano; sin el, aleatoria como siempre.
+      // El tiempo va clavado a la grilla en ambos casos.
       if (Math.random() < (preset.arpRest ?? 0.1)) return;
-      const vel = 0.7 + Math.random() * 0.5;
+      const accA = preset.arpAccent;
+      const vel = accA ? accA[i % accA.length] * (0.9 + Math.random() * 0.2) : (0.7 + Math.random() * 0.5);
       pluck(arpBus, ch[p.v % ch.length] * (p.oct || 1), preset.arpType || 'sine', preset.arpDur || 0.6, (preset.arpVol || 0.06) * vel, 0.015, t0);
-    });
+    }, preset.swing);
   }
 
   // --- pulso grave suave ---
@@ -878,24 +891,39 @@ export function createAmbientMusic(mood, volume) {
 
   // --- batería por patrón: 'k' bombo, 's' caja, 'h' hat, 'H' hat abierto,
   // 't' tom, '.' silencio; un carácter por paso de drumStep segundos.
-  // Va seca al master (sin delay: la percusión con eco se emborrona) y se
-  // humaniza por golpe SOLO en velocidad (drumRest = fallos escasos); el
-  // tiempo lo pone el scheduler de lookahead, como en todas las capas.
+  // Va seca (sin delay: la percusión con eco se emborrona) y se humaniza
+  // por golpe SOLO en velocidad (drumRest = fallos escasos); el tiempo lo
+  // pone el scheduler de lookahead, como en todas las capas.
   if (preset.drums) {
+    // DIRECTO a `out`, saltándose el compresor: el drone lo mantiene
+    // enganchado todo el tiempo y le comía 6-9 dB de transitorio a cada
+    // golpe (por eso subir drumVol daba retornos decrecientes). Conserva
+    // el send a la reverb para sonar dentro de la misma sala.
     const drumBus = ac.createGain(); drumBus.gain.value = 1;
-    drumBus.connect(master);
+    drumBus.connect(out);
+    if (verb) drumBus.connect(verb);
     const pat = preset.drums;
+    const fill = preset.drumFill || null;
+    const fillEvery = preset.fillEvery || 4;
     schedule(preset.drumStep || 0.25, (i, t0) => {
-      const c = pat[i % pat.length];
-      if (c === '.') return;
+      // Fill: cada `fillEvery` compases, el compas ENTERO cambia al patron
+      // de relleno (`drumFill`, redoble/descarga) y vuelve: rompe la
+      // sensacion de loop infinito de la musica generativa.
+      const bar = Math.floor(i / pat.length);
+      const src = (fill && (bar + 1) % fillEvery === 0) ? fill : pat;
+      const c = src[i % src.length];
+      if (c === '.' || c == null) return;
       if (Math.random() < (preset.drumRest ?? 0.04)) return;
-      const vel = (preset.drumVol || 0.5) * (0.8 + Math.random() * 0.4);
+      // `drumAccent`: mapa ciclico de dinamica por paso (el 1 fuerte, los
+      // demas fantasma) + ±10% humano; sin el, aleatoria como antes.
+      const acc = preset.drumAccent;
+      const vel = (preset.drumVol || 0.5) * (acc ? acc[i % acc.length] * (0.9 + Math.random() * 0.2) : (0.8 + Math.random() * 0.4));
       if (c === 'k') kick(drumBus, vel, t0);
       else if (c === 's') snare(drumBus, vel * 0.85, t0);
-      else if (c === 'h') hat(drumBus, vel * 0.55, false, t0);
-      else if (c === 'H') hat(drumBus, vel * 0.55, true, t0);
+      else if (c === 'h') hat(drumBus, vel * 0.65, false, t0);
+      else if (c === 'H') hat(drumBus, vel * 0.65, true, t0);
       else if (c === 't') tom(drumBus, vel, t0);
-    });
+    }, preset.swing);
   }
 
   const targetVol = volume != null ? volume : preset.vol;

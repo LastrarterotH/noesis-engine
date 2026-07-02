@@ -2,27 +2,27 @@
 // World class: simulation state + tick + draw orchestration.
 // Owns entities, camera, scripts, fx, bubbles, labels, ambient, audio handles.
 
-import { mulberry32, ease, colorAlpha, mixColors, drawRichText, measureRichText, formatAPA } from './util.js?v=111';
-import { compileHooks } from './hooks.js?v=111';
-import { createAmbientSound } from './audio.js?v=111';
-import { SKY_PRESETS } from './sky-presets.js?v=111';
-import { computeSolidBox, drawProp } from './prop-draw.js?v=111';
-import { PROP_NATURAL_SCALE, PROP_SPRITES } from './prop-sprites.js?v=111';
-import { Draw } from './draw.js?v=111';
-import { initCamera, tickCamera } from './camera.js?v=111';
-import { makeAmbientParticle, tickAmbient, drawAmbient } from './ambient.js?v=111';
+import { mulberry32, ease, colorAlpha, mixColors, drawRichText, measureRichText, formatAPA } from './util.js?v=112';
+import { compileHooks } from './hooks.js?v=112';
+import { createAmbientSound } from './audio.js?v=112';
+import { SKY_PRESETS } from './sky-presets.js?v=112';
+import { computeSolidBox, drawProp } from './prop-draw.js?v=112';
+import { PROP_NATURAL_SCALE, PROP_SPRITES } from './prop-sprites.js?v=112';
+import { Draw } from './draw.js?v=112';
+import { initCamera, tickCamera } from './camera.js?v=112';
+import { makeAmbientParticle, tickAmbient, drawAmbient } from './ambient.js?v=112';
 import {
   runScript as _runScript, stopScripts as _stopScripts, tickScripts,
   evalScriptExpr, processScript, execScriptStep,
-} from './scripts.js?v=111';
-import { compileForm } from './forms.js?v=111';
-import { drawFloor } from './floor.js?v=111';
-import { tickAnimatedProps } from './animated-props.js?v=111';
-import { initLearner, touchLearner, tickLearner } from './learner.js?v=111';
-import { handleClick, togglePropInteraction } from './interaction.js?v=111';
+} from './scripts.js?v=112';
+import { compileForm } from './forms.js?v=112';
+import { drawFloor } from './floor.js?v=112';
+import { tickAnimatedProps } from './animated-props.js?v=112';
+import { initLearner, touchLearner, tickLearner } from './learner.js?v=112';
+import { handleClick, togglePropInteraction } from './interaction.js?v=112';
 import {
   createFxApi, spawnBubble, spawnParticles, tickFx, positionBubbles, drawFx,
-} from './fx.js?v=111';
+} from './fx.js?v=112';
 
 // Props que emiten luz solos cuando hay `ambient.darkness` (opt-out con
 // `light: false` en el prop). `dy` ubica la fuente en celdas del sprite
@@ -429,6 +429,12 @@ export class World {
     if (this._dialogues) this._dialogues.length = 0;
     if (this._fx) this._fx.length = 0;
     if (this._tweens) this._tweens.length = 0;
+    // La música (si el usuario la activó) sigue sonando en el replay, pero
+    // vuelve a su volumen base: un step `music` del guion pudo dejarla
+    // agachada o en silencio al terminar la corrida anterior.
+    if (this._ambientMusic && this._ambientMusic.baseVolume != null) {
+      this._ambientMusic.setVolume(this._ambientMusic.baseVolume, 0.8);
+    }
     this.entities = [];
     this.state = {};
     this.t = 0;

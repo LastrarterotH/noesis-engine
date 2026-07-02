@@ -7,8 +7,8 @@
 // _positionBubbles/_drawFx as thin wrappers. The `fx` getter memoizes this api
 // on world._fxApi, so it is built once per World (not rebuilt every access).
 
-import { tone, sweep, createAmbientSound, createAmbientMusic, audio } from './audio.js?v=111';
-import { richToHtml } from './util.js?v=111';
+import { tone, sweep, createAmbientSound, createAmbientMusic, audio } from './audio.js?v=112';
+import { richToHtml } from './util.js?v=112';
 
 export function createFxApi(world) {
   const W = world;
@@ -243,6 +243,20 @@ export function createFxApi(world) {
   api.ambientMusicStop = (opts = {}) => {
     const fadeOut = opts.fadeOut ?? 1.2;
     if (W._ambientMusic) { W._ambientMusic.stop(fadeOut); W._ambientMusic = null; }
+  };
+  // Música reactiva al guion (step `music`). `frac` es FRACCIÓN del volumen
+  // base del mood (1 = normal, 0 = silencio, tope 1.5): el autor de la
+  // escena no necesita conocer la mezcla interna. Si el usuario no activó ♪
+  // no hay handle y ambas son no-ops silenciosos: la escena corre igual.
+  api.ambientMusicVolume = (frac, dur) => {
+    const m = W._ambientMusic;
+    if (!m || m.baseVolume == null) return;
+    const f = Math.max(0, Math.min(1.5, frac));
+    m.setVolume(m.baseVolume * f, dur);
+  };
+  api.ambientMusicStinger = () => {
+    const m = W._ambientMusic;
+    if (m && m.stinger) m.stinger();
   };
   api.cameraShake = (intensity = 8, duration = 0.4) => {
     const cam = W.camera;

@@ -144,6 +144,17 @@ export function execScriptStep(world, step, sc) {
   if (step.reinforce) fx.reinforce(world.byId(step.reinforce));
   if (step.tone != null) fx.tone(step.tone, step.dur ?? 0.4, step.opts || {});
   if (step.sweep) fx.sweep(step.sweep[0], step.sweep[1], step.dur ?? 0.3, step.opts || {});
+  if (step.music != null) {
+    // Música reactiva al guion: { volume, duration } agacha o levanta la
+    // música ambiental (volume = fracción del volumen base del mood: 1
+    // normal, 0 silencio) y "stinger" dispara un golpe musical cuantizado
+    // al siguiente tiempo fuerte de la grilla. Si el usuario no activó ♪,
+    // ambos son no-ops: la escena corre idéntica sin música.
+    if (step.music === 'stinger') fx.ambientMusicStinger();
+    else if (typeof step.music === 'object' && step.music.volume != null) {
+      fx.ambientMusicVolume(step.music.volume, step.music.duration ?? 1.2);
+    }
+  }
   if (step.particles) fx.particles(step.particles.x, step.particles.y, step.particles);
   if (step.floatNumber) fx.floatNumber(step.floatNumber.x, step.floatNumber.y, step.floatNumber.text, step.floatNumber);
   // --- Pasos declarativos (escenas sin JS): reacciones, camara, caption, meter ---

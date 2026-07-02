@@ -174,6 +174,7 @@ Step keys (one primary action per step; combine multiple keys if they should fir
 - `exclaim: <id>` / `surprise: <id>` / `wonder: <id>` / `flash: <id>` / `reinforce: <id>`.
 - `mood: <id>, value: 'happy', duration?: 1.4`.
 - `tone: <freq>, dur?, opts?` / `sweep: [from, to], dur?, opts?`.
+- `music: { volume: <0..1.5>, duration?: 1.2 }` — música reactiva al guion: agacha o levanta la música ambiental con un fade. `volume` es FRACCIÓN del volumen base del mood (1 = normal, 0 = silencio; el autor no necesita conocer la mezcla). Usos: bajar a ~0.35 antes de un caption fuerte, silencio súbito (`volume: 0, duration: 0.2`) en el golpe más duro, crecida leve (1.2) para la tesis final. `music: "stinger"` dispara un golpe musical (acorde del compás actual + timbal) CUANTIZADO al siguiente tiempo fuerte de la grilla: el momento de revelación aterriza en el compás. Requiere `meta.music` declarado (sin ♪ activo es no-op: la escena corre idéntica); el replay restaura el volumen base solo. Ver escena 11 como fixture.
 - `particles: { x, y, color, count, ... }` / `floatNumber: { x, y, text }`.
 - `set: { key: value }` — assign to `world.state[key]`.
 - `add: { key: delta }` — additive (numbers only).

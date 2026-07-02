@@ -10,10 +10,10 @@
 // hooks) o se escanean del código fuente del motor (buildVocab recibe un
 // lector de fuentes), así el validador no se desincroniza al crecer el motor.
 
-import { PROP_SPRITES } from './prop-sprites.js?v=111';
-import { SKY_PRESETS } from './sky-presets.js?v=111';
-import { HOOK_NAMES, HOOK_ARGS } from './hooks.js?v=111';
-import { compileForm, FORM_TYPES } from './forms.js?v=111';
+import { PROP_SPRITES } from './prop-sprites.js?v=112';
+import { SKY_PRESETS } from './sky-presets.js?v=112';
+import { HOOK_NAMES, HOOK_ARGS } from './hooks.js?v=112';
+import { compileForm, FORM_TYPES } from './forms.js?v=112';
 
 // Fuentes del motor que buildVocab escanea con regex (enums de despachos
 // if/else que no se exportan como datos).
@@ -96,7 +96,7 @@ const STEP_KEYS = [
   'celebrate', 'cry', 'thinking', 'appear', 'vanish', 'camera', 'caption', 'meter',
   'tween', 'chart', 'show', 'hide', 'alpha', 'series', 'reveal',
   'focus', 'off', 'radius', 'color', 'style', 'scene', 'move', 'weather', 'intensity',
-  'showLabel', 'hideLabel',
+  'showLabel', 'hideLabel', 'music',
   'set', 'add', 'clamp', 'do', 'call', 'runScript', 'runScriptOpts',
 ];
 const STEP_ENTITY_REFS = ['walk', 'stop', 'say', 'think', 'exclaim', 'surprise', 'wonder', 'mood', 'flash', 'reinforce', 'celebrate', 'cry', 'thinking', 'appear', 'vanish'];
@@ -567,6 +567,29 @@ export function createValidator(vocab) {
         else ctx.err(`${p}.path`, msg);
       }
     }
+    if (s.music != null) {
+      const m = s.music;
+      if (m === 'stinger') {
+        // ok: golpe musical cuantizado al siguiente tiempo fuerte de la grilla
+      } else if (m && typeof m === 'object' && !Array.isArray(m)) {
+        for (const k of Object.keys(m)) {
+          if (!['volume', 'duration'].includes(k)) {
+            ctx.err(`${p}.music.${k}`, `clave desconocida en music. Válidas: volume (0..1.5, fracción del volumen base del mood), duration (segundos del fade, default 1.2).`);
+          }
+        }
+        if (typeof m.volume !== 'number' || m.volume < 0 || m.volume > 1.5) {
+          ctx.err(`${p}.music.volume`, 'volume es una FRACCIÓN del volumen base del mood: número entre 0 (silencio) y 1.5 (1 = volumen normal).');
+        }
+        if (m.duration != null && (typeof m.duration !== 'number' || m.duration <= 0)) {
+          ctx.err(`${p}.music.duration`, 'duration del fade en segundos: número positivo (default 1.2).');
+        }
+      } else {
+        ctx.err(`${p}.music`, 'music es { "volume": 0..1.5, "duration"?: segundos } (agacha o levanta la música ambiental) o el string "stinger" (golpe musical cuantizado a la grilla).');
+      }
+      if (!scope.hasMusic) {
+        ctx.warn(`${p}.music`, 'la escena no declara meta.music, así que este step será un no-op. Declara el mood en meta.music para que tenga efecto.');
+      }
+    }
     for (const k of ['say', 'think']) {
       if (s[k] != null) {
         if (typeof s.text !== 'string' || !s.text.trim()) ctx.err(`${p}.text`, `${k} necesita "text" con el diálogo.`);
@@ -845,6 +868,7 @@ export function createValidator(vocab) {
         setIds: new Set((Array.isArray(config.sets) ? config.sets : []).map(st => st?.id).filter(Boolean)),
         labelIds: new Set((config.labels || []).map(l => l?.id).filter(Boolean)),
         hasHooks: Object.values(config.hooks || {}).some(v => typeof v === 'string' && v.trim()),
+        hasMusic: typeof config.meta?.music === 'string' && config.meta.music.trim() !== '',
       };
       vSteps(ctx, steps, 'form', scope);
     }
@@ -938,6 +962,7 @@ export function createValidator(vocab) {
         setIds: new Set((Array.isArray(config.sets) ? config.sets : []).map(st => st?.id).filter(Boolean)),
         labelIds: new Set((config.labels || []).map(l => l?.id).filter(Boolean)),
         hasHooks: Object.values(config.hooks || {}).some(v => typeof v === 'string' && v.trim()),
+        hasMusic: typeof config.meta?.music === 'string' && config.meta.music.trim() !== '',
       };
       vSteps(ctx, config.script, 'script', scope);
       if (Array.isArray(config.script) && config.script.some(s => s && s.loop === true && s.path == null)) {

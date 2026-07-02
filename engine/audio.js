@@ -1019,12 +1019,43 @@ export function createAmbientMusic(mood, volume) {
 
   const targetVol = volume != null ? volume : preset.vol;
   out.gain.linearRampToValueAtTime(targetVol, ac.currentTime + 2.2);
+
+  // Bus del stinger: como la batería, va directo a `out` (el punch no pasa
+  // por el compresor) y manda su cola a la reverb de la sala.
+  const stingBus = ac.createGain();
+  stingBus.gain.value = 1;
+  stingBus.connect(out);
+  if (verb) stingBus.connect(verb);
+  cleanups.push(() => { try { stingBus.disconnect(); } catch {} });
+
   return {
     mood,
-    setVolume(v) {
+    // Volumen base del mood: la referencia para los steps `music` del guion
+    // (que hablan en fracciones de este valor) y para el reset del replay.
+    baseVolume: targetVol,
+    setVolume(v, dur = 0.3) {
       const now = ac.currentTime;
       out.gain.cancelScheduledValues(now);
-      out.gain.linearRampToValueAtTime(v, now + 0.3);
+      out.gain.setValueAtTime(out.gain.value, now);
+      out.gain.linearRampToValueAtTime(v, now + Math.max(0.05, dur));
+    },
+    // Stinger: golpe musical puntual (el acorde del compás actual como stab
+    // + un golpe grave de timbal), CUANTIZADO al siguiente tiempo fuerte de
+    // la grilla compartida: el guion lo dispara cuando quiere y el golpe
+    // aterriza en el compás. Un tiempo fuerte = 4 pasos de batería (la negra
+    // de los patrones de 16avos) o 2 pasos de arpegio si el mood no lleva
+    // batería.
+    stinger() {
+      const ch = chords ? chords[chordIdx] : preset.freqs;
+      if (!ch) return;
+      const beat = preset.drums ? (preset.drumStep || 0.25) * 4 : (preset.arpStep || 0.55) * 2;
+      const now = ac.currentTime + 0.03;
+      const t0 = gridStart + Math.max(0, Math.ceil((now - gridStart) / beat)) * beat;
+      const type = preset.type === 'sine' ? 'triangle' : preset.type;
+      for (let i = 0; i < ch.length; i++) {
+        pluck(master, ch[i], type, 1.5, 0.6 / ch.length, 0.008, t0);
+      }
+      tom(stingBus, 0.85, t0);
     },
     // A/B en vivo del procesamiento nuevo (lo usa tools/music-test.html):
     // false puentea compresor y reverb (master directo a out) y aplana el

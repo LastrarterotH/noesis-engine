@@ -28,8 +28,8 @@
  *   util.js           color, RNG, html, anchor, APA helpers
  */
 
-import { NoesisScene } from './element.js?v=99';
-import { World } from './world.js?v=99';
+import { NoesisScene } from './element.js?v=107';
+import { World } from './world.js?v=107';
 
 if (!customElements.get('noesis-scene')) {
   customElements.define('noesis-scene', NoesisScene);

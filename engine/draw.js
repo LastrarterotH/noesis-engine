@@ -2,9 +2,9 @@
 // Pixel-art draw primitives: learner blob, eye geometry, mood-routing,
 // accessories overlay. Instantiated once per World.
 
-import { mixColors } from './util.js?v=99';
-import { drawMoodOverlays } from './mood.js?v=99';
-import { drawAccessories } from './accessories.js?v=99';
+import { mixColors } from './util.js?v=107';
+import { drawMoodOverlays } from './mood.js?v=107';
+import { drawAccessories } from './accessories.js?v=107';
 
 export class Draw {
   constructor(world) { this.world = world; }

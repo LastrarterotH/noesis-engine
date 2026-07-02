@@ -22,11 +22,12 @@
 </style>
 </head><body><div class="page">
 <h1>noesis<span>.</span> audición de moods</h1>
-<p>Herramienta interna: un click arranca el mood (y detiene el anterior). Cada uno debe sentirse vivo a los 30 segundos: acordes que avanzan, arpegio que respira, pulso si corresponde. Si algo suena a drone plano, es un bug de composición.</p>
+<p>Herramienta interna: un click arranca el mood (y detiene el anterior). Cada uno debe sentirse vivo a los 30 segundos: acordes que avanzan, arpegio que respira, pulso si corresponde. Si algo suena a drone plano, es un bug de composición. Módulo cargado: <code>audio.js ?v=107</code> (si este número no coincide con el último bump, estás en una pestaña vieja).</p>
 <div class="grid" id="grid"></div>
 <button class="stop" id="stop">■ Detener</button>
+<label style="display:block;margin-top:14px;font-size:13px;color:#9aa3bd;cursor:pointer"><input type="checkbox" id="fx" checked> FX nuevos (reverb de sala + compresor + unison): apágalo y préndelo con un mood sonando para el A/B</label>
 <script type="module">
-  import { createAmbientMusic, audioUnlock } from '../engine/audio.js?v=63';
+  import { createAmbientMusic, audioUnlock } from '../engine/audio.js?v=107';
   const MOODS = [
     ['cosmic', 'espacial, sin latido'],
     ['melancholic', 'tristeza serena, latido lento'],
@@ -36,10 +37,24 @@
     ['pedagogical', 'neutro y discreto'],
     ['electronic', 'sintético con groove'],
     ['warm', 'cálida que crece (la referencia)'],
+    ['joyful', 'festiva y brillante, toda mayor'],
+    ['tension', 'suspenso, latido cardíaco, tic que se acerca'],
+    ['mystery', 'enigma lidio que no resuelve, sin pulso'],
+    ['lullaby', 'nana de caja de música, vals'],
+    ['solemn', 'himno coral, campana que dobla'],
+    ['urgent', 'cuenta regresiva, ostinato y tic-tac'],
+    ['march', 'marcha con caja y bombo'],
+    ['tribal', 'toms rituales, quintas dóricas'],
+    ['groove', 'beat sereno con hats, pad sine'],
+    ['rock', 'riff saw en menor armónica, doble bombo'],
+    ['mischief', 'burlona: sneak cromático y pizzicato'],
+    ['symphonic', 'operática: cuerdas, napolitana y timbales'],
   ];
   const grid = document.getElementById('grid');
+  const fxBox = document.getElementById('fx');
   let current = null;
   let activeBtn = null;
+  fxBox.addEventListener('change', () => { if (current && current.setFx) current.setFx(fxBox.checked); });
   for (const [mood, desc] of MOODS) {
     const b = document.createElement('button');
     b.innerHTML = `${mood}<small>${desc}</small>`;
@@ -48,6 +63,7 @@
       if (current) current.stop(0.8);
       if (activeBtn) activeBtn.classList.remove('active');
       current = createAmbientMusic(mood);
+      if (current && current.setFx && !fxBox.checked) current.setFx(false);
       activeBtn = b;
       b.classList.add('active');
     });

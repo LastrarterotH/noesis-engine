@@ -10,10 +10,10 @@
 // hooks) o se escanean del código fuente del motor (buildVocab recibe un
 // lector de fuentes), así el validador no se desincroniza al crecer el motor.
 
-import { PROP_SPRITES } from './prop-sprites.js?v=112';
-import { SKY_PRESETS } from './sky-presets.js?v=112';
-import { HOOK_NAMES, HOOK_ARGS } from './hooks.js?v=112';
-import { compileForm, FORM_TYPES } from './forms.js?v=112';
+import { PROP_SPRITES } from './prop-sprites.js?v=115';
+import { SKY_PRESETS } from './sky-presets.js?v=115';
+import { HOOK_NAMES, HOOK_ARGS } from './hooks.js?v=115';
+import { compileForm, FORM_TYPES } from './forms.js?v=115';
 
 // Fuentes del motor que buildVocab escanea con regex (enums de despachos
 // if/else que no se exportan como datos).
@@ -573,18 +573,24 @@ export function createValidator(vocab) {
         // ok: golpe musical cuantizado al siguiente tiempo fuerte de la grilla
       } else if (m && typeof m === 'object' && !Array.isArray(m)) {
         for (const k of Object.keys(m)) {
-          if (!['volume', 'duration'].includes(k)) {
-            ctx.err(`${p}.music.${k}`, `clave desconocida en music. Válidas: volume (0..1.5, fracción del volumen base del mood), duration (segundos del fade, default 1.2).`);
+          if (!['volume', 'duration', 'mood'].includes(k)) {
+            ctx.err(`${p}.music.${k}`, `clave desconocida en music. Válidas: volume (0..1.5, fracción del volumen base del mood), mood (cambio de mood con crossfade), duration (segundos del fade).`);
           }
         }
-        if (typeof m.volume !== 'number' || m.volume < 0 || m.volume > 1.5) {
+        if (m.mood != null && m.volume != null) {
+          ctx.err(`${p}.music`, 'mood y volume no van en el mismo step: el cambio de mood arranca en el volumen base del nuevo mood; agacha o levanta con un step aparte.');
+        } else if (m.mood != null) {
+          if (typeof m.mood !== 'string' || !MUSIC_MOODS.includes(m.mood)) {
+            ctx.err(`${p}.music.mood`, `"${m.mood}" no es un mood de música. Usa uno de: ${list(MUSIC_MOODS)}.`);
+          }
+        } else if (typeof m.volume !== 'number' || m.volume < 0 || m.volume > 1.5) {
           ctx.err(`${p}.music.volume`, 'volume es una FRACCIÓN del volumen base del mood: número entre 0 (silencio) y 1.5 (1 = volumen normal).');
         }
         if (m.duration != null && (typeof m.duration !== 'number' || m.duration <= 0)) {
-          ctx.err(`${p}.music.duration`, 'duration del fade en segundos: número positivo (default 1.2).');
+          ctx.err(`${p}.music.duration`, 'duration del fade en segundos: número positivo.');
         }
       } else {
-        ctx.err(`${p}.music`, 'music es { "volume": 0..1.5, "duration"?: segundos } (agacha o levanta la música ambiental) o el string "stinger" (golpe musical cuantizado a la grilla).');
+        ctx.err(`${p}.music`, 'music es { "volume": 0..1.5 } (fracción del volumen base), { "mood": "<mood>" } (cambio con crossfade) o el string "stinger" (golpe cuantizado a la grilla); duration opcional en los objetos.');
       }
       if (!scope.hasMusic) {
         ctx.warn(`${p}.music`, 'la escena no declara meta.music, así que este step será un no-op. Declara el mood en meta.music para que tenga efecto.');
@@ -967,6 +973,34 @@ export function createValidator(vocab) {
       vSteps(ctx, config.script, 'script', scope);
       if (Array.isArray(config.script) && config.script.some(s => s && s.loop === true && s.path == null)) {
         ctx.warn('script', 'el guion tiene "loop": true: la escena nunca termina, así que el motor nunca mostrará "Ver nuevamente". Quita el loop salvo que la escena sea deliberadamente ambiental.');
+      }
+      // Lint de dramaturgia musical: recorre el guion acumulando `wait`.
+      // No valida vocabulario (eso ya pasó en vStep) sino calidad de uso:
+      // stingers en ráfaga pierden el peso, y una música agachada que
+      // nunca se restaura deja el cierre de la escena apagado.
+      if (scope.hasMusic && Array.isArray(config.script)) {
+        let t = 0;
+        let lastStingerT = null;
+        let lastVol = null;
+        let lastVolStep = -1;
+        config.script.forEach((s, i) => {
+          if (s && typeof s.wait === 'number') t += s.wait;
+          if (!s || s.music == null) return;
+          if (s.music === 'stinger') {
+            if (lastStingerT != null && t - lastStingerT < 3) {
+              ctx.warn(`script[${i}].music`, `dos stingers a ${(t - lastStingerT).toFixed(1)} s uno del otro: en ráfaga pierden todo el peso dramático. Sepáralos al menos 3 s o deja uno solo.`);
+            }
+            lastStingerT = t;
+          } else if (typeof s.music === 'object' && s.music.mood != null) {
+            lastVol = null; // el mood nuevo arranca en su volumen base
+          } else if (typeof s.music === 'object' && typeof s.music.volume === 'number') {
+            lastVol = s.music.volume;
+            lastVolStep = i;
+          }
+        });
+        if (lastVol != null && lastVol < 0.9) {
+          ctx.warn(`script[${lastVolStep}].music`, `el guion deja la música agachada (volume ${lastVol}) y no la restaura: el cierre de la escena queda apagado (el replay sí vuelve al volumen base). Termina cerca de volume 1 salvo intención deliberada.`);
+        }
       }
     }
     if (config.form != null) vForm(ctx, config);

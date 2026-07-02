@@ -808,6 +808,7 @@ export function createAmbientMusic(mood, volume) {
   const hat = (dest, vel, open, t0) => {
     const n = noiseSrc();
     const hp = ac.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = 6500;
+    hp.Q.value = -6; // sin pico de resonancia (Q de highpass también va en dB)
     const g = ac.createGain();
     const dur = open ? 0.22 : 0.05;
     g.gain.setValueAtTime(vel, t0);
@@ -835,21 +836,34 @@ export function createAmbientMusic(mood, volume) {
     const t0 = when != null ? when : ac.currentTime + 0.02;
     const exc = noiseSrc();
     const excG = ac.createGain();
-    excG.gain.setValueAtTime(peak * 2, t0);
+    excG.gain.setValueAtTime(peak * 1.4, t0);
     excG.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.015);
     const dl = ac.createDelay(1);
     dl.delayTime.value = 1 / freq;
     const damp = ac.createBiquadFilter();
     damp.type = 'lowpass';
-    damp.frequency.value = Math.min(freq * 6, 9000);
-    const fb = ac.createGain(); fb.gain.value = 0.965;
+    // Amortiguación cálida (3x la fundamental): con 6x la cuerda salía
+    // metálica y chillona en el registro agudo.
+    damp.frequency.value = Math.min(freq * 3, 6500);
+    // CRÍTICO: en Web Audio el Q de un lowpass se interpreta EN DECIBELIOS
+    // y su default es +1 dB: un pico de resonancia (~x1.12) cerca del corte.
+    // Dentro de un lazo con feedback 0.985 eso da ganancia > 1 en la
+    // resonancia: el armónico de la nota más cercano al corte CRECE en vez
+    // de apagarse y la cuerda se auto-oscila en un chillido agudo. Q = -6
+    // aplana el pico y garantiza lazo estable (ganancia < 1 en todo el
+    // espectro).
+    damp.Q.value = -6;
+    const fb = ac.createGain(); fb.gain.value = 0.985;
     exc.connect(excG); excG.connect(dl);
     dl.connect(damp); damp.connect(fb); fb.connect(dl);
     const tail = ac.createGain();
     tail.gain.setValueAtTime(1, t0);
     tail.gain.setValueAtTime(1, t0 + Math.max(dur - 0.25, 0.05));
     tail.gain.linearRampToValueAtTime(0, t0 + dur);
-    dl.connect(tail); tail.connect(dest);
+    // La salida se toma DESPUÉS del lowpass: tapada desde `dl` directo, la
+    // ráfaga de excitación salía CRUDA en el primer paso (un chasquido de
+    // ruido blanco agudo en cada nota, amplificado por el eco).
+    damp.connect(tail); tail.connect(dest);
     exc.start(t0); exc.stop(t0 + 0.03);
     // El feedback resuena solo: desarmar el lazo cuando la nota terminó.
     setTimeout(() => {
@@ -1011,8 +1025,8 @@ export function createAmbientMusic(mood, volume) {
       const vel = (preset.drumVol || 0.5) * (acc ? acc[i % acc.length] * (0.9 + Math.random() * 0.2) : (0.8 + Math.random() * 0.4));
       if (c === 'k') kick(drumBus, vel, t0);
       else if (c === 's') snare(snareBus, vel * 0.85, t0);
-      else if (c === 'h') hat(hatBus, vel * 0.65, false, t0);
-      else if (c === 'H') hat(hatBus, vel * 0.65, true, t0);
+      else if (c === 'h') hat(hatBus, vel * 0.5, false, t0);
+      else if (c === 'H') hat(hatBus, vel * 0.5, true, t0);
       else if (c === 't') tom(drumBus, vel, t0);
     }, preset.swing);
   }

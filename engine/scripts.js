@@ -147,12 +147,15 @@ export function execScriptStep(world, step, sc) {
   if (step.music != null) {
     // Música reactiva al guion: { volume, duration } agacha o levanta la
     // música ambiental (volume = fracción del volumen base del mood: 1
-    // normal, 0 silencio) y "stinger" dispara un golpe musical cuantizado
-    // al siguiente tiempo fuerte de la grilla. Si el usuario no activó ♪,
-    // ambos son no-ops: la escena corre idéntica sin música.
+    // normal, 0 silencio); { mood, duration } cambia el mood con crossfade
+    // (escenas multi-acto: el replay vuelve al de meta.music); "stinger"
+    // dispara un golpe musical cuantizado al siguiente tiempo fuerte de la
+    // grilla. Si el usuario no activó ♪, todos son no-ops: la escena corre
+    // idéntica sin música.
     if (step.music === 'stinger') fx.ambientMusicStinger();
-    else if (typeof step.music === 'object' && step.music.volume != null) {
-      fx.ambientMusicVolume(step.music.volume, step.music.duration ?? 1.2);
+    else if (typeof step.music === 'object') {
+      if (step.music.mood) fx.ambientMusicMood(step.music.mood, step.music.duration ?? 1.5);
+      else if (step.music.volume != null) fx.ambientMusicVolume(step.music.volume, step.music.duration ?? 1.2);
     }
   }
   if (step.particles) fx.particles(step.particles.x, step.particles.y, step.particles);

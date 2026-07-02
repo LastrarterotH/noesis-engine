@@ -2,8 +2,8 @@
 // Per-prop draw functions + dispatch (drawProp). Animated/bespoke props
 // have their own renderer; static props fall through to PROP_SPRITES.
 
-import { PROP_SPRITES } from './prop-sprites.js?v=112';
-import { mixColors } from './util.js?v=112';
+import { PROP_SPRITES } from './prop-sprites.js?v=115';
+import { mixColors } from './util.js?v=115';
 
 // Compute a default collision box for a solid prop: the bottom 60% of the
 // sprite, centered on prop.x. Authors can override with `solidBox: {x,y,w,h}`

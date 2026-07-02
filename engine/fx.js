@@ -7,8 +7,8 @@
 // _positionBubbles/_drawFx as thin wrappers. The `fx` getter memoizes this api
 // on world._fxApi, so it is built once per World (not rebuilt every access).
 
-import { tone, sweep, createAmbientSound, createAmbientMusic, audio } from './audio.js?v=112';
-import { richToHtml } from './util.js?v=112';
+import { tone, sweep, createAmbientSound, createAmbientMusic, audio } from './audio.js?v=115';
+import { richToHtml } from './util.js?v=115';
 
 export function createFxApi(world) {
   const W = world;
@@ -257,6 +257,17 @@ export function createFxApi(world) {
   api.ambientMusicStinger = () => {
     const m = W._ambientMusic;
     if (m && m.stinger) m.stinger();
+  };
+  // Cambio de mood a MITAD de escena con crossfade (step music.mood): el
+  // mood viejo se apaga en `dur` segundos mientras el nuevo entra con su
+  // ramp propio (~2.2 s). Solo actúa si la música ya suena (el usuario
+  // decide con ♪); el reset del replay vuelve al mood de meta.music.
+  api.ambientMusicMood = (mood, dur = 1.5) => {
+    const cur = W._ambientMusic;
+    if (!cur || cur.mood === mood) return;
+    cur.stop(dur);
+    const m = createAmbientMusic(mood);
+    if (m) W._ambientMusic = m;
   };
   api.cameraShake = (intensity = 8, duration = 0.4) => {
     const cam = W.camera;

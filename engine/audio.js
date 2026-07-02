@@ -316,6 +316,7 @@ const MUSIC_PRESETS = {
   },
   // Campo y manana: C - F - Am - G, arpegio saltarin, pulso ligero.
   pastoral: {
+    arpTimbre: 'string',
     space: 0.3,
     type: 'sine', vol: 0.04, beatRate: 0.05,
     chords: [
@@ -331,6 +332,7 @@ const MUSIC_PRESETS = {
   },
   // Gesta en menor: Dm - Bb - F - C grave, pulso marcado, capa que crece.
   epic: {
+    layersIn: { pulse: 7 },
     space: 0.5,
     type: 'sine', vol: 0.055, beatRate: 0.07,
     chords: [
@@ -378,6 +380,7 @@ const MUSIC_PRESETS = {
   // Sintetico con groove: Am - G - F - G, secuencia rapida, pulso firme,
   // capa que sube. El mas ritmico del catalogo.
   electronic: {
+    arpFilter: { start: 8, end: 1.5, q: 6 },
     space: 0.12,
     type: 'square', vol: 0.025, beatRate: 0.10,
     chords: [
@@ -461,6 +464,7 @@ const MUSIC_PRESETS = {
   // Nana de caja de música: C - Am - F - G7, púas agudas que resuenan en
   // patrón de vals, mecer de cuna grave. Para cuentos y cierres suaves.
   lullaby: {
+    arpTimbre: 'string',
     space: 0.35,
     type: 'sine', vol: 0.045, beatRate: 0.04,
     chords: [
@@ -529,6 +533,7 @@ const MUSIC_PRESETS = {
   // toms graves en patrón ancestral y hats como semillas. El pariente rítmico
   // de ancient. Para ritos, orígenes, lo comunitario.
   tribal: {
+    layersIn: { arp: 9.6 },
     space: 0.45,
     type: 'triangle', vol: 0.045, beatRate: 0.05,
     chords: [
@@ -547,6 +552,7 @@ const MUSIC_PRESETS = {
   // caja relajada sobre un pad sine. Para tecnología cotidiana, datos,
   // procesos modernos que fluyen.
   groove: {
+    arpFilter: { start: 5, end: 2, q: 2 }, layersIn: { drums: 3.84 },
     space: 0.15,
     type: 'sine', vol: 0.045, beatRate: 0.07,
     chords: [
@@ -567,6 +573,7 @@ const MUSIC_PRESETS = {
   // (0.16) y la batería (0.16) comparten grilla: van trabados. El acorde
   // dura 5.12 s = exactamente 2 compases del patrón.
   rock: {
+    arpFilter: { start: 5, end: 1.2, q: 4 }, layersIn: { drums: 5.12 },
     space: 0.18, detune: 10,
     type: 'sawtooth', vol: 0.035, beatRate: 0.08,
     chords: [
@@ -586,6 +593,7 @@ const MUSIC_PRESETS = {
   // pizzicato staccato con huecos cómplices y el arpegio citando la burla
   // infantil (sol - mi - la - sol - mi). Batería en puntas de pie.
   mischief: {
+    arpFilter: { start: 4, end: 2, q: 2 },
     space: 0.12,
     type: 'triangle', vol: 0.035, beatRate: 0.07,
     chords: [
@@ -604,6 +612,7 @@ const MUSIC_PRESETS = {
   // napolitana (Cm - Ab - Db - G, el bajo cae en tritono Db->G), melodía
   // legato que planea con saltos amplios y timbales con redoble al cierre.
   symphonic: {
+    layersIn: { arp: 5.12, drums: 10.24 },
     space: 0.7, detune: 12,
     type: 'sawtooth', vol: 0.03, beatRate: 0.05,
     chords: [
@@ -691,11 +700,25 @@ export function createAmbientMusic(mood, volume) {
 
   // Nota corta con envolvente de pluck hacia un bus destino. `when` opcional:
   // tiempo exacto en el reloj del AudioContext (lo pasan las capas rítmicas).
-  const pluck = (dest, freq, type, dur, peak, attack, when) => {
+  // `filt` opcional = envolvente de filtro (síntesis sustractiva de verdad):
+  // un lowpass abre brillante al ataque y se cierra hacia el final de la
+  // nota, como un instrumento físico. { start, end } en múltiplos de la
+  // fundamental, `q` = resonancia (alta ≈ acid).
+  const pluck = (dest, freq, type, dur, peak, attack, when, filt) => {
     const o = ac.createOscillator(); o.type = type; o.frequency.value = freq;
     const g = ac.createGain();
-    o.connect(g); g.connect(dest);
     const t0 = when != null ? when : ac.currentTime + 0.02;
+    if (filt) {
+      const lp = ac.createBiquadFilter();
+      lp.type = 'lowpass';
+      lp.Q.value = filt.q || 1;
+      lp.frequency.setValueAtTime(Math.min(freq * (filt.start || 6), 12000), t0);
+      lp.frequency.exponentialRampToValueAtTime(Math.max(freq * (filt.end || 1.2), 80), t0 + dur);
+      o.connect(lp); lp.connect(g);
+    } else {
+      o.connect(g);
+    }
+    g.connect(dest);
     g.gain.setValueAtTime(0.0001, t0);
     g.gain.linearRampToValueAtTime(peak, t0 + (attack || 0.02));
     g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
@@ -721,6 +744,19 @@ export function createAmbientMusic(mood, volume) {
       while (nextT < ac.currentTime) { nextT += stepSec; i++; }
       while (nextT < ac.currentTime + 0.25) { fn(i, nextT + (i % 2 ? sw : 0)); i++; nextT += stepSec; }
     }, 100));
+  };
+
+  // Entradas escalonadas: `preset.layersIn = { arp: 8, pulse: 5, drums: 16 }`
+  // (segundos desde el arranque). El bus de la capa abre con un fade de
+  // 1.5 s en su momento; el scheduler corre desde el inicio igual, así la
+  // capa entra EN FASE con la grilla (solo estaba muda). El drone siempre
+  // abre de inmediato: es el que recibe.
+  const layerIn = (bus, name) => {
+    const at = preset.layersIn && preset.layersIn[name];
+    if (!at) return;
+    bus.gain.setValueAtTime(0.0001, ac.currentTime);
+    bus.gain.setValueAtTime(0.0001, ac.currentTime + at);
+    bus.gain.linearRampToValueAtTime(1, ac.currentTime + at + 1.5);
   };
 
   // --- kit de percusión sintetizada (sin archivos, como todo lo demás) ---
@@ -790,6 +826,37 @@ export function createAmbientMusic(mood, volume) {
     o.start(t0); o.stop(t0 + 0.4);
   };
 
+  // Cuerda pulsada Karplus-Strong: una ráfaga de ruido de 15 ms excita una
+  // línea de retardo afinada al período de la nota, con un lowpass en el
+  // feedback que va apagando los armónicos como la cuerda real de un arpa
+  // o guitarra. Modelo físico puro, cero muestras. La usa el arp cuando el
+  // preset declara `arpTimbre: 'string'`.
+  const string = (dest, freq, dur, peak, when) => {
+    const t0 = when != null ? when : ac.currentTime + 0.02;
+    const exc = noiseSrc();
+    const excG = ac.createGain();
+    excG.gain.setValueAtTime(peak * 2, t0);
+    excG.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.015);
+    const dl = ac.createDelay(1);
+    dl.delayTime.value = 1 / freq;
+    const damp = ac.createBiquadFilter();
+    damp.type = 'lowpass';
+    damp.frequency.value = Math.min(freq * 6, 9000);
+    const fb = ac.createGain(); fb.gain.value = 0.965;
+    exc.connect(excG); excG.connect(dl);
+    dl.connect(damp); damp.connect(fb); fb.connect(dl);
+    const tail = ac.createGain();
+    tail.gain.setValueAtTime(1, t0);
+    tail.gain.setValueAtTime(1, t0 + Math.max(dur - 0.25, 0.05));
+    tail.gain.linearRampToValueAtTime(0, t0 + dur);
+    dl.connect(tail); tail.connect(dest);
+    exc.start(t0); exc.stop(t0 + 0.03);
+    // El feedback resuena solo: desarmar el lazo cuando la nota terminó.
+    setTimeout(() => {
+      try { exc.disconnect(); dl.disconnect(); damp.disconnect(); fb.disconnect(); tail.disconnect(); } catch {}
+    }, Math.max(0, t0 - ac.currentTime + dur + 0.1) * 1000);
+  };
+
   // --- drone sostenido (acorde base, con vibrato + tremolo) ---
   // Unison: cada voz del acorde son TRES osciladores desafinados ±detune
   // cents (`preset.detune`, default 7): el efecto ensemble que separa un
@@ -823,7 +890,11 @@ export function createAmbientMusic(mood, volume) {
       o.frequency.value = f;
       o.detune.value = det * u;
       lfoDepth.connect(o.frequency);
-      o.connect(g);
+      // Estéreo: el oscilador central queda al medio y los dos desafinados
+      // se abren a los lados; el pad gana el ancho de una sección real.
+      const pan = ac.createStereoPanner();
+      pan.pan.value = u * 0.5;
+      o.connect(pan); pan.connect(g);
       o.start();
       voice.push(o);
       cleanups.push(() => { try { o.stop(); } catch {} });
@@ -851,7 +922,11 @@ export function createAmbientMusic(mood, volume) {
   // --- arpegio / movimiento melodico ---
   if (preset.arp) {
     const arpBus = ac.createGain(); arpBus.gain.value = 1;
-    arpBus.connect(master); arpBus.connect(delay);
+    // Arpegio levemente a la derecha (la capa grow va a la izquierda):
+    // separar las capas en el estéreo las hace legibles sin pelear volumen.
+    const arpPan = ac.createStereoPanner(); arpPan.pan.value = 0.3;
+    arpBus.connect(arpPan); arpPan.connect(master); arpPan.connect(delay);
+    layerIn(arpBus, 'arp');
     schedule(preset.arpStep || 0.55, (i, t0) => {
       const ch = chords ? chords[chordIdx] : preset.freqs;
       const p = preset.arp[i % preset.arp.length];
@@ -863,7 +938,12 @@ export function createAmbientMusic(mood, volume) {
       if (Math.random() < (preset.arpRest ?? 0.1)) return;
       const accA = preset.arpAccent;
       const vel = accA ? accA[i % accA.length] * (0.9 + Math.random() * 0.2) : (0.7 + Math.random() * 0.5);
-      pluck(arpBus, ch[p.v % ch.length] * (p.oct || 1), preset.arpType || 'sine', preset.arpDur || 0.6, (preset.arpVol || 0.06) * vel, 0.015, t0);
+      const freq = ch[p.v % ch.length] * (p.oct || 1);
+      const peak = (preset.arpVol || 0.06) * vel;
+      // Timbre: `arpTimbre: 'string'` = cuerda Karplus-Strong; si no,
+      // pluck de oscilador, con `arpFilter` opcional (envolvente de filtro).
+      if (preset.arpTimbre === 'string') string(arpBus, freq, preset.arpDur || 0.6, peak, t0);
+      else pluck(arpBus, freq, preset.arpType || 'sine', preset.arpDur || 0.6, peak, 0.015, t0, preset.arpFilter);
     }, preset.swing);
   }
 
@@ -871,6 +951,7 @@ export function createAmbientMusic(mood, volume) {
   if (preset.pulse) {
     const pulseBus = ac.createGain(); pulseBus.gain.value = 1;
     pulseBus.connect(master);
+    layerIn(pulseBus, 'pulse');
     schedule(preset.pulseStep || 1.4, (i, t0) => {
       const ch = chords ? chords[chordIdx] : preset.freqs;
       pluck(pulseBus, ch[0] / 2, 'sine', preset.pulseDur || 0.55, preset.pulseVol || 0.045, 0.008, t0);
@@ -880,7 +961,8 @@ export function createAmbientMusic(mood, volume) {
   // --- capa electronica que crece con el tiempo ---
   if (preset.grow) {
     const elecBus = ac.createGain(); elecBus.gain.value = 0.0001;
-    elecBus.connect(master); elecBus.connect(delay);
+    const elecPan = ac.createStereoPanner(); elecPan.pan.value = -0.25;
+    elecBus.connect(elecPan); elecPan.connect(master); elecPan.connect(delay);
     elecBus.gain.setValueAtTime(0.0001, ac.currentTime);
     elecBus.gain.linearRampToValueAtTime(preset.elecVol || 0.05, ac.currentTime + (preset.growDur || 42));
     schedule(preset.elecStep || 0.7, (i, t0) => {
@@ -902,6 +984,15 @@ export function createAmbientMusic(mood, volume) {
     const drumBus = ac.createGain(); drumBus.gain.value = 1;
     drumBus.connect(out);
     if (verb) drumBus.connect(verb);
+    layerIn(drumBus, 'drums');
+    // Kit abierto en el estéreo como una batería real: hats a la izquierda,
+    // caja apenas a la derecha, bombo y tom al centro.
+    const hatBus = ac.createGain(); hatBus.gain.value = 1;
+    const hatPan = ac.createStereoPanner(); hatPan.pan.value = -0.35;
+    hatBus.connect(hatPan); hatPan.connect(drumBus);
+    const snareBus = ac.createGain(); snareBus.gain.value = 1;
+    const snarePan = ac.createStereoPanner(); snarePan.pan.value = 0.15;
+    snareBus.connect(snarePan); snarePan.connect(drumBus);
     const pat = preset.drums;
     const fill = preset.drumFill || null;
     const fillEvery = preset.fillEvery || 4;
@@ -919,9 +1010,9 @@ export function createAmbientMusic(mood, volume) {
       const acc = preset.drumAccent;
       const vel = (preset.drumVol || 0.5) * (acc ? acc[i % acc.length] * (0.9 + Math.random() * 0.2) : (0.8 + Math.random() * 0.4));
       if (c === 'k') kick(drumBus, vel, t0);
-      else if (c === 's') snare(drumBus, vel * 0.85, t0);
-      else if (c === 'h') hat(drumBus, vel * 0.65, false, t0);
-      else if (c === 'H') hat(drumBus, vel * 0.65, true, t0);
+      else if (c === 's') snare(snareBus, vel * 0.85, t0);
+      else if (c === 'h') hat(hatBus, vel * 0.65, false, t0);
+      else if (c === 'H') hat(hatBus, vel * 0.65, true, t0);
       else if (c === 't') tom(drumBus, vel, t0);
     }, preset.swing);
   }

@@ -90,6 +90,8 @@
     { "say": "perse", "text": "Nunca había visto una flor así.", "duration": 2.8 },
     { "wait": 2.6 },
 
+    { "music": "stinger" },
+    { "music": { "volume": 0.45, "duration": 1.5 } },
     { "caption": "La toca, y el mundo tiembla." },
     { "camera": { "shake": 10 } },
     { "tone": 90, "dur": 0.7 },
@@ -117,6 +119,7 @@
     { "caption": "Solo queda una cesta y flores esparcidas." },
     { "wait": 3.4 },
 
+    { "music": { "volume": 0.35, "duration": 2.5 } },
     { "caption": "Deméter busca a su hija por montañas, bosques y ríos. No la encuentra." },
     { "mood": "deme", "value": "sad", "duration": 30 },
     { "wait": 4.6 },
@@ -130,6 +133,7 @@
     { "caption": "Las flores se marchitan. Los árboles quedan desnudos." },
     { "tween": "ambient.darkness", "to": 0.28, "duration": 4 },
     { "wait": 4.4 },
+    { "music": { "volume": 0.15, "duration": 2 } },
     { "caption": "Y por primera vez llega el invierno." },
     { "weather": "snow" },
     { "tone": 196, "dur": 0.5 },
@@ -192,6 +196,7 @@
     { "tween": "granada.alpha", "to": 0, "duration": 0.6 },
     { "caption": "Ningún dios podía romper aquella ley, ni siquiera Zeus." },
     { "wait": 4.0 },
+    { "music": { "volume": 0.5, "duration": 2 } },
     { "caption": "Entonces hubo un pacto: parte del año con su madre, parte con Hades." },
     { "wait": 4.8 },
 
@@ -209,6 +214,8 @@
     { "appear": "deme", "duration": 0.9 },
     { "do": "var p=world.byId('perse'); if(p) p.lookAt='deme'; var d=world.byId('deme'); if(d) d.lookAt='perse';" },
     { "mood": "deme", "value": "happy", "duration": 12 },
+    { "music": "stinger" },
+    { "music": { "volume": 1.2, "duration": 1.5 } },
     { "caption": "Cuando Perséfone vuelve a la superficie, la tierra despierta." },
     { "tween": "ambient.darkness", "to": 0, "duration": 2.4 },
     { "tween": "ambient.saturation", "to": 1, "duration": 3.2, "easing": "easeInOutCubic" },
@@ -228,6 +235,7 @@
     { "wait": 3.0 },
     { "vanish": "perse", "duration": 1.0 },
     { "mood": "deme", "value": "sad", "duration": 14 },
+    { "music": { "volume": 0.55, "duration": 2.5 } },
     { "caption": "Cuando Perséfone regresa al inframundo, Deméter vuelve a extrañarla." },
     { "do": "world.props.filter(function(p){return p._spring;}).forEach(function(p){world.tween(p,'alpha',0,{duration:3});});" },
     { "do": "world.props=world.props.filter(function(p){return p.type!=='butterfly';});" },
@@ -240,6 +248,7 @@
     { "tween": "ambient.darkness", "to": 0.26, "duration": 3.5 },
     { "wait": 5.0 },
 
+    { "music": { "volume": 0.9, "duration": 2.5 } },
     { "caption": "Los griegos no conocían la inclinación del eje de la Tierra." },
     { "wait": 4.0 },
     { "caption": "Esa inclinación, no la pena de una diosa, es la causa real de las estaciones." },

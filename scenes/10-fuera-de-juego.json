@@ -1,5 +1,5 @@
 {
-  "meta": { "id": "10-fuera-de-juego", "number": 10, "version": "1.1", "lang": ["es"], "music": "epic" },
+  "meta": { "id": "10-fuera-de-juego", "number": 10, "version": "1.1", "lang": ["es"], "music": "urgent" },
   "text": {
     "es": {
       "title": "El fuera de juego: la línea y el instante",
@@ -61,6 +61,7 @@
     { "sweep": [320, 720], "dur": 0.4 },
     { "wait": 0.55 },
 
+    { "music": "stinger" },
     { "caption": "El balón entra. Gol." },
     { "do": "var d=world.byId('delantero'); if(d) world.fx.celebrate(d,{});" },
     { "tween": "hype", "to": 1, "duration": 0.35, "easing": "easeOutCubic" },
@@ -70,6 +71,7 @@
     { "tween": "hype", "to": 0.4, "duration": 1.6 },
     { "wait": 2.6 },
 
+    { "music": { "volume": 0.5, "duration": 1.5 } },
     { "caption": "Espera. El árbitro va a la revisión." },
     { "camera": { "letterbox": true } },
     { "tween": "ambient.saturation", "to": 0.72, "duration": 0.8 },
@@ -103,6 +105,7 @@
     { "camera": { "to": [490, 290], "zoom": 1 } },
     { "wait": 0.6 },
 
+    { "music": { "volume": 0.15, "duration": 0.3 } },
     { "caption": "Posición adelantada. El gol se anula." },
     { "tween": "flagUp", "to": 1, "duration": 0.5, "easing": "easeOutBack" },
     { "tween": "hype", "to": 0, "duration": 1.0 },
@@ -117,8 +120,10 @@
     { "tween": "ambient.saturation", "to": 1, "duration": 1.0 },
     { "tween": "lineOn", "to": 0, "duration": 0.8 },
     { "tween": "flagUp", "to": 0, "duration": 0.6 },
+    { "music": { "volume": 0.9, "duration": 2 } },
     { "caption": "La regla mide cualquier parte con la que se marca, adelantada en el instante del pase." },
     { "wait": 5.0 },
+    { "music": { "volume": 1, "duration": 2.5 } },
     { "caption": "Por un margen mínimo se anula un gol: la línea es exacta, y aun así la jugada se sigue discutiendo." },
     { "wait": 5.6 }
   ],

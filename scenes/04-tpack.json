@@ -102,12 +102,14 @@
     { "caption": "¿La tecnología, sola, mejora el aprendizaje?" },
     { "wait": 4.4 },
 
+    { "music": { "volume": 0.5, "duration": 2 } },
     { "caption": "Cada saber, por separado, se queda corto." },
     { "vanish": "tecno", "duration": 1.0 },
     { "vanish": "est1", "duration": 1.0 },
     { "vanish": "est2", "duration": 1.0 },
     { "vanish": "est3", "duration": 1.0 },
     { "wait": 3.6 },
+    { "music": { "volume": 1, "duration": 2 } },
     { "caption": "Aquí aparece TPACK (Mishra y Koehler): no un modelo de tecnología, sino de conocimiento docente." },
     { "wait": 5.6 },
     { "caption": "Tres saberes que, por separado, ninguno alcanza: contenido, pedagogía y tecnología." },
@@ -126,6 +128,7 @@
     { "tone": 523, "dur": 0.14 },
     { "wait": 5.8 },
 
+    { "music": "stinger" },
     { "caption": "Y en el centro, los tres como un solo sistema: TPACK." },
     { "tween": "core", "to": 1, "duration": 1.0, "easing": "easeOutCubic" },
     { "tone": 587, "dur": 0.3 },
@@ -143,6 +146,7 @@
 
     { "caption": "El error común es empezar preguntando: ¿qué herramienta voy a usar?" },
     { "wait": 5.2 },
+    { "music": { "volume": 1.1, "duration": 3 } },
     { "caption": "La pregunta correcta llega antes: ¿qué quiero que aprendan, y qué papel puede jugar la tecnología?" },
     { "wait": 6.2 }
   ],

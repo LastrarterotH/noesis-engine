@@ -1,5 +1,5 @@
 {
-  "meta": { "id": "09-la-caverna", "number": 9, "version": "0.1", "lang": ["es"], "music": "melancholic" },
+  "meta": { "id": "09-la-caverna", "number": 9, "version": "0.1", "lang": ["es"], "music": "mystery" },
   "text": {
     "es": {
       "title": "El mito de la caverna en la era de la IA",
@@ -103,6 +103,8 @@
     { "tone": 784, "dur": 0.5 },
     { "weather": "petals" },
     { "wait": 1.3 },
+    { "music": "stinger" },
+    { "music": { "volume": 1.25, "duration": 1.5 } },
     { "caption": "Lo que tomaba por el mundo era apenas su sombra." },
     { "walk": "proto", "to": [1052, 388] },
     { "waitFor": "arrive:proto" },
@@ -117,12 +119,14 @@
     { "mood": "proto", "value": "happy", "duration": 4 },
     { "wait": 1.4 },
 
+    { "music": { "volume": 0.8, "duration": 2 } },
     { "caption": "Podría quedarse en la luz. Vuelve a buscar a los otros." },
     { "wait": 3.0 },
     { "camera": { "reset": true } },
     { "walk": "proto", "to": [864, 392] },
     { "waitFor": "arrive:proto" },
     { "weather": "none" },
+    { "music": { "volume": 0.45, "duration": 2.5 } },
     { "scene": "cueva", "move": { "proto": [624, 392] } },
     { "tween": "ambient.darkness", "to": 0.16, "duration": 2.0, "easing": "easeInOutCubic" },
     { "tween": "ambient.saturation", "to": 0.20, "duration": 2.0, "easing": "easeInOutCubic" },
@@ -141,10 +145,12 @@
     { "do": "var p=world.byId('proto'); if(p) p.lookAt={x:726,y:392};" },
     { "wait": 2.0 },
 
+    { "music": { "volume": 0.9, "duration": 2 } },
     { "caption": "Platón escribió esta caverna hace veinticuatro siglos." },
     { "wait": 3.4 },
     { "caption": "No cambió de forma. Solo cambió de pantalla." },
     { "wait": 3.6 },
+    { "music": { "volume": 1.1, "duration": 3 } },
     { "caption": "La sombra es cómoda. Salir cuesta, y se paga con no ser creído. La puerta sigue ahí." },
     { "wait": 5.4 }
   ],

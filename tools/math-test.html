@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>noesis · math-test</title>
+<style>
+  html, body { margin: 0; background: #0e1430; }
+  canvas { display: block; width: 1240px; height: 980px; }   /* backing 2x para nitidez */
+</style>
+</head>
+<body>
+<canvas id="c" width="2480" height="1960"></canvas>
+<script type="module">
+// Página interna de audición del motor de fórmulas del canvas (world.draw.math).
+// Dibuja una batería que ejercita fracción, raíz n-ésima, sub/super, operadores
+// grandes con límites (∑ ∏ ∫ lim), delimitadores escalables y matrices/cases.
+// Verla tras cualquier cambio a drawMath/_mathBox en util.js. Muestra la versión.
+import { drawMath, measureMath } from '../engine/util.js?v=120';
+
+const V = new URL(import.meta.url).search.match(/v=(\d+)/)?.[1] || '?';
+const c = document.getElementById('c');
+const ctx = c.getContext('2d');
+const W = 1240, H = 980;
+ctx.scale(2, 2);   // backing 2x para nitidez
+
+// paleta del canvas del mundo
+const NAVY = '#0e1430', PANEL = 'rgba(31,37,71,0.55)', LINE = 'rgba(244,172,29,0.22)';
+const CREAM = '#f4e8c6', AMB = '#F4AC1D', SRC = '#7f8bb0', HDR = '#c9d2e6';
+const UIQ = '"Plus Jakarta Sans", ui-sans-serif, system-ui, -apple-system, sans-serif';
+
+// batería: [código LaTeX, tamaño]. El código se muestra tal cual arriba.
+const items = [
+  ['1 - \\frac{1}{R_0} = \\frac{1}{2}', 30],
+  ['e = mc^2 \\quad SO_4^{2-}', 30],
+  ['\\sum_{i=1}^{n} i = \\frac{n(n+1)}{2}', 30],
+  ['\\prod_{k=1}^{n} k = n!', 30],
+  ['\\int_0^1 x^2 dx = \\frac{1}{3}', 30],
+  ['\\lim_{x \\to 0} \\frac{\\sin x}{x} = 1', 30],
+  ['\\sqrt[3]{x^2 + 1}', 30],
+  ['x = \\frac{-b \\pm \\sqrt{b^2 - 4ac}}{2a}', 28],
+  ['\\left( \\frac{a}{b} \\right)^{2}', 30],
+  ['\\left[ 1 + \\frac{1}{n} \\right]^{n} \\to e', 28],
+  ['\\frac{\\partial f}{\\partial x} = 2x', 30],
+  ['\\begin{pmatrix} a & b \\\\ c & d \\end{pmatrix}', 26],
+  ['\\Delta S = nR \\ln\\frac{V_f}{V_i} > 0', 28],
+  ['f(x) = \\begin{cases} x & x \\ge 0 \\\\ -x & x < 0 \\end{cases}', 26],
+];
+
+// fondo
+ctx.fillStyle = NAVY; ctx.fillRect(0, 0, W, H);
+// título
+ctx.fillStyle = HDR; ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+ctx.font = '700 15px ' + UIQ; ctx.letterSpacing = '1px';
+ctx.fillText('WORLD.DRAW.MATH  ·  BATERÍA DE NOTACIÓN APILADA', 28, 34);
+ctx.letterSpacing = '0px';
+ctx.fillStyle = SRC; ctx.font = '500 12px ' + UIQ; ctx.textAlign = 'right';
+ctx.fillText('engine v' + V, W - 28, 34);
+
+// grilla 2 columnas
+const cols = 2, top = 58, cellW = (W - 56) / cols, cellH = (H - top - 20) / Math.ceil(items.length / cols);
+ctx.textAlign = 'left';
+items.forEach((it, k) => {
+  const col = k % cols, row = (k - col) / cols;
+  const x = 28 + col * cellW, y = top + row * cellH;
+  // panel
+  ctx.fillStyle = PANEL;
+  rrect(x + 4, y + 4, cellW - 16, cellH - 12, 10); ctx.fill();
+  ctx.strokeStyle = LINE; ctx.lineWidth = 1; rrect(x + 4, y + 4, cellW - 16, cellH - 12, 10); ctx.stroke();
+  // código fuente
+  ctx.fillStyle = SRC; ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+  ctx.font = '500 12px ui-monospace, Menlo, monospace';
+  ctx.fillText(it[0].replace(/\\\\/g, '\\\\'), x + 18, y + 26);
+  // fórmula, centrada en la celda
+  const cx = x + (cellW - 16) / 2, cyf = y + (cellH - 12) / 2 + 12;
+  drawMath(ctx, it[0], cx, cyf, { px: it[1], weight: '600', family: UIQ, color: CREAM, align: 'center', valign: 'middle' });
+});
+
+function rrect(x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r);
+  ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r);
+  ctx.arcTo(x, y, x + w, y, r);
+  ctx.closePath();
+}
+</script>
+</body>
+</html>

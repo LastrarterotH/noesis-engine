@@ -2,9 +2,9 @@
 // Pixel-art draw primitives: learner blob, eye geometry, mood-routing,
 // accessories overlay. Instantiated once per World.
 
-import { mixColors } from './util.js?v=117';
-import { drawMoodOverlays } from './mood.js?v=117';
-import { drawAccessories } from './accessories.js?v=117';
+import { mixColors, drawMath, measureMath as _measureMath } from './util.js?v=120';
+import { drawMoodOverlays } from './mood.js?v=120';
+import { drawAccessories } from './accessories.js?v=120';
 
 export class Draw {
   constructor(world) { this.world = world; }
@@ -845,5 +845,23 @@ export class Draw {
       a0 = a1;
     });
     ctx.restore();
+  }
+
+  // math: render a stacked LaTeX-subset formula on the canvas (real vertical
+  // fractions, roots, sub/superscripts, symbols), unlike drawRichText/captions
+  // which flatten $\frac{a}{b}$ to inline "a/b". (x,y) anchors per opts.align
+  // (left|center|right) and opts.valign (baseline|middle|top|bottom, default
+  // baseline). opts: px (16), color (default current fillStyle), weight, family,
+  // alpha, align, valign. Returns { w, ascent, descent, height, x, baseline } so
+  // callers can position adjacent parts (e.g. a highlighted result in another
+  // color). Accepts the tex with or without surrounding `$`. See util.js.
+  math(x, y, tex, opts = {}) {
+    return drawMath(this.world.ctx, tex, x, y, opts);
+  }
+
+  // measureMath: layout-measure a formula without drawing. Returns
+  // { w, ascent, descent, height }. Use to size a panel or center a derivation.
+  measureMath(tex, opts = {}) {
+    return _measureMath(this.world.ctx, tex, opts);
   }
 }

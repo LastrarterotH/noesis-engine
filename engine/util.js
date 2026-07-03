@@ -292,3 +292,17 @@ export function formatAPA(r) {
   else if (r.url) parts.push(`<a href="${escapeHtml(r.url)}" target="_blank" rel="noopener">${escapeHtml(r.url)}</a>`);
   return parts.join(' ');
 }
+
+// HTML (de formatAPA/richToHtml) → texto plano para el canvas: quita etiquetas
+// y DECODIFICA las entidades que introduce escapeHtml (&quot; &#39; &amp;...).
+// Sin esto, un `.replace(/<[^>]*>/g,'')` deja `&quot;` literal en el lienzo.
+export function htmlToText(html) {
+  return String(html)
+    .replace(/<[^>]*>/g, '')
+    .replace(/&quot;/g, '"')
+    .replace(/&#0?39;/g, "'")
+    .replace(/&apos;/g, "'")
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&amp;/g, '&');   // amp al final: evita re-decodificar entidades anidadas
+}

@@ -10,10 +10,10 @@
 // hooks) o se escanean del código fuente del motor (buildVocab recibe un
 // lector de fuentes), así el validador no se desincroniza al crecer el motor.
 
-import { PROP_SPRITES } from './prop-sprites.js?v=120';
-import { SKY_PRESETS } from './sky-presets.js?v=120';
-import { HOOK_NAMES, HOOK_ARGS } from './hooks.js?v=120';
-import { compileForm, FORM_TYPES } from './forms.js?v=120';
+import { PROP_SPRITES } from './prop-sprites.js?v=121';
+import { SKY_PRESETS } from './sky-presets.js?v=121';
+import { HOOK_NAMES, HOOK_ARGS } from './hooks.js?v=121';
+import { compileForm, FORM_TYPES } from './forms.js?v=121';
 
 // Fuentes del motor que buildVocab escanea con regex (enums de despachos
 // if/else que no se exportan como datos).
@@ -224,6 +224,139 @@ function checkMovement(ctx, config) {
       }
     }
   });
+}
+
+// Alcanzabilidad de walk/path: los clamps del motor (banda de subtítulos y
+// horizonte) retienen al learner por debajo/encima de una línea; un destino más
+// allá de esa línea NUNCA se alcanza (el umbral de arribo es 4 px), y un
+// `waitFor: "arrive"` sobre él CUELGA el guion para siempre, sin error de
+// runtime. También caza un path con loop (que nunca termina) esperado por
+// arrive, y un `arrive:<id>` huérfano que no espera a nada. Estático y lineal:
+// sigue el guion top-level, no ramas ni cambios por `do`. Números en sintonía
+// con learner.js (CAPTION_BAND 56, NAME_RESERVE 20, umbral de arribo 4).
+function checkReachability(ctx, config) {
+  const steps = Array.isArray(config.script) ? config.script : null;
+  if (!steps) return;
+  const c = config.canvas || {};
+  const H = typeof c.h === 'number' ? c.h : 400;
+  const hasSky = c.sky != null;
+  const horizonY = Math.round(H * (typeof c.horizon === 'number' ? c.horizon : 0.45));
+  const footBand = H - 56 - 20;              // CAPTION_BAND + NAME_RESERVE
+  const ARRIVE = 4;                          // stopAt default del walkTo (learner.js)
+  const hasHooks = Object.values(config.hooks || {}).some(v => typeof v === 'string' && v.trim());
+  const ents = new Map();
+  for (const e of (config.entities || [])) {
+    if (!e || !e.id) continue;
+    const half = ((e.hero !== false ? 11 : 7) * (typeof e.scale === 'number' ? e.scale : 4)) / 2;
+    ents.set(e.id, { yMax: footBand - half, yMin: (hasSky && e.skybound !== true) ? horizonY : 0 });
+  }
+  // Razón por la que una `y` destino es inalcanzable para una entidad (o null).
+  const yReason = (info, y) => {
+    if (y == null) return null;
+    if (y > info.yMax + ARRIVE) return `su y=${Math.round(y)} cae bajo la banda de subtítulos (el motor lo clampa a y=${Math.round(info.yMax)} y el arribo, umbral ${ARRIVE}px, nunca ocurre). Baja el destino a y<=${Math.round(info.yMax)}`;
+    if (info.yMin && y < info.yMin - ARRIVE) return `su y=${Math.round(y)} queda sobre el horizonte (el motor lo clampa a y=${info.yMin}). Marca la entidad "skybound": true o baja el destino a y>=${info.yMin}`;
+    return null;
+  };
+  const lastMove = new Map();   // id -> { reason, loop, stepIdx }
+  let lastMover = null;
+  steps.forEach((s, i) => {
+    if (!s || typeof s !== 'object') return;
+    if (s.walk != null && ents.has(s.walk)) {
+      const info = ents.get(s.walk);
+      const t = s.to;
+      let ty = null;
+      if (Array.isArray(t)) ty = resolveCoord(t[1], H);
+      else if (t && typeof t === 'object' && !Array.isArray(t)) ty = resolveCoord(t.y, H);
+      // destino = otra entidad (string): su posición ya está clampeada → alcanzable; no se evalúa.
+      const reason = yReason(info, ty);
+      lastMove.set(s.walk, { reason, loop: false, kind: 'walk', stepIdx: i });
+      lastMover = s.walk;
+      if (reason) ctx.warn(`script[${i}].to`, `"${s.walk}" camina a un destino inalcanzable: ${reason}. Aunque no cuelgue el guion, el personaje no llega adonde lo mandas.`);
+    }
+    if (s.path != null && ents.has(s.path) && Array.isArray(s.points) && s.points.length) {
+      const info = ents.get(s.path);
+      const last = s.points[s.points.length - 1];
+      const ly = resolveCoord(Array.isArray(last) ? last[1] : (last && last.y), H);
+      const reason = yReason(info, ly);
+      lastMove.set(s.path, { reason, loop: s.loop === true, kind: 'path', stepIdx: i });
+      lastMover = s.path;
+      // Un `path` (followPath) llega por DISTANCIA recorrida, no por proximidad
+      // (learner.js: `_dist += speed*dt` hasta `>= _total`), así que SIEMPRE
+      // completa aunque el clamp impida tocar el waypoint: no cuelga. Solo es
+      // aviso visual (no llega adonde apuntas); el cuelgue real es el loop.
+      if (reason) ctx.warn(`script[${i}].points`, `el path de "${s.path}" termina en un punto inalcanzable: ${reason}. El personaje no llega ahí (aunque el path completa igual, no cuelga).`);
+    }
+    const wf = s.waitFor;
+    if (wf === 'arrive' || (typeof wf === 'string' && wf.startsWith('arrive:'))) {
+      const target = wf === 'arrive' ? lastMover : wf.slice(7);
+      if (!target) return;
+      const mv = lastMove.get(target);
+      if (!mv) {
+        if (wf !== 'arrive' && ents.has(target)) {
+          ctx.warn(`script[${i}].waitFor`, `"arrive:${target}" pero "${target}" no tiene ningún walk/path antes en el guion: no espera a nada (resuelve al instante). ¿Querías esperar a otra entidad, o mover a "${target}" primero?`);
+        }
+        return;
+      }
+      // Cuelga SOLO si: (a) un path con loop:true (nunca termina), o (b) un
+      // `walk` (walkTo, llegada por proximidad d<4px) a un destino inalcanzable.
+      // Un `path` no-loop a un punto inalcanzable NO cuelga (completa por
+      // distancia): ese caso quedó en el aviso visual de arriba, no en ERROR.
+      const hangs = mv.loop || (mv.reason && mv.kind === 'walk');
+      if (hangs) {
+        const why = mv.loop
+          ? `su path (script[${mv.stepIdx}]) tiene "loop": true y nunca termina`
+          : `su destino es inalcanzable (${mv.reason})`;
+        const msg = `CUELGA la escena: "waitFor: ${wf}" espera a que "${target}" llegue, pero ${why}. El arribo nunca ocurre y el guion se congela para siempre (nunca aparece "Ver nuevamente"). Corrige el walk/path de "${target}" (script[${mv.stepIdx}]) o quita el waitFor.`;
+        if (hasHooks) ctx.warn(`script[${i}].waitFor`, msg + ' (La escena tiene hooks: si un `do` reubica a la entidad o el destino en runtime, ignora esto.)');
+        else ctx.err(`script[${i}].waitFor`, msg);
+      }
+    }
+  });
+}
+
+// Ids duplicados: byId (y todos los steps que resuelven por id) devuelven el
+// PRIMERO, así que un segundo objeto con el mismo id queda indirigible sin
+// aviso: los walk/say/tween/focus dirigen siempre al primero. Chequea unicidad
+// dentro de cada colección, y avisa si un id de prop pisa uno de entidad.
+function checkDuplicateIds(ctx, config) {
+  const scan = (arr, label, hasId) => {
+    const seen = new Map();
+    (arr || []).forEach((o, i) => {
+      const id = o && o.id;
+      if (id == null) return;
+      if (seen.has(id)) {
+        ctx.err(`${label}[${i}].id`, `"${id}" ya está declarado en ${label}[${seen.get(id)}]: los steps (walk/say/tween/focus...) siempre dirigen al primero y este queda indirigible y quieto. Dale un id único.`);
+      } else seen.set(id, i);
+    });
+    return seen;
+  };
+  const entIds = scan(config.entities, 'entities');
+  const propIds = scan(config.props, 'props');
+  const chartIds = scan(config.charts, 'charts');
+  scan(config.labels, 'labels');
+  scan(config.meters, 'meters');
+  // series por chart
+  (config.charts || []).forEach((c, i) => {
+    if (c && Array.isArray(c.series)) scan(c.series, `charts[${i}].series`);
+  });
+  // Colisiones ENTRE colecciones que comparten el namespace de resolución de
+  // focus/camera/tween/path: la precedencia es entidad > prop > chart (byId
+  // busca entidades primero; focus/camera resuelven entidad, luego prop, luego
+  // chart). Un id que coincide entre dos deja al de menor precedencia
+  // indirigible (p. ej. el push-in sobre un chart homónimo de una entidad nunca
+  // ocurre). Aviso, no error: puede ser coincidencia inofensiva si nunca se
+  // referencia por id.
+  const order = [['entities', entIds], ['props', propIds], ['charts', chartIds]];
+  for (let a = 0; a < order.length; a++) {
+    for (let b = a + 1; b < order.length; b++) {
+      const [laA, mapA] = order[a], [laB, mapB] = order[b];
+      for (const [id, iB] of mapB) {
+        if (mapA.has(id)) {
+          ctx.warn(`${laB}[${iB}].id`, `"${id}" coincide con el id de ${laA}[${mapA.get(id)}]: focus/camera/tween/byId resuelven ${laA} antes que ${laB}, así que una referencia a "${id}" apuntará a ${laA.slice(0, -1)}, no a este ${laB.slice(0, -1)}. Usa ids distintos.`);
+        }
+      }
+    }
+  }
 }
 
 function checkTextStyle(ctx, path, value) {
@@ -509,6 +642,52 @@ export function createValidator(vocab) {
     checkTextStyle(ctx, `${p}.title`, c.title);
     checkTextStyle(ctx, `${p}.xLabel`, c.xLabel);
     checkTextStyle(ctx, `${p}.yLabel`, c.yLabel);
+    // Cruce datos vs dominios: lo que el validador no atrapaba y CLAUDE.md marca
+    // en el checklist ("ajusta yDomain a los datos o la curva queda aplastada y
+    // la target inalcanzable"). El motor cae a [0,1] cuando falta el dominio
+    // (world.js), así que un dominio AUSENTE se trata como [0,1] efectivo para
+    // los chequeos de fuera-de-rango (datos fuera de [0,1] sin declararlo se
+    // dibujan fuera del marco). La "curva aplastada" solo se avisa con yDomain
+    // DECLARADO (con default [0,1] podría ser una escala intencional). Warnings.
+    const okDom = (d) => Array.isArray(d) && d.length === 2 && d.every(n => typeof n === 'number') && d[1] > d[0];
+    const yDdecl = okDom(c.yDomain) ? c.yDomain : null;   // declarado y válido
+    const xD = okDom(c.xDomain) ? c.xDomain : [0, 1];      // efectivo (default del motor)
+    const yD = yDdecl || [0, 1];
+    const dtxt = (dcl) => dcl ? '' : ' (no lo declaraste: el motor usa [0, 1] por defecto)';
+    if (type === 'line' && Array.isArray(c.series)) {
+      let ymin = Infinity, ymax = -Infinity, flaggedOut = false;
+      for (const sr of c.series) {
+        if (!sr || !Array.isArray(sr.data)) continue;
+        for (const pt of sr.data) {
+          if (!Array.isArray(pt) || pt.length !== 2 || typeof pt[1] !== 'number') continue;
+          const [x, y] = pt;
+          ymin = Math.min(ymin, y); ymax = Math.max(ymax, y);
+          if (!flaggedOut && typeof x === 'number' && (x < xD[0] || x > xD[1])) {
+            ctx.warn(`${p}.series`, `un punto [${x}, ${y}] cae fuera de xDomain [${xD[0]}, ${xD[1]}]${dtxt(okDom(c.xDomain))}: se dibuja fuera del marco. Declara/amplía xDomain para incluir todos los datos.`); flaggedOut = true;
+          }
+          if (!flaggedOut && (y < yD[0] || y > yD[1])) {
+            ctx.warn(`${p}.series`, `un punto [${x}, ${y}] cae fuera de yDomain [${yD[0]}, ${yD[1]}]${dtxt(yDdecl)}: se dibuja fuera del marco. Declara/amplía yDomain (~[${Math.floor(Math.min(0, ymin))}, ${Math.ceil(ymax)}]).`); flaggedOut = true;
+          }
+        }
+      }
+      if (!flaggedOut && yDdecl && isFinite(ymin) && isFinite(ymax)) {
+        const frac = (ymax - ymin) / (yDdecl[1] - yDdecl[0]);
+        if (frac < 0.15) {
+          ctx.warn(`${p}.yDomain`, `los datos ocupan solo ${Math.round(frac * 100)}% del yDomain [${yDdecl[0]}, ${yDdecl[1]}]: la curva queda aplastada contra el piso y no se lee. Ajusta yDomain al rango real de los datos (~[${Math.floor(ymin)}, ${Math.ceil(ymax)}]).`);
+        }
+      }
+    }
+    if (type === 'bars' && Array.isArray(c.values)) {
+      for (const v of c.values) {
+        const val = v && typeof v === 'object' ? v.value : v;
+        if (typeof val === 'number' && (val > yD[1] || val < Math.min(0, yD[0]))) {
+          ctx.warn(`${p}.values`, `una barra (value=${val}) excede yDomain [${yD[0]}, ${yD[1]}]${dtxt(yDdecl)}: se dibuja fuera del marco. Declara/amplía yDomain al máximo de los datos.`); break;
+        }
+      }
+    }
+    if (c.target && typeof c.target.y === 'number' && (c.target.y < yD[0] || c.target.y > yD[1])) {
+      ctx.warn(`${p}.target`, `la meta (target.y=${c.target.y}) cae fuera de yDomain [${yD[0]}, ${yD[1]}]${dtxt(yDdecl)}: la línea de meta queda fuera del marco (inalcanzable en pantalla). Incluye la meta dentro de yDomain.`);
+    }
   }
 
   function vSteps(ctx, steps, p, scope) {
@@ -1004,7 +1183,25 @@ export function createValidator(vocab) {
       }
     }
     if (config.form != null) vForm(ctx, config);
+    // Definir hooks.onDraw REEMPLAZA el pase automático de learners del motor
+    // (world.js): si el hook no los dibuja él mismo, el elenco entero desaparece
+    // sin aviso mientras el guion, los globos y los name-labels siguen.
+    const onDraw = config.hooks && typeof config.hooks.onDraw === 'string' ? config.hooks.onDraw : '';
+    if (onDraw.trim() && (config.entities || []).length > 0) {
+      // Cuenta como "dibuja el elenco" si: llama `.learner(` con cualquier
+      // receptor (draw.learner, d.learner, world['draw'].learner), o el interno
+      // _drawLearners, o pasa learners/entidades a drawSorted (drawSorted solo
+      // con props NO dibuja el elenco, así que exige mención de learner/entit).
+      const drawsLearners = /\.learner\s*\(/.test(onDraw)
+        || /_drawLearners\b/.test(onDraw)
+        || (/drawSorted/.test(onDraw) && /learner|entit/.test(onDraw));
+      if (!drawsLearners) {
+        ctx.warn('hooks.onDraw', `la escena declara ${(config.entities || []).length} entidad(es) pero onDraw no dibuja a los learners (no aparece draw.learner, drawSorted ni _drawLearners): definir onDraw APAGA el dibujo automático del elenco, así que los personajes quedarán invisibles. Dibújalos tú (p.ej. for (const e of world.entities) if (e.type==='learner') world.draw.learner(e)) o usa el hook onDrawOver para un overlay.`);
+      }
+    }
     checkMovement(ctx, config);
+    checkReachability(ctx, config);
+    checkDuplicateIds(ctx, config);
     return { errors, warnings };
   }
 

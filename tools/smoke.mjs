@@ -55,6 +55,43 @@ const { validateScene } = await import(join(ROOT, 'tools', 'validate.mjs'));
 
 const files = readdirSync(join(ROOT, 'scenes')).filter(f => f.endsWith('.json')).sort()
   .map(f => ['scenes', f]);
+// Corre el guion y detecta CUELGUES. Un cuelgue = un script ESTANCADO: no
+// terminó (sc.done) y su sc.i no avanzó durante >= STALL ticks simulados (parado
+// en un waitFor:arrive inalcanzable o un waitUntil imposible). Se evalúa sobre
+// TODOS los scripts, INCLUIDOS los que contienen un `loop` de control: un loop
+// sano sigue moviendo sc.i (nunca se estanca), pero un guion que cuelga ANTES de
+// llegar a su loop sí se estanca y debe cazarse. Al tope de ticks NO se reprueba
+// por "no terminó" (un goto-loop o loop:true avanza para siempre por diseño): solo
+// el estancamiento es cuelgue. Tickea un mínimo para ejercitar escenas sin guion.
+// `onTick(i)` inyecta la interacción. Devuelve un mensaje de fallo o null.
+function runToCompletionOrHang(world, onTick) {
+  const dt = 0.05, MIN_TICKS = 120, MAX_TICKS = 8000, STALL = 2000;   // tope 400s; 100s sin avanzar sc.i = colgado
+  const prog = new Map();   // sc -> { i, tick del último avance de sc.i }
+  for (let i = 0; i < MAX_TICKS; i++) {
+    world.runStep(dt);
+    world.runDraw();
+    if (onTick) onTick(i);
+    const scripts = world._scripts || [];
+    for (const sc of scripts) {
+      const pr = prog.get(sc);
+      if (!pr || pr.i !== sc.i) prog.set(sc, { i: sc.i, tick: i });
+    }
+    if (i >= MIN_TICKS - 1) {
+      const stuck = scripts.find(sc => !sc.done && (i - (prog.get(sc)?.tick ?? i)) >= STALL);
+      if (stuck) {
+        const why = stuck.waitForArrive ? `esperando arrive:"${stuck.waitForArrive}" que nunca llega`
+          : stuck.waitPredicate ? `esperando waitUntil "${stuck.waitPredicate}" que nunca se cumple`
+          : 'sin avanzar en una espera';
+        return `guion COLGADO: un script no avanzó en ${Math.round(STALL * dt)}s simulados (atascado en el step ${stuck.i}, ${why}). Un waitFor:arrive a un destino inalcanzable o un waitUntil imposible congela la escena y "Ver nuevamente" nunca aparece.`;
+      }
+      // Terminó todo lo que puede terminar (los guiones con loop de control no
+      // llegan a done por diseño; el estancamiento ya se descartó arriba).
+      if (!scripts.length || scripts.every(sc => sc.done)) return null;
+    }
+  }
+  return null;   // avanzó hasta el tope sin estancarse: bucle por diseño (goto/loop), no cuelgue.
+}
+
 let pass = 0, fail = 0;
 for (const [dir, file] of files) {
   const config = JSON.parse(readFileSync(join(ROOT, dir, file), 'utf8'));
@@ -76,11 +113,12 @@ for (const [dir, file] of files) {
     world._muted = true;
     world.runInit();
     const ents0 = world.entities.length;
-    for (let i = 0; i < 120; i++) {
-      world.runStep(0.05);
-      world.runDraw();
-      if (i === 60) world.handleClick(w / 2, h / 2);   // exercise interaction + onClick
-    }
+    // Corre el guion completo desde t=0 y detecta cuelgues (con el click de
+    // interacción a mitad, sin tocar el botón de replay si ya terminó).
+    const hang = runToCompletionOrHang(world, (i) => {
+      if (i === 60 && !(world.state && world.state.showReplay)) world.handleClick(w / 2, h / 2);
+    });
+    if (hang) throw new Error(hang);
     const tMid = world.t;
     world.reset();                                      // exercise reset() + camera re-init
     for (let i = 0; i < 40; i++) { world.runStep(0.05); world.runDraw(); }

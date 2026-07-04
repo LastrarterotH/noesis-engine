@@ -10,10 +10,10 @@
 // hooks) o se escanean del código fuente del motor (buildVocab recibe un
 // lector de fuentes), así el validador no se desincroniza al crecer el motor.
 
-import { PROP_SPRITES } from './prop-sprites.js?v=124';
-import { SKY_PRESETS } from './sky-presets.js?v=124';
-import { HOOK_NAMES, HOOK_ARGS } from './hooks.js?v=124';
-import { compileForm, FORM_TYPES } from './forms.js?v=124';
+import { PROP_SPRITES } from './prop-sprites.js?v=125';
+import { SKY_PRESETS } from './sky-presets.js?v=125';
+import { HOOK_NAMES, HOOK_ARGS } from './hooks.js?v=125';
+import { compileForm, FORM_TYPES } from './forms.js?v=125';
 
 // Fuentes del motor que buildVocab escanea con regex (enums de despachos
 // if/else que no se exportan como datos).
@@ -81,8 +81,8 @@ const TOP_KEYS = ['meta', 'text', 'hint', 'hintDuration', 'canvas', 'entities', 
 const FORMULA_KEYS = ['id', 'tex', 'x', 'y', 'px', 'color', 'weight', 'family', 'align', 'valign', 'alpha', 'screen', 'panel'];
 const FORMULA_PANEL_KEYS = ['title', 'titleColor', 'bg', 'border', 'pad', 'radius'];
 const SET_KEYS = ['id', 'cx', 'cy', 'zoom'];
-const CHART_KEYS = ['id', 'type', 'x', 'y', 'w', 'h', 'xDomain', 'yDomain', 'xTicks', 'yTicks', 'xLabel', 'yLabel', 'xFormat', 'yFormat', 'title', 'target', 'panel', 'alpha', 'reveal', 'gap', 'color', 'series', 'values'];
-const SERIES_KEYS = ['id', 'color', 'width', 'fill', 'dash', 'dots', 'data', 'reveal'];
+const CHART_KEYS = ['id', 'type', 'x', 'y', 'w', 'h', 'xDomain', 'yDomain', 'xScale', 'yScale', 'xTicks', 'yTicks', 'xLabel', 'yLabel', 'xFormat', 'yFormat', 'title', 'target', 'panel', 'alpha', 'reveal', 'gap', 'color', 'series', 'values'];
+const SERIES_KEYS = ['id', 'color', 'width', 'fill', 'dash', 'dots', 'data', 'fn', 'reveal', 'head'];
 const CANVAS_KEYS = ['w', 'h', 'bg', 'ss', 'sky', 'horizon', 'floor', 'safeArea', 'ysort', 'layers'];
 const ENTITY_KEYS = ['id', 'type', 'x', 'y', 'name', 'body', 'color2', 'scale', 'hero', 'mood', 'accessory', 'accessoryColor', 'behavior', 'look', 'lookAt', 'health', 'extinguishable', 'extinctionThreshold', 'ageRate', 'maxAge', 'skybound', 'greets', 'sleepable', 'solid', 'stage'];
 const PROP_KEYS = ['type', 'id', 'tag', 'x', 'y', 'scale', 'color', 'color2', 'beakColor', 'interactive', 'solid', 'solidBox', 'z', 'dir', 'state', 'open', 'label', 'light', 'fall', 'w', 'h', 'cols', 'rows', 'disorder', 'homeFrac', 'jitter', 'pose', 'alpha', 'glass', 'wheel', 'face', 'lift', 'seeds', 'eye', 'glow', 'spin', 'wear', 'depth', 'panels', 'crank', 'braid', 'fire'];
@@ -615,6 +615,11 @@ export function createValidator(vocab) {
         ctx.err(`${p}.${k}`, `${k} es [min, max] numérico.`);
       }
     }
+    for (const k of ['xScale', 'yScale']) {
+      if (c[k] != null && c[k] !== 'log' && c[k] !== 'linear') ctx.err(`${p}.${k}`, `${k} es "log" (para fenómenos exponenciales) o "linear" (default).`);
+    }
+    if (c.xScale === 'log' && Array.isArray(c.xDomain) && typeof c.xDomain[0] === 'number' && c.xDomain[0] <= 0) ctx.err(`${p}.xDomain`, 'con xScale "log" el dominio debe ser > 0 (el log de 0 o negativo no existe). Usa un mínimo positivo, ej. [1, 1000].');
+    if (c.yScale === 'log' && Array.isArray(c.yDomain) && typeof c.yDomain[0] === 'number' && c.yDomain[0] <= 0) ctx.err(`${p}.yDomain`, 'con yScale "log" el dominio debe ser > 0. Usa un mínimo positivo, ej. [1, 1000000].');
     if (c.target != null) {
       if (typeof c.target !== 'object' || typeof c.target.y !== 'number') {
         ctx.err(`${p}.target`, 'target es { "y": <número>, "label": "..." } (línea de meta punteada).');
@@ -630,8 +635,14 @@ export function createValidator(vocab) {
         for (const k of Object.keys(sr)) {
           if (!SERIES_KEYS.includes(k)) ctx.warn(`${sp}.${k}`, `clave desconocida. Conocidas: ${list(SERIES_KEYS)}.`);
         }
-        if (!Array.isArray(sr.data) || !sr.data.length || sr.data.some(pt => !Array.isArray(pt) || pt.length !== 2 || pt.some(n => typeof n !== 'number'))) {
-          ctx.err(`${sp}.data`, 'data es un array de puntos [x, y] numéricos, ej. [[2006, 0], [2007, 5]].');
+        // Una serie se declara con `data` (puntos) O `fn` (expresión en x).
+        if (typeof sr.fn === 'string' && sr.fn.trim()) {
+          compiles(ctx, `${sp}.fn`, ['x'], 'return (' + sr.fn + ');');
+        } else if (!Array.isArray(sr.data) || !sr.data.length || sr.data.some(pt => !Array.isArray(pt) || pt.length !== 2 || pt.some(n => typeof n !== 'number'))) {
+          ctx.err(`${sp}.data`, 'data es un array de puntos [x, y] numéricos (ej. [[2006, 0], [2007, 5]]), o declara la serie como función con "fn": "exp(0.8*x)" (se muestrea sobre el xDomain).');
+        }
+        if (sr.head != null && sr.head !== true && (typeof sr.head !== 'object' || Array.isArray(sr.head))) {
+          ctx.err(`${sp}.head`, 'head es true (punto viajero por defecto) o un objeto { r, color, pulse, guides, label }.');
         }
       });
     } else if (type === 'bars') {
@@ -673,7 +684,8 @@ export function createValidator(vocab) {
           }
         }
       }
-      if (!flaggedOut && yDdecl && isFinite(ymin) && isFinite(ymax)) {
+      // La "curva aplastada" no aplica con yScale log (comprimir es el punto).
+      if (!flaggedOut && yDdecl && c.yScale !== 'log' && isFinite(ymin) && isFinite(ymax)) {
         const frac = (ymax - ymin) / (yDdecl[1] - yDdecl[0]);
         if (frac < 0.15) {
           ctx.warn(`${p}.yDomain`, `los datos ocupan solo ${Math.round(frac * 100)}% del yDomain [${yDdecl[0]}, ${yDdecl[1]}]: la curva queda aplastada contra el piso y no se lee. Ajusta yDomain al rango real de los datos (~[${Math.floor(ymin)}, ${Math.ceil(ymax)}]).`);

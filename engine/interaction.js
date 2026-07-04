@@ -5,8 +5,8 @@
 // world._touchLearner, world._spawnParticles, world._compiled, world._muted).
 // World exposes handleClick / _togglePropInteraction as thin wrappers.
 
-import { PROP_SPRITES } from './prop-sprites.js?v=124';
-import { tone } from './audio.js?v=124';
+import { PROP_SPRITES } from './prop-sprites.js?v=125';
+import { tone } from './audio.js?v=125';
 
 // Interactive props drawn procedurally (not in PROP_SPRITES) need explicit
 // click bounds in grid units, matching their drawn extent in prop-draw.js:

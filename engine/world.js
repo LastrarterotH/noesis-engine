@@ -2,27 +2,27 @@
 // World class: simulation state + tick + draw orchestration.
 // Owns entities, camera, scripts, fx, bubbles, labels, ambient, audio handles.
 
-import { mulberry32, ease, colorAlpha, mixColors, drawRichText, measureRichText, drawLabel, formatAPA, htmlToText } from './util.js?v=124';
-import { compileHooks } from './hooks.js?v=124';
-import { createAmbientSound } from './audio.js?v=124';
-import { SKY_PRESETS } from './sky-presets.js?v=124';
-import { computeSolidBox, drawProp } from './prop-draw.js?v=124';
-import { PROP_NATURAL_SCALE, PROP_SPRITES } from './prop-sprites.js?v=124';
-import { Draw } from './draw.js?v=124';
-import { initCamera, tickCamera } from './camera.js?v=124';
-import { makeAmbientParticle, tickAmbient, drawAmbient } from './ambient.js?v=124';
+import { mulberry32, ease, colorAlpha, mixColors, drawRichText, measureRichText, drawLabel, formatAPA, htmlToText } from './util.js?v=125';
+import { compileHooks } from './hooks.js?v=125';
+import { createAmbientSound } from './audio.js?v=125';
+import { SKY_PRESETS } from './sky-presets.js?v=125';
+import { computeSolidBox, drawProp } from './prop-draw.js?v=125';
+import { PROP_NATURAL_SCALE, PROP_SPRITES } from './prop-sprites.js?v=125';
+import { Draw } from './draw.js?v=125';
+import { initCamera, tickCamera } from './camera.js?v=125';
+import { makeAmbientParticle, tickAmbient, drawAmbient } from './ambient.js?v=125';
 import {
   runScript as _runScript, stopScripts as _stopScripts, tickScripts,
   evalScriptExpr, processScript, execScriptStep,
-} from './scripts.js?v=124';
-import { compileForm } from './forms.js?v=124';
-import { drawFloor } from './floor.js?v=124';
-import { tickAnimatedProps } from './animated-props.js?v=124';
-import { initLearner, touchLearner, tickLearner } from './learner.js?v=124';
-import { handleClick, togglePropInteraction } from './interaction.js?v=124';
+} from './scripts.js?v=125';
+import { compileForm } from './forms.js?v=125';
+import { drawFloor } from './floor.js?v=125';
+import { tickAnimatedProps } from './animated-props.js?v=125';
+import { initLearner, touchLearner, tickLearner } from './learner.js?v=125';
+import { handleClick, togglePropInteraction } from './interaction.js?v=125';
 import {
   createFxApi, spawnBubble, spawnParticles, tickFx, positionBubbles, drawFx,
-} from './fx.js?v=124';
+} from './fx.js?v=125';
 
 // Props que emiten luz solos cuando hay `ambient.darkness` (opt-out con
 // `light: false` en el prop). `dy` ubica la fuente en celdas del sprite
@@ -612,6 +612,18 @@ export class World {
 
   // --- Capa declarativa: elementos que el engine dibuja sin que la escena
   // escriba JS (escenas con `script`/`form` en vez de hooks).
+  // Compila una serie declarada como FUNCIÓN (string en x) a un muestreador,
+  // para no pre-muestrear decenas de puntos a mano (una parábola, un seno, una
+  // exponencial). Inyecta las funciones de Math comunes sin el prefijo `Math.`
+  // (exp, log, sin, pow...). Devuelve null si no compila (el validador ya avisa).
+  _compileFn(expr) {
+    try {
+      const raw = new Function('x', 'exp', 'log', 'log10', 'log2', 'sin', 'cos', 'tan', 'sqrt', 'pow', 'abs', 'min', 'max', 'floor', 'round', 'PI', 'E', 'return (' + expr + ');');
+      const M = Math;
+      return (x) => { try { const v = raw(x, M.exp, M.log, M.log10, M.log2, M.sin, M.cos, M.tan, M.sqrt, M.pow, M.abs, M.min, M.max, M.floor, M.round, M.PI, M.E); return Number.isFinite(v) ? v : 0; } catch { return 0; } };
+    } catch { return null; }
+  }
+
   _initDeclarative() {
     this._caption = { text: '' };
     // Segundo slot de texto: el título de acto (banda superior). Independiente
@@ -649,6 +661,7 @@ export class World {
       id: c.id, type: c.type === 'bars' ? 'bars' : 'line',
       x: c.x ?? 60, y: c.y ?? 60, w: c.w ?? 300, h: c.h ?? 170,
       xDomain: c.xDomain || [0, 1], yDomain: c.yDomain || [0, 1],
+      xScale: c.xScale === 'log' ? 'log' : undefined, yScale: c.yScale === 'log' ? 'log' : undefined,
       xTicks: c.xTicks, yTicks: c.yTicks,
       xLabel: c.xLabel, yLabel: c.yLabel,
       xFormat: c.xFormat || '', yFormat: c.yFormat || '',
@@ -660,6 +673,7 @@ export class World {
         id: sr.id, color: sr.color || '#5b8def', width: sr.width ?? 2.5,
         fill: sr.fill || false, dash: sr.dash, dots: sr.dots,
         data: sr.data || [], reveal: sr.reveal ?? 1,
+        fn: sr.fn ? this._compileFn(sr.fn) : null, head: sr.head || null,
       })),
     }));
     this._chartById = {};
@@ -744,7 +758,7 @@ export class World {
         drawLabel(ctx, String(c.title).toUpperCase(), c.x - 12, c.y - 12);
       }
       const f = this.draw.axes(c.x, c.y, c.w, c.h, {
-        xDomain: c.xDomain, yDomain: c.yDomain,
+        xDomain: c.xDomain, yDomain: c.yDomain, xScale: c.xScale, yScale: c.yScale,
         xTicks: c.xTicks, yTicks: c.yTicks,
         xLabel: c.xLabel, yLabel: c.yLabel,
         xFormat: fmt(c.xFormat), yFormat: fmt(c.yFormat),
@@ -755,8 +769,7 @@ export class World {
           color: c.target.color || '#c44a3e', dash: [5, 4], width: 1.5,
         });
         if (c.target.label) {
-          const span = (c.yDomain[1] - c.yDomain[0]) || 1;
-          const py = c.y + c.h * (1 - (c.target.y - c.yDomain[0]) / span);
+          const py = f.map(c.xDomain[0], c.target.y).y;   // via map: correcto también en escala log
           ctx.fillStyle = c.target.color || '#c44a3e'; ctx.font = '600 10px ' + UIQ;
           ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
           drawLabel(ctx, c.target.label, c.x + 8, py + 14);
@@ -769,9 +782,9 @@ export class World {
         });
       } else {
         for (const sr of c.series) {
-          this.draw.plot(f, sr.data, {
+          this.draw.plot(f, sr.fn || sr.data, {
             color: sr.color, width: sr.width, dash: sr.dash, dots: sr.dots,
-            reveal: Math.max(0, Math.min(1, sr.reveal)), fill: sr.fill,
+            reveal: Math.max(0, Math.min(1, sr.reveal)), fill: sr.fill, head: sr.head,
           });
         }
       }

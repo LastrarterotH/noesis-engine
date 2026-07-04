@@ -7,8 +7,8 @@
 // _positionBubbles/_drawFx as thin wrappers. The `fx` getter memoizes this api
 // on world._fxApi, so it is built once per World (not rebuilt every access).
 
-import { tone, sweep, createAmbientSound, createAmbientMusic, audio } from './audio.js?v=123';
-import { richToHtml } from './util.js?v=123';
+import { tone, sweep, createAmbientSound, createAmbientMusic, audio } from './audio.js?v=124';
+import { richToHtml, drawLabel } from './util.js?v=124';
 
 export function createFxApi(world) {
   const W = world;
@@ -652,7 +652,7 @@ export function drawFx(world, ctx) {
       ctx.font = `600 ${fx.size || 13}px ui-monospace, monospace`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.fillText(fx.text, fx.x, fx.y);
+      drawLabel(ctx, fx.text, fx.x, fx.y);   // notación _/^ (ej. "10^{9}") en la cifra
     } else if (fx.type === 'lightPulse') {
       // Beam of light: glowing dot with halo + fading trail.
       let a = Math.max(0, 1 - fx.age / fx.duration);

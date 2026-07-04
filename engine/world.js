@@ -2,27 +2,27 @@
 // World class: simulation state + tick + draw orchestration.
 // Owns entities, camera, scripts, fx, bubbles, labels, ambient, audio handles.
 
-import { mulberry32, ease, colorAlpha, mixColors, drawRichText, measureRichText, formatAPA, htmlToText } from './util.js?v=123';
-import { compileHooks } from './hooks.js?v=123';
-import { createAmbientSound } from './audio.js?v=123';
-import { SKY_PRESETS } from './sky-presets.js?v=123';
-import { computeSolidBox, drawProp } from './prop-draw.js?v=123';
-import { PROP_NATURAL_SCALE, PROP_SPRITES } from './prop-sprites.js?v=123';
-import { Draw } from './draw.js?v=123';
-import { initCamera, tickCamera } from './camera.js?v=123';
-import { makeAmbientParticle, tickAmbient, drawAmbient } from './ambient.js?v=123';
+import { mulberry32, ease, colorAlpha, mixColors, drawRichText, measureRichText, drawLabel, formatAPA, htmlToText } from './util.js?v=124';
+import { compileHooks } from './hooks.js?v=124';
+import { createAmbientSound } from './audio.js?v=124';
+import { SKY_PRESETS } from './sky-presets.js?v=124';
+import { computeSolidBox, drawProp } from './prop-draw.js?v=124';
+import { PROP_NATURAL_SCALE, PROP_SPRITES } from './prop-sprites.js?v=124';
+import { Draw } from './draw.js?v=124';
+import { initCamera, tickCamera } from './camera.js?v=124';
+import { makeAmbientParticle, tickAmbient, drawAmbient } from './ambient.js?v=124';
 import {
   runScript as _runScript, stopScripts as _stopScripts, tickScripts,
   evalScriptExpr, processScript, execScriptStep,
-} from './scripts.js?v=123';
-import { compileForm } from './forms.js?v=123';
-import { drawFloor } from './floor.js?v=123';
-import { tickAnimatedProps } from './animated-props.js?v=123';
-import { initLearner, touchLearner, tickLearner } from './learner.js?v=123';
-import { handleClick, togglePropInteraction } from './interaction.js?v=123';
+} from './scripts.js?v=124';
+import { compileForm } from './forms.js?v=124';
+import { drawFloor } from './floor.js?v=124';
+import { tickAnimatedProps } from './animated-props.js?v=124';
+import { initLearner, touchLearner, tickLearner } from './learner.js?v=124';
+import { handleClick, togglePropInteraction } from './interaction.js?v=124';
 import {
   createFxApi, spawnBubble, spawnParticles, tickFx, positionBubbles, drawFx,
-} from './fx.js?v=123';
+} from './fx.js?v=124';
 
 // Props que emiten luz solos cuando hay `ambient.darkness` (opt-out con
 // `light: false` en el prop). `dy` ubica la fuente en celdas del sprite
@@ -741,7 +741,7 @@ export class World {
       if (c.title) {
         ctx.fillStyle = '#d4dbeb'; ctx.font = '600 11px ' + UIQ;
         ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
-        ctx.fillText(String(c.title).toUpperCase(), c.x - 12, c.y - 12);
+        drawLabel(ctx, String(c.title).toUpperCase(), c.x - 12, c.y - 12);
       }
       const f = this.draw.axes(c.x, c.y, c.w, c.h, {
         xDomain: c.xDomain, yDomain: c.yDomain,
@@ -759,7 +759,7 @@ export class World {
           const py = c.y + c.h * (1 - (c.target.y - c.yDomain[0]) / span);
           ctx.fillStyle = c.target.color || '#c44a3e'; ctx.font = '600 10px ' + UIQ;
           ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
-          ctx.fillText(c.target.label, c.x + 8, py + 14);
+          drawLabel(ctx, c.target.label, c.x + 8, py + 14);
         }
       }
       if (c.type === 'bars') {
@@ -1209,7 +1209,7 @@ export class World {
         ctx.font = '600 9px ui-monospace, "SF Mono", Menlo, monospace';
         ctx.textAlign = 'left';
         ctx.textBaseline = 'top';
-        ctx.fillText(String(z.label).toUpperCase(), z.x + 6, z.y + 6);
+        drawLabel(ctx, String(z.label).toUpperCase(), z.x + 6, z.y + 6);
       }
     }
   }

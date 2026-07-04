@@ -2,9 +2,9 @@
 // Pixel-art draw primitives: learner blob, eye geometry, mood-routing,
 // accessories overlay. Instantiated once per World.
 
-import { mixColors, drawMath, measureMath as _measureMath } from './util.js?v=123';
-import { drawMoodOverlays } from './mood.js?v=123';
-import { drawAccessories } from './accessories.js?v=123';
+import { mixColors, drawMath, measureMath as _measureMath, drawLabel, measureLabel } from './util.js?v=124';
+import { drawMoodOverlays } from './mood.js?v=124';
+import { drawAccessories } from './accessories.js?v=124';
 
 export class Draw {
   constructor(world) { this.world = world; }
@@ -521,13 +521,13 @@ export class Draw {
       ctx.font = opts.font || '600 12px "Plus Jakarta Sans", ui-sans-serif, system-ui, -apple-system, sans-serif';
       ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
       if (opts.labelBg !== false) {
-        const tw = ctx.measureText(String(opts.label)).width;
+        const tw = measureLabel(ctx, opts.label).w;
         const padX = 5, h = 16;
         this.rrect(mx - tw / 2 - padX, my - h / 2, tw + padX * 2, h, 5);
         ctx.fillStyle = opts.labelBg || 'rgba(20,22,40,0.82)'; ctx.fill();
       }
       ctx.fillStyle = opts.labelColor || '#eef1f6';
-      ctx.fillText(String(opts.label), mx, my + 0.5);
+      drawLabel(ctx, opts.label, mx, my + 0.5);
       ctx.restore();
     }
   }
@@ -553,7 +553,7 @@ export class Draw {
       ctx.font = opts.font || '600 13px "Plus Jakarta Sans", ui-sans-serif, system-ui, -apple-system, sans-serif';
       ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
       ctx.fillStyle = opts.labelColor || '#1F2547';
-      ctx.fillText(String(opts.label), x + w / 2, y + h / 2 + 0.5);
+      drawLabel(ctx, opts.label, x + w / 2, y + h / 2 + 0.5);
     }
     ctx.restore();
     const cx = x + w / 2, cy = y + h / 2;
@@ -612,18 +612,18 @@ export class Draw {
       const p = map(tv, 0), py = opts.frame ? y + h : ay;
       ctx.beginPath(); ctx.moveTo(p.x, py - tickLen); ctx.lineTo(p.x, py + tickLen); ctx.stroke();
       const t = opts.xFormat ? opts.xFormat(tv) : String(Math.round(tv * 100) / 100);
-      if (t !== '') ctx.fillText(t, p.x, py + tickLen + 2);
+      if (t !== '') drawLabel(ctx, t, p.x, py + tickLen + 2);
     }
     ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
     for (const tv of yticks) {
       const p = map(0, tv), px2 = opts.frame ? x : ax;
       ctx.beginPath(); ctx.moveTo(px2 - tickLen, p.y); ctx.lineTo(px2 + tickLen, p.y); ctx.stroke();
       const t = opts.yFormat ? opts.yFormat(tv) : String(Math.round(tv * 100) / 100);
-      if (t !== '') ctx.fillText(t, px2 - tickLen - 3, p.y);
+      if (t !== '') drawLabel(ctx, t, px2 - tickLen - 3, p.y);
     }
     ctx.fillStyle = labelColor;
-    if (opts.xLabel) { ctx.textAlign = 'right'; ctx.textBaseline = 'top'; ctx.fillText(opts.xLabel, x + w, ay + tickLen + 14); }
-    if (opts.yLabel) { ctx.textAlign = 'left'; ctx.textBaseline = 'bottom'; ctx.fillText(opts.yLabel, ax + 6, y - 4); }
+    if (opts.xLabel) { ctx.textAlign = 'right'; ctx.textBaseline = 'top'; drawLabel(ctx, opts.xLabel, x + w, ay + tickLen + 14); }
+    if (opts.yLabel) { ctx.textAlign = 'left'; ctx.textBaseline = 'bottom'; drawLabel(ctx, opts.yLabel, ax + 6, y - 4); }
     ctx.restore();
     return frame;
   }
@@ -704,7 +704,7 @@ export class Draw {
       ctx.fillStyle = col; ctx.fill();
       if (opts.labels && typeof v === 'object' && v.label != null) {
         ctx.fillStyle = opts.labelColor || '#c5cbdb'; ctx.textAlign = 'center'; ctx.textBaseline = 'top';
-        ctx.fillText(String(v.label), cx, by + 4);
+        drawLabel(ctx, v.label, cx, by + 4);
       }
     });
     ctx.restore();
@@ -801,7 +801,7 @@ export class Draw {
       }
       if (opts.labels && g.label != null) {
         ctx.fillStyle = opts.labelColor || '#c5cbdb'; ctx.textAlign = 'center'; ctx.textBaseline = 'top';
-        ctx.fillText(String(g.label), cx, by + 4);
+        drawLabel(ctx, g.label, cx, by + 4);
       }
     });
     ctx.restore();

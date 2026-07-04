@@ -198,6 +198,35 @@ function _richRuns(ctx, runs, opts) {
   return { w, fonts, widths };
 }
 
+// Parsea px/weight/family de un ctx.font ("600 11px fam") para drawRichText.
+export function fontToOpts(font) {
+  const m = String(font).match(/^\s*(?:(?:italic|oblique)\s+)?(?:(\d{2,3}|bold|bolder|lighter|normal)\s+)?([\d.]+)px\s+(.+?)\s*$/);
+  if (!m) return { px: 14, weight: '500', family: 'sans-serif' };
+  return { px: parseFloat(m[2]), weight: m[1] || '500', family: m[3] };
+}
+
+// Dibuja un label del autor en canvas CON notación (_/^ y $...$ inline),
+// derivando px/weight/family del ctx.font actual y el align del ctx.textAlign
+// (respeta el textBaseline/fillStyle ya seteados). Es el reemplazo directo de
+// `ctx.fillText(textoDelAutor, x, y)` en los labels del toolkit (ejes, ticks,
+// barras, nodos, títulos de chart, floatNumber): un tick "10^{6}", un eje
+// "v_{max}" o "$\frac{dy}{dx}$" ya no salen con la sintaxis cruda.
+export function drawLabel(ctx, text, x, y, opts = {}) {
+  const prevFont = ctx.font;                 // drawRichText deja la fuente en el último run
+  const f = fontToOpts(prevFont);
+  const ta = ctx.textAlign;
+  const align = opts.align || (ta === 'center' ? 'center' : (ta === 'right' || ta === 'end') ? 'right' : 'left');
+  const r = drawRichText(ctx, String(text), x, y, { px: f.px, weight: f.weight, family: f.family, align, ...opts });
+  ctx.font = prevFont;                        // restaurar: cada llamada es independiente (ticks en loop)
+  return r;
+}
+
+// Ancho real (con notación) de un label, para dimensionar chips/fondos.
+export function measureLabel(ctx, text) {
+  const f = fontToOpts(ctx.font);
+  return measureRichText(ctx, String(text), { px: f.px, weight: f.weight, family: f.family });
+}
+
 // --- Notación matemática APILADA en el canvas ----------------------------
 // Motor de layout de cajas mínimo (sin KaTeX) para dibujar fórmulas en
 // notación vertical REAL sobre el lienzo. Cubre: fracción apilada (num sobre

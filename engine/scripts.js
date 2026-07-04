@@ -255,6 +255,20 @@ export function execScriptStep(world, step, sc) {
       }
     }
   }
+  if (step.formula) {
+    // Step de fórmulas declarativas: mostrar/ocultar/animar una ecuación
+    // (world.draw.math) sin onDraw, con tween opcional de su opacidad.
+    const f = world._formulaById && world._formulaById[step.formula];
+    if (f) {
+      const ease = step.easing || 'easeInOut';
+      const tw = (obj, key, to2) => step.duration
+        ? world.tween(obj, key, to2, { duration: step.duration, easing: ease })
+        : (obj[key] = to2);
+      if (step.show === true) tw(f, 'alpha', 1);
+      if (step.hide === true) tw(f, 'alpha', 0);
+      if (typeof step.alpha === 'number') tw(f, 'alpha', step.alpha);
+    }
+  }
   if (step.weather != null) {
     // Clima en vivo: arranca o detiene partículas de ambiente a mitad de
     // escena (la tormenta que arrecia, la nieve que empieza, la lluvia que

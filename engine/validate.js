@@ -10,10 +10,10 @@
 // hooks) o se escanean del código fuente del motor (buildVocab recibe un
 // lector de fuentes), así el validador no se desincroniza al crecer el motor.
 
-import { PROP_SPRITES } from './prop-sprites.js?v=121';
-import { SKY_PRESETS } from './sky-presets.js?v=121';
-import { HOOK_NAMES, HOOK_ARGS } from './hooks.js?v=121';
-import { compileForm, FORM_TYPES } from './forms.js?v=121';
+import { PROP_SPRITES } from './prop-sprites.js?v=122';
+import { SKY_PRESETS } from './sky-presets.js?v=122';
+import { HOOK_NAMES, HOOK_ARGS } from './hooks.js?v=122';
+import { compileForm, FORM_TYPES } from './forms.js?v=122';
 
 // Fuentes del motor que buildVocab escanea con regex (enums de despachos
 // if/else que no se exportan como datos).
@@ -77,7 +77,9 @@ const LABEL_ANCHORS = ['top-left', 'top', 'top-right', 'left', 'center', 'right'
 const HEALTH_KINDS = ['normal', 'sick', 'feverish', 'frozen'];
 const ZONE_EFFECTS = ['mood', 'reinforce', 'quiet', 'sleep'];
 
-const TOP_KEYS = ['meta', 'text', 'hint', 'hintDuration', 'canvas', 'entities', 'props', 'labels', 'walls', 'zones', 'ambient', 'hooks', 'script', 'meters', 'charts', 'sets', 'seed', 'form'];
+const TOP_KEYS = ['meta', 'text', 'hint', 'hintDuration', 'canvas', 'entities', 'props', 'labels', 'walls', 'zones', 'ambient', 'hooks', 'script', 'meters', 'charts', 'formulas', 'sets', 'seed', 'form'];
+const FORMULA_KEYS = ['id', 'tex', 'x', 'y', 'px', 'color', 'weight', 'family', 'align', 'valign', 'alpha', 'screen', 'panel'];
+const FORMULA_PANEL_KEYS = ['title', 'titleColor', 'bg', 'border', 'pad', 'radius'];
 const SET_KEYS = ['id', 'cx', 'cy', 'zoom'];
 const CHART_KEYS = ['id', 'type', 'x', 'y', 'w', 'h', 'xDomain', 'yDomain', 'xTicks', 'yTicks', 'xLabel', 'yLabel', 'xFormat', 'yFormat', 'title', 'target', 'panel', 'alpha', 'reveal', 'gap', 'color', 'series', 'values'];
 const SERIES_KEYS = ['id', 'color', 'width', 'fill', 'dash', 'dots', 'data', 'reveal'];
@@ -94,7 +96,7 @@ const STEP_KEYS = [
   'stop', 'say', 'think', 'text', 'exclaim', 'surprise', 'wonder', 'mood', 'value',
   'flash', 'reinforce', 'tone', 'dur', 'opts', 'sweep', 'particles', 'floatNumber',
   'celebrate', 'cry', 'thinking', 'appear', 'vanish', 'camera', 'caption', 'meter',
-  'tween', 'chart', 'show', 'hide', 'alpha', 'series', 'reveal',
+  'tween', 'chart', 'formula', 'show', 'hide', 'alpha', 'series', 'reveal',
   'focus', 'off', 'radius', 'color', 'style', 'scene', 'move', 'weather', 'intensity',
   'showLabel', 'hideLabel', 'music',
   'set', 'add', 'clamp', 'do', 'call', 'runScript', 'runScriptOpts',
@@ -335,6 +337,7 @@ function checkDuplicateIds(ctx, config) {
   const chartIds = scan(config.charts, 'charts');
   scan(config.labels, 'labels');
   scan(config.meters, 'meters');
+  scan(config.formulas, 'formulas');
   // series por chart
   (config.charts || []).forEach((c, i) => {
     if (c && Array.isArray(c.series)) scan(c.series, `charts[${i}].series`);
@@ -690,6 +693,41 @@ export function createValidator(vocab) {
     }
   }
 
+  function vFormula(ctx, f, i) {
+    const p = `formulas[${i}]`;
+    if (!f || typeof f !== 'object') return ctx.err(p, 'cada fórmula es un objeto { "id", "tex", ... }.');
+    if (!f.id || typeof f.id !== 'string') ctx.err(`${p}.id`, 'falta el id (el step "formula" lo usa para mostrarla/animarla).');
+    // tex: string, o array de strings / { tex, color } (segmentos en fila).
+    const segs = Array.isArray(f.tex) ? f.tex : [f.tex];
+    if (f.tex == null || !segs.some(s => (typeof s === 'string' && s.trim()) || (s && typeof s === 'object' && typeof s.tex === 'string' && s.tex.trim()))) {
+      ctx.err(`${p}.tex`, 'falta "tex": la ecuación LaTeX (un string, o un array de segmentos { "tex", "color" } para pintar partes en distinto color, ej. un resultado resaltado).');
+    }
+    segs.forEach((s, j) => {
+      if (s && typeof s === 'object' && !Array.isArray(s)) {
+        if (typeof s.tex !== 'string') ctx.err(`${p}.tex[${j}].tex`, 'cada segmento es { "tex": "...", "color"? }.');
+        if (s.color != null && !COLOR_RE.test(s.color)) ctx.warn(`${p}.tex[${j}].color`, `"${s.color}" no parece un color CSS.`);
+      }
+    });
+    for (const k of Object.keys(f)) {
+      if (!FORMULA_KEYS.includes(k)) ctx.warn(`${p}.${k}`, `clave desconocida. Conocidas: ${list(FORMULA_KEYS)}.`);
+    }
+    for (const k of ['x', 'y']) {
+      if (f[k] != null) { const r = isCoord(f[k]); if (r !== true) ctx.err(`${p}.${k}`, r); }
+    }
+    if (f.align != null && !['left', 'center', 'right'].includes(f.align)) ctx.err(`${p}.align`, 'align es "left", "center" o "right".');
+    if (f.valign != null && !['baseline', 'middle', 'top', 'bottom'].includes(f.valign)) ctx.err(`${p}.valign`, 'valign es "baseline", "middle", "top" o "bottom".');
+    if (f.color != null && !COLOR_RE.test(f.color)) ctx.warn(`${p}.color`, `"${f.color}" no parece un color CSS.`);
+    if (f.alpha != null && (typeof f.alpha !== 'number' || f.alpha < 0 || f.alpha > 1)) ctx.warn(`${p}.alpha`, 'alpha es la opacidad inicial 0..1 (usa 0 para revelarla luego con el step "formula").');
+    if (f.panel != null && f.panel !== true && (typeof f.panel !== 'object' || Array.isArray(f.panel))) {
+      ctx.err(`${p}.panel`, 'panel es true (tarjeta por defecto) o un objeto { title, bg, border, pad, radius }.');
+    } else if (f.panel && typeof f.panel === 'object') {
+      for (const k of Object.keys(f.panel)) {
+        if (!FORMULA_PANEL_KEYS.includes(k)) ctx.warn(`${p}.panel.${k}`, `clave desconocida del panel. Conocidas: ${list(FORMULA_PANEL_KEYS)}.`);
+      }
+      checkTextStyle(ctx, `${p}.panel.title`, f.panel.title);
+    }
+  }
+
   function vSteps(ctx, steps, p, scope) {
     if (!Array.isArray(steps)) return ctx.err(p, 'script debe ser un array de steps.');
     // goto puede apuntar a labels de ramas then/else (se inyectan al correr).
@@ -826,9 +864,19 @@ export function createValidator(vocab) {
       if (s.alpha != null && (typeof s.alpha !== 'number' || s.alpha < 0 || s.alpha > 1)) {
         ctx.err(`${p}.alpha`, 'alpha es la opacidad, un número entre 0 y 1.');
       }
+    } else if (s.formula != null) {
+      if (!scope.formulaIds || !scope.formulaIds.has(s.formula)) {
+        ctx.err(`${p}.formula`, `"${s.formula}" no es el id de ninguna fórmula declarada (${list(scope.formulaIds || []) || 'ninguna'}). Declárala en la lista top-level "formulas".`);
+      }
+      const acts = ['show', 'hide', 'alpha'].filter(k => s[k] != null);
+      if (!acts.length) ctx.err(p, 'el step formula necesita una acción: "show": true, "hide": true o "alpha": n (con "duration" opcional para el fade).');
+      if (s.alpha != null && (typeof s.alpha !== 'number' || s.alpha < 0 || s.alpha > 1)) {
+        ctx.err(`${p}.alpha`, 'alpha es la opacidad, un número entre 0 y 1.');
+      }
+      for (const k of ['series', 'reveal']) if (s[k] != null) ctx.err(`${p}.${k}`, `"${k}" es de "chart", no de "formula".`);
     } else {
       for (const k of ['show', 'hide', 'series', 'reveal']) {
-        if (s[k] != null) ctx.err(`${p}.${k}`, `"${k}" solo tiene sentido junto a "chart": "<id>".`);
+        if (s[k] != null) ctx.err(`${p}.${k}`, `"${k}" solo tiene sentido junto a "chart": "<id>" o "formula": "<id>".`);
       }
     }
     if (s.focus != null) {
@@ -1052,6 +1100,7 @@ export function createValidator(vocab) {
         chartSeries: new Map((config.charts || []).filter(c => c?.id).map(c => [c.id, new Set((c.series || []).map(sr => sr?.id).filter(Boolean))])),
         setIds: new Set((Array.isArray(config.sets) ? config.sets : []).map(st => st?.id).filter(Boolean)),
         labelIds: new Set((config.labels || []).map(l => l?.id).filter(Boolean)),
+        formulaIds: new Set((config.formulas || []).map(f => f?.id).filter(Boolean)),
         hasHooks: Object.values(config.hooks || {}).some(v => typeof v === 'string' && v.trim()),
         hasMusic: typeof config.meta?.music === 'string' && config.meta.music.trim() !== '',
       };
@@ -1118,6 +1167,7 @@ export function createValidator(vocab) {
       }
     });
     (config.charts || []).forEach((c, i) => vChart(ctx, c, i));
+    (config.formulas || []).forEach((f, i) => vFormula(ctx, f, i));
     if (config.sets != null) {
       if (!Array.isArray(config.sets)) ctx.err('sets', 'debe ser un array de vistas { "id", "cx" }. La cámara arranca en la primera.');
       else {
@@ -1146,6 +1196,7 @@ export function createValidator(vocab) {
         chartSeries: new Map((config.charts || []).filter(c => c?.id).map(c => [c.id, new Set((c.series || []).map(sr => sr?.id).filter(Boolean))])),
         setIds: new Set((Array.isArray(config.sets) ? config.sets : []).map(st => st?.id).filter(Boolean)),
         labelIds: new Set((config.labels || []).map(l => l?.id).filter(Boolean)),
+        formulaIds: new Set((config.formulas || []).map(f => f?.id).filter(Boolean)),
         hasHooks: Object.values(config.hooks || {}).some(v => typeof v === 'string' && v.trim()),
         hasMusic: typeof config.meta?.music === 'string' && config.meta.music.trim() !== '',
       };

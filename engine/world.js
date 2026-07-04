@@ -2,27 +2,27 @@
 // World class: simulation state + tick + draw orchestration.
 // Owns entities, camera, scripts, fx, bubbles, labels, ambient, audio handles.
 
-import { mulberry32, ease, colorAlpha, mixColors, drawRichText, measureRichText, formatAPA, htmlToText } from './util.js?v=121';
-import { compileHooks } from './hooks.js?v=121';
-import { createAmbientSound } from './audio.js?v=121';
-import { SKY_PRESETS } from './sky-presets.js?v=121';
-import { computeSolidBox, drawProp } from './prop-draw.js?v=121';
-import { PROP_NATURAL_SCALE, PROP_SPRITES } from './prop-sprites.js?v=121';
-import { Draw } from './draw.js?v=121';
-import { initCamera, tickCamera } from './camera.js?v=121';
-import { makeAmbientParticle, tickAmbient, drawAmbient } from './ambient.js?v=121';
+import { mulberry32, ease, colorAlpha, mixColors, drawRichText, measureRichText, formatAPA, htmlToText } from './util.js?v=122';
+import { compileHooks } from './hooks.js?v=122';
+import { createAmbientSound } from './audio.js?v=122';
+import { SKY_PRESETS } from './sky-presets.js?v=122';
+import { computeSolidBox, drawProp } from './prop-draw.js?v=122';
+import { PROP_NATURAL_SCALE, PROP_SPRITES } from './prop-sprites.js?v=122';
+import { Draw } from './draw.js?v=122';
+import { initCamera, tickCamera } from './camera.js?v=122';
+import { makeAmbientParticle, tickAmbient, drawAmbient } from './ambient.js?v=122';
 import {
   runScript as _runScript, stopScripts as _stopScripts, tickScripts,
   evalScriptExpr, processScript, execScriptStep,
-} from './scripts.js?v=121';
-import { compileForm } from './forms.js?v=121';
-import { drawFloor } from './floor.js?v=121';
-import { tickAnimatedProps } from './animated-props.js?v=121';
-import { initLearner, touchLearner, tickLearner } from './learner.js?v=121';
-import { handleClick, togglePropInteraction } from './interaction.js?v=121';
+} from './scripts.js?v=122';
+import { compileForm } from './forms.js?v=122';
+import { drawFloor } from './floor.js?v=122';
+import { tickAnimatedProps } from './animated-props.js?v=122';
+import { initLearner, touchLearner, tickLearner } from './learner.js?v=122';
+import { handleClick, togglePropInteraction } from './interaction.js?v=122';
 import {
   createFxApi, spawnBubble, spawnParticles, tickFx, positionBubbles, drawFx,
-} from './fx.js?v=121';
+} from './fx.js?v=122';
 
 // Props que emiten luz solos cuando hay `ambient.darkness` (opt-out con
 // `light: false` en el prop). `dy` ubica la fuente en celdas del sprite
@@ -579,6 +579,7 @@ export class World {
     else this._drawLearners(ctx);
     this._drawFocuses(ctx);
     this._drawCharts(ctx);
+    this._drawFormulas(ctx, false);   // fórmulas en espacio de mundo (push-in las agranda)
     this._drawFx(ctx);
     ctx.restore();
     // Iluminación: scrim de oscuridad perforado por los emisores, sobre el
@@ -598,6 +599,8 @@ export class World {
     // Saturación: dessatura TODO el mundo ya dibujado (gris ↔ color) sin tocar
     // el HUD/captions/watermark, que se pintan después. `ambient.saturation` 0..1.
     this._drawSaturation(ctx);
+    // Fórmulas con `screen: true`: callout HUD fijo (inmune a cámara/saturación).
+    this._drawFormulas(ctx, true);
     // Capa declarativa (captions + meters), en espacio-pantalla, bajo el watermark.
     this._drawDeclarative(ctx);
     // Logo institucional opcional (esquina inferior izquierda), bajo el watermark.
@@ -661,6 +664,25 @@ export class World {
     }));
     this._chartById = {};
     for (const c of this._charts) this._chartById[c.id] = c;
+    // Fórmulas declarativas: ecuaciones apiladas (world.draw.math) que el guion
+    // muestra/anima con el step `formula`, sin escribir onDraw. Se dibujan en
+    // espacio de mundo por defecto (un push-in las agranda), o en pantalla con
+    // `screen: true` (callout HUD fijo). `tex` es un string o un array de
+    // segmentos { tex, color } que se dibujan en fila (para resaltar un
+    // resultado en otro color). `panel` opcional dibuja una tarjeta de respaldo.
+    this._formulas = (this.config.formulas || []).map(f => ({
+      id: f.id,
+      segs: (Array.isArray(f.tex) ? f.tex : [f.tex])
+        .map(s => (typeof s === 'string' ? { tex: s } : s))
+        .filter(s => s && s.tex),
+      x: f.x ?? this.W / 2, y: f.y ?? 40,
+      px: f.px ?? 22, color: f.color || '#f4e8c6', weight: f.weight || '600',
+      family: f.family, align: f.align || 'center', valign: f.valign || 'middle',
+      alpha: f.alpha ?? 1, screen: f.screen === true,
+      panel: f.panel ? (typeof f.panel === 'object' ? f.panel : {}) : null,
+    }));
+    this._formulaById = {};
+    for (const f of this._formulas) this._formulaById[f.id] = f;
     // Sets de cámara declarativos: vistas nombradas que el step `scene`
     // activa con fade a negro + teleport (fx.transitionTo). La cámara
     // arranca en el primer set de la lista.
@@ -752,6 +774,58 @@ export class World {
             reveal: Math.max(0, Math.min(1, sr.reveal)), fill: sr.fill,
           });
         }
+      }
+      ctx.restore();
+    }
+  }
+
+  // Fórmulas declarativas (world.draw.math sin onDraw). `screen` selecciona la
+  // pasada: false = espacio de mundo (dentro de la cámara), true = pantalla.
+  _drawFormulas(ctx, screen) {
+    if (!this._formulas || !this._formulas.length) return;
+    const UIQ = '"Plus Jakarta Sans", ui-sans-serif, system-ui, -apple-system, sans-serif';
+    for (const f of this._formulas) {
+      if (!!f.screen !== !!screen) continue;
+      if (f.alpha < 0.01 || !f.segs.length) continue;
+      const fam = f.family || UIQ;
+      const baseOpts = { px: f.px, weight: f.weight, family: fam };
+      const gap = f.px * 0.5;
+      // Mide cada segmento; la fila comparte baseline (ascenso/descenso máximos).
+      let asc = 0, desc = 0;
+      const ms = f.segs.map(s => {
+        const m = this.draw.measureMath(s.tex, baseOpts);
+        asc = Math.max(asc, m.ascent); desc = Math.max(desc, m.descent);
+        return m;
+      });
+      const totalW = ms.reduce((a, m) => a + m.w, 0) + gap * (f.segs.length - 1);
+      const height = asc + desc;
+      const left = f.align === 'center' ? f.x - totalW / 2 : f.align === 'right' ? f.x - totalW : f.x;
+      const baseline = f.valign === 'middle' ? f.y + (asc - desc) / 2
+        : f.valign === 'top' ? f.y + asc : f.valign === 'bottom' ? f.y - desc : f.y;
+      const top = baseline - asc;
+      ctx.save();
+      ctx.globalAlpha *= Math.min(1, f.alpha);
+      if (f.panel) {
+        const p = f.panel, pad = p.pad ?? 18, titleH = p.title ? 22 : 0, r = p.radius ?? 12;
+        const bx = left - pad, by = top - pad - titleH, bw = totalW + pad * 2, bh = height + pad * 2 + titleH;
+        ctx.fillStyle = p.bg || 'rgba(31,37,71,0.93)';
+        this._declRrect(ctx, bx, by, bw, bh, r); ctx.fill();
+        if (p.border !== false) {
+          ctx.strokeStyle = typeof p.border === 'string' ? p.border : 'rgba(244,172,29,0.30)';
+          ctx.lineWidth = 1; this._declRrect(ctx, bx, by, bw, bh, r); ctx.stroke();
+        }
+        if (p.title) {
+          ctx.fillStyle = p.titleColor || '#c9d2e6';
+          ctx.font = '600 10px ' + fam; ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
+          try { ctx.letterSpacing = '1.5px'; } catch {}
+          ctx.fillText(String(p.title).toUpperCase(), left + totalW / 2, by + 15);
+          try { ctx.letterSpacing = '0px'; } catch {}
+        }
+      }
+      let cx = left;
+      for (let k = 0; k < f.segs.length; k++) {
+        this.draw.math(cx, baseline, f.segs[k].tex, { ...baseOpts, color: f.segs[k].color || f.color, align: 'left', valign: 'baseline' });
+        cx += ms[k].w + gap;
       }
       ctx.restore();
     }

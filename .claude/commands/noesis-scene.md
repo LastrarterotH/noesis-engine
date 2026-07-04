@@ -176,10 +176,12 @@ Step keys (one primary action per step; combine multiple keys if they should fir
 - `tone: <freq>, dur?, opts?` / `sweep: [from, to], dur?, opts?`.
 - `music: { volume: <0..1.5>, duration?: 1.2 }` — música reactiva al guion: agacha o levanta la música ambiental con un fade. `volume` es FRACCIÓN del volumen base del mood (1 = normal, 0 = silencio; el autor no necesita conocer la mezcla). Usos: bajar a ~0.35 antes de un caption fuerte, silencio súbito (`volume: 0, duration: 0.2`) en el golpe más duro, crecida leve (1.2) para la tesis final. `music: "stinger"` dispara un golpe musical (acorde del compás actual + timbal) CUANTIZADO al siguiente tiempo fuerte de la grilla: el momento de revelación aterriza en el compás. `music: { mood: "<mood>", duration?: 1.5 }` cambia el mood a MITAD de escena con crossfade, para escenas multi-acto (el inframundo de la 05 pasa a `solemn` y la primavera vuelve a `pastoral`); no combinar `mood` y `volume` en el mismo step, y usarlo solo entre actos largos (cambiarlo por beat marea). Requiere `meta.music` declarado (sin ♪ activo es no-op: la escena corre idéntica); el replay restaura volumen base y mood original solos. El validador lintea la dramaturgia: stingers a <3 s o música agachada sin restaurar al final dan warning. Fixtures: escena 11 (volumen/stinger), escena 05 (mood switch).
 - `particles: { x, y, color, count, ... }` / `floatNumber: { x, y, text }`.
-- `set: { key: value }` — assign to `world.state[key]`.
+- `set: { key: value }` — assign to `world.state[key]`; una clave con punto (`'granada.seeds'`, `'puerta.open'`) escribe la propiedad de esa entidad/prop por id.
+- `lookAt: '<id>', to: '<otroId>' | [x,y] | {x,y}` — dirige la mirada de un personaje (sin `to` la suelta). NO uses `do` para esto.
+- `jump: '<id>', duration?` — salto expresivo de una entidad.
 - `add: { key: delta }` — additive (numbers only).
 - `clamp: { key: [min, max] }` — clamp `state.key`.
-- `tween: '<key>' | '<id>.<prop>', to: <num>, duration?: 0.6, easing?: 'easeInOut'` — animate a `world.state` key (`'deuda'`) or an entity property by id (`'alma._alpha'`) without JS. Don't combine with `walk`/`meter` in the same step (all read `to`).
+- `tween: '<key>' | '<id>.<prop>', to: <num>, duration?: 0.6, easing?: 'easeInOut'` — animate a `world.state` key (`'deuda'`), an entity/prop property by id (`'alma._alpha'`, `'d1.fall'`), `'ambient.darkness'`, or a GROUP of props: `'type:tree.alpha'` (todos los props de ese type) o `'tag:primavera.alpha'` (props con ese `tag`). Don't combine with `walk`/`meter`/`lookAt` in the same step (all read `to`).
 - `chart: '<id>', show?: true | hide?: true | alpha?: <0..1>, reveal?: <0..1>, series?: '<seriesId>', duration?, easing?` — declarative charts: show/hide a top-level `charts` entry and reveal its line series (or its bars, without `series`) at the right beat. Charts draw in world space (camera push-in magnifies them). See scene 91 for the fixture.
 - `do: '<js code>'` — escape hatch, scope: `world`, `state`, `s`, `e` (last walked entity).
 - `call: '<expr>'` — eval expression, if it returns a function, invoke it.
@@ -217,7 +219,7 @@ leaveTombstone: true            show tombstone after death
 extinguishable: false           opt-in to Skinner-style fade
 extinctionThreshold: 8          s without reinforce before fade
 imitates: otherEntity           copies target's mood periodically
-lookAt: id | {x,y}              blob quieto mira a esa entidad o punto (el movimiento manda; cámbialo con `do`)
+lookAt: id | {x,y}              blob quieto mira a esa entidad o punto (el movimiento manda; cámbialo a mitad con el step `lookAt`)
 sleepable: true                 false = never sleep (scripted scenes)
 greets: true                    false = never auto-greet
 solid: true                     false = no collision with other learners

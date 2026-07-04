@@ -10,10 +10,10 @@
 // hooks) o se escanean del código fuente del motor (buildVocab recibe un
 // lector de fuentes), así el validador no se desincroniza al crecer el motor.
 
-import { PROP_SPRITES } from './prop-sprites.js?v=122';
-import { SKY_PRESETS } from './sky-presets.js?v=122';
-import { HOOK_NAMES, HOOK_ARGS } from './hooks.js?v=122';
-import { compileForm, FORM_TYPES } from './forms.js?v=122';
+import { PROP_SPRITES } from './prop-sprites.js?v=123';
+import { SKY_PRESETS } from './sky-presets.js?v=123';
+import { HOOK_NAMES, HOOK_ARGS } from './hooks.js?v=123';
+import { compileForm, FORM_TYPES } from './forms.js?v=123';
 
 // Fuentes del motor que buildVocab escanea con regex (enums de despachos
 // if/else que no se exportan como datos).
@@ -85,7 +85,7 @@ const CHART_KEYS = ['id', 'type', 'x', 'y', 'w', 'h', 'xDomain', 'yDomain', 'xTi
 const SERIES_KEYS = ['id', 'color', 'width', 'fill', 'dash', 'dots', 'data', 'reveal'];
 const CANVAS_KEYS = ['w', 'h', 'bg', 'ss', 'sky', 'horizon', 'floor', 'safeArea', 'ysort', 'layers'];
 const ENTITY_KEYS = ['id', 'type', 'x', 'y', 'name', 'body', 'color2', 'scale', 'hero', 'mood', 'accessory', 'accessoryColor', 'behavior', 'look', 'lookAt', 'health', 'extinguishable', 'extinctionThreshold', 'ageRate', 'maxAge', 'skybound', 'greets', 'sleepable', 'solid', 'stage'];
-const PROP_KEYS = ['type', 'id', 'x', 'y', 'scale', 'color', 'color2', 'beakColor', 'interactive', 'solid', 'solidBox', 'z', 'dir', 'state', 'open', 'label', 'light', 'fall', 'w', 'h', 'cols', 'rows', 'disorder', 'homeFrac', 'jitter', 'pose', 'alpha', 'glass', 'wheel', 'face', 'lift', 'seeds', 'eye', 'glow', 'spin', 'wear', 'depth', 'panels', 'crank', 'braid', 'fire'];
+const PROP_KEYS = ['type', 'id', 'tag', 'x', 'y', 'scale', 'color', 'color2', 'beakColor', 'interactive', 'solid', 'solidBox', 'z', 'dir', 'state', 'open', 'label', 'light', 'fall', 'w', 'h', 'cols', 'rows', 'disorder', 'homeFrac', 'jitter', 'pose', 'alpha', 'glass', 'wheel', 'face', 'lift', 'seeds', 'eye', 'glow', 'spin', 'wear', 'depth', 'panels', 'crank', 'braid', 'fire'];
 const LABEL_KEYS = ['id', 'html', 'text', 'x', 'y', 'anchor', 'style', 'hidden'];
 const METER_KEYS = ['id', 'label', 'x', 'y', 'w', 'h', 'color', 'max', 'value', 'showValue'];
 // Un step puede combinar varias acciones; esto es la unión de claves que
@@ -95,13 +95,13 @@ const STEP_KEYS = [
   'walk', 'to', 'speed', 'path', 'points', 'duration', 'easing', 'curve', 'fromCurrent',
   'stop', 'say', 'think', 'text', 'exclaim', 'surprise', 'wonder', 'mood', 'value',
   'flash', 'reinforce', 'tone', 'dur', 'opts', 'sweep', 'particles', 'floatNumber',
-  'celebrate', 'cry', 'thinking', 'appear', 'vanish', 'camera', 'caption', 'meter',
+  'celebrate', 'cry', 'thinking', 'jump', 'lookAt', 'appear', 'vanish', 'camera', 'caption', 'meter',
   'tween', 'chart', 'formula', 'show', 'hide', 'alpha', 'series', 'reveal',
   'focus', 'off', 'radius', 'color', 'style', 'scene', 'move', 'weather', 'intensity',
   'showLabel', 'hideLabel', 'music',
   'set', 'add', 'clamp', 'do', 'call', 'runScript', 'runScriptOpts',
 ];
-const STEP_ENTITY_REFS = ['walk', 'stop', 'say', 'think', 'exclaim', 'surprise', 'wonder', 'mood', 'flash', 'reinforce', 'celebrate', 'cry', 'thinking', 'appear', 'vanish'];
+const STEP_ENTITY_REFS = ['walk', 'stop', 'say', 'think', 'exclaim', 'surprise', 'wonder', 'mood', 'flash', 'reinforce', 'celebrate', 'cry', 'thinking', 'appear', 'vanish', 'jump', 'lookAt'];
 
 const ANCHOR_RE = /^(left|right|center|top|bottom|middle)([+-]\d+(\.\d+)?)?$/;
 const COLOR_RE = /^(#[0-9a-fA-F]{3,8}|rgba?\(|hsla?\()/;
@@ -830,19 +830,37 @@ export function createValidator(vocab) {
       if (!scope.meterIds.has(s.meter)) ctx.err(`${p}.meter`, `"${s.meter}" no es el id de ningún meter declarado (${list(scope.meterIds) || 'ninguno'}).`);
       if (s.to == null) ctx.warn(`${p}.to`, 'meter sin "to" no cambia el valor.');
     }
-    const toConsumers = ['walk', 'meter', 'tween'].filter(k => s[k] != null);
+    const toConsumers = ['walk', 'meter', 'tween', 'lookAt'].filter(k => s[k] != null);
     if (toConsumers.length > 1) {
-      ctx.err(p, `un step no puede combinar ${toConsumers.join(' + ')}: los tres leen "to". Sepáralos en steps distintos.`);
+      ctx.err(p, `un step no puede combinar ${toConsumers.join(' + ')}: todos leen "to". Sepáralos en steps distintos.`);
+    }
+    if (s.lookAt != null) {
+      const t = s.to;
+      if (t != null && typeof t !== 'string' && !(Array.isArray(t) && t.length === 2) && !(t && typeof t === 'object' && t.x != null && t.y != null)) {
+        ctx.err(`${p}.to`, 'lookAt mira hacia "to": el id de otra entidad, un punto [x,y] o {x,y}. Sin "to" (o con null) suelta la mirada.');
+      }
+      if (typeof t === 'string' && !scope.entityIds.has(t) && !scope.hasHooks) {
+        ctx.err(`${p}.to`, `"${t}" no es el id de ninguna entidad declarada (${list(scope.entityIds) || 'ninguna'}).`);
+      }
     }
     if (s.tween != null) {
-      if (typeof s.tween !== 'string') ctx.err(`${p}.tween`, 'tween es la clave de state a animar ("deuda"), "idEntidad.propiedad" ("alma._alpha") o "ambient.darkness".');
+      if (typeof s.tween !== 'string') ctx.err(`${p}.tween`, 'tween es la clave de state a animar ("deuda"), "idEntidad.propiedad" ("alma._alpha"), "ambient.darkness", o un grupo de props ("type:tree.alpha", "tag:primavera.alpha").');
       else if (s.tween.includes('.')) {
         const id = s.tween.slice(0, s.tween.indexOf('.'));
+        // Selectores de grupo: type:<tipo> (todos los props de ese type) y
+        // tag:<tag> (props con esa etiqueta). No refieren un id puntual.
         if (id === 'ambient') {
           const key = s.tween.slice(s.tween.indexOf('.') + 1);
           if (key !== 'darkness' && key !== 'saturation') ctx.warn(`${p}.tween`, `"ambient.${key}" no es una clave animable documentada del ambiente; las conocidas son "ambient.darkness" y "ambient.saturation".`);
+        } else if (id.startsWith('type:')) {
+          const ty = id.slice(5);
+          if (!PROP_KINDS.has(ty)) ctx.warn(`${p}.tween`, `"type:${ty}" no es un tipo de prop conocido (${list(PROP_KINDS)}); no coincidirá con ningún prop.`);
+        } else if (id.startsWith('tag:')) {
+          const tag = id.slice(4);
+          const tagged = (config => (config.props || []).some(pr => pr && (pr.tag === tag || (Array.isArray(pr.tag) && pr.tag.includes(tag)))))(scope._config || {});
+          if (scope._config && !tagged && !scope.hasHooks) ctx.warn(`${p}.tween`, `"tag:${tag}" no coincide con ningún prop: ninguno declara tag "${tag}".`);
         } else if (!scope.entityIds.has(id) && !(scope.propIds && scope.propIds.has(id))) {
-          const msg = `"${id}" no es el id de ninguna entidad ni prop declarado (${list(scope.entityIds) || 'ninguna'}), ni el prefijo "ambient".`;
+          const msg = `"${id}" no es el id de ninguna entidad ni prop declarado (${list(scope.entityIds) || 'ninguna'}), ni "ambient", ni un selector "type:"/"tag:".`;
           if (scope.hasHooks) ctx.warn(`${p}.tween`, msg);
           else ctx.err(`${p}.tween`, msg);
         }
@@ -1101,6 +1119,7 @@ export function createValidator(vocab) {
         setIds: new Set((Array.isArray(config.sets) ? config.sets : []).map(st => st?.id).filter(Boolean)),
         labelIds: new Set((config.labels || []).map(l => l?.id).filter(Boolean)),
         formulaIds: new Set((config.formulas || []).map(f => f?.id).filter(Boolean)),
+        _config: config,
         hasHooks: Object.values(config.hooks || {}).some(v => typeof v === 'string' && v.trim()),
         hasMusic: typeof config.meta?.music === 'string' && config.meta.music.trim() !== '',
       };
@@ -1197,6 +1216,7 @@ export function createValidator(vocab) {
         setIds: new Set((Array.isArray(config.sets) ? config.sets : []).map(st => st?.id).filter(Boolean)),
         labelIds: new Set((config.labels || []).map(l => l?.id).filter(Boolean)),
         formulaIds: new Set((config.formulas || []).map(f => f?.id).filter(Boolean)),
+        _config: config,
         hasHooks: Object.values(config.hooks || {}).some(v => typeof v === 'string' && v.trim()),
         hasMusic: typeof config.meta?.music === 'string' && config.meta.music.trim() !== '',
       };

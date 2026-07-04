@@ -164,6 +164,20 @@ export function execScriptStep(world, step, sc) {
   if (step.celebrate) fx.celebrate(world.byId(step.celebrate));
   if (step.cry) fx.cry(world.byId(step.cry));
   if (step.thinking) fx.thinking(world.byId(step.thinking));
+  if (step.jump) fx.jump(world.byId(step.jump), step.duration != null ? { duration: step.duration } : undefined);
+  if (step.lookAt != null) {
+    // Dirigir la mirada de un personaje sin JS: hacia otra entidad (id de `to`),
+    // un punto [x,y] / {x,y}, o soltarla (sin `to` o `to: null`). El movimiento
+    // manda sobre lookAt (draw.js); un blob quieto orienta las pupilas ahí.
+    const e = world.byId(step.lookAt);
+    if (e) {
+      const t = step.to;
+      if (t == null) e.lookAt = null;
+      else if (typeof t === 'string') e.lookAt = t;
+      else if (Array.isArray(t)) e.lookAt = { x: t[0], y: t[1] };
+      else if (typeof t === 'object') e.lookAt = { x: t.x, y: t.y };
+    }
+  }
   if (step.appear) fx.appear(world.byId(step.appear), step.duration);
   if (step.vanish) fx.vanish(world.byId(step.vanish), step.duration);
   if (step.scene) {
@@ -318,26 +332,44 @@ export function execScriptStep(world, step, sc) {
       world.tween(f, 'alpha', 1, { duration: fdur, easing: 'easeInOut' });
     }
   }
-  if (step.tween) {
-    // Tween declarativo: anima una clave de world.state ("deuda") o una
-    // propiedad de una entidad por id con punto ("alma._alpha") sin JS.
+  if (step.tween && typeof step.to === 'number') {
+    // Tween declarativo: anima una clave de world.state ("deuda"), una propiedad
+    // de una entidad/prop por id ("alma._alpha", "d1.fall"), "ambient.darkness",
+    // o un GRUPO de props sin JS: "type:tree.alpha" (todos los props de ese
+    // type) o "tag:primavera.alpha" (los que declaren tag). Sirve para el viraje
+    // de estación (desvanecer todos los árboles de una) sin un `do` con forEach.
     const tpath = String(step.tween);
     const tdot = tpath.indexOf('.');
-    let tobj = world.state, tkey = tpath;
-    if (tdot > 0) {
-      const thead = tpath.slice(0, tdot);
-      // "ambient.darkness" anima el ambiente vivo (amaneceres, anocheceres);
-      // cualquier otro prefijo es el id de una entidad.
-      tobj = thead === 'ambient'
-        ? (world._ambient || (world._ambient = {}))
-        : (world.byId(thead) || (world.props && world.props.find(pp => pp.id === thead)) || null);
-      tkey = tpath.slice(tdot + 1);
-    }
-    if (tobj && typeof step.to === 'number') {
-      world.tween(tobj, tkey, step.to, { duration: step.duration ?? 0.6, easing: step.easing || 'easeInOut' });
+    const topts = { duration: step.duration ?? 0.6, easing: step.easing || 'easeInOut' };
+    if (tdot <= 0) {
+      world.tween(world.state, tpath, step.to, topts);
+    } else {
+      const thead = tpath.slice(0, tdot), tkey = tpath.slice(tdot + 1);
+      const hasTag = (p, tag) => p.tag === tag || (Array.isArray(p.tag) && p.tag.includes(tag));
+      if (thead.startsWith('type:')) {
+        const ty = thead.slice(5);
+        for (const p of (world.props || [])) if (p.type === ty) world.tween(p, tkey, step.to, topts);
+      } else if (thead.startsWith('tag:')) {
+        const tag = thead.slice(4);
+        for (const p of (world.props || [])) if (hasTag(p, tag)) world.tween(p, tkey, step.to, topts);
+      } else if (thead === 'ambient') {
+        world.tween(world._ambient || (world._ambient = {}), tkey, step.to, topts);
+      } else {
+        const obj = world.byId(thead) || (world.props && world.props.find(pp => pp.id === thead)) || null;
+        if (obj) world.tween(obj, tkey, step.to, topts);
+      }
     }
   }
-  if (step.set) for (const [k, v] of Object.entries(step.set)) world.state[k] = v;
+  if (step.set) for (const [k, v] of Object.entries(step.set)) {
+    // Una clave con punto ("granada.seeds", "puerta.open") escribe en la
+    // entidad/prop por id; sin punto (o si el id no existe), en world.state.
+    const dot = k.indexOf('.');
+    if (dot > 0) {
+      const obj = world.byId(k.slice(0, dot)) || (world.props && world.props.find(pp => pp.id === k.slice(0, dot)));
+      if (obj) { obj[k.slice(dot + 1)] = v; continue; }
+    }
+    world.state[k] = v;
+  }
   if (step.add) for (const [k, v] of Object.entries(step.add)) world.state[k] = (world.state[k] || 0) + v;
   if (step.clamp) for (const [k, r] of Object.entries(step.clamp)) world.state[k] = Math.max(r[0], Math.min(r[1], world.state[k] || 0));
   if (step.do) {

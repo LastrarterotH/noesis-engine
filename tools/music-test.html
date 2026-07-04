@@ -22,12 +22,12 @@
 </style>
 </head><body><div class="page">
 <h1>noesis<span>.</span> audición de moods</h1>
-<p>Herramienta interna: un click arranca el mood (y detiene el anterior). Cada uno debe sentirse vivo a los 30 segundos: acordes que avanzan, arpegio que respira, pulso si corresponde. Si algo suena a drone plano, es un bug de composición. Módulo cargado: <code>audio.js ?v=122</code> (si este número no coincide con el último bump, estás en una pestaña vieja).</p>
+<p>Herramienta interna: un click arranca el mood (y detiene el anterior). Cada uno debe sentirse vivo a los 30 segundos: acordes que avanzan, arpegio que respira, pulso si corresponde. Si algo suena a drone plano, es un bug de composición. Módulo cargado: <code>audio.js ?v=123</code> (si este número no coincide con el último bump, estás en una pestaña vieja).</p>
 <div class="grid" id="grid"></div>
 <button class="stop" id="stop">■ Detener</button>
 <label style="display:block;margin-top:14px;font-size:13px;color:#9aa3bd;cursor:pointer"><input type="checkbox" id="fx" checked> FX nuevos (reverb de sala + compresor + unison): apágalo y préndelo con un mood sonando para el A/B</label>
 <script type="module">
-  import { createAmbientMusic, audioUnlock } from '../engine/audio.js?v=122';
+  import { createAmbientMusic, audioUnlock } from '../engine/audio.js?v=123';
   const MOODS = [
     ['cosmic', 'espacial, sin latido'],
     ['melancholic', 'tristeza serena, latido lento'],

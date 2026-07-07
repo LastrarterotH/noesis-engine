@@ -1,0 +1,834 @@
+{
+  "meta": {
+    "id": "12-bosque-oscuro",
+    "number": 12,
+    "version": "0.1",
+    "lang": [
+      "es"
+    ],
+    "music": "mystery"
+  },
+  "text": {
+    "es": {
+      "title": "La teoría del bosque oscuro",
+      "body": [
+        "En 1950, durante un almuerzo, el físico Enrico Fermi lanzó una pregunta que todavía no tiene respuesta: si el universo es tan vasto y antiguo, y la vida no parece un milagro irrepetible, ¿dónde está todo el mundo? A esa tensión entre la abundancia estadística de mundos y el silencio que escuchamos se la conoce como la <strong>paradoja de Fermi</strong> (Hart, 1975).",
+        "Un modo de poner cifras a esa expectativa es la <strong>ecuación de Drake</strong> (Drake, 1965), que estima cuántas civilizaciones podrían comunicarse multiplicando siete factores: cuántas estrellas nacen, cuántas tienen planetas, cuántos de esos mundos son templados, en cuántos surge vida, en cuántos vida inteligente, cuántos emiten señales y cuánto tiempo siguen emitiendo. Los tres primeros los acota hoy la astronomía; los cuatro últimos son conjeturas. Por eso la cuenta no da un número sino un abanico: con supuestos generosos arroja miles de civilizaciones, con supuestos cautos, menos de una. La fórmula no resuelve la pregunta de Fermi, la ordena: vuelve explícito cuánto de nuestra esperanza descansa en lo que todavía no sabemos.",
+        "El escritor Liu Cixin ofrece una respuesta inquietante en su novela <em>El bosque oscuro</em> (2008). Parte de dos supuestos mínimos: toda civilización busca ante todo sobrevivir, y aunque las civilizaciones crecen sin descanso, la materia del universo es finita. De ahí se sigue que, tarde o temprano, unas y otras competirán por lo mismo.",
+        "Sobre esos cimientos aparece la <strong>cadena de sospecha</strong>: al detectar a otra civilización, no hay manera de saber si es benévola u hostil, ni ellos pueden saberlo de nosotros, ni nosotros si ellos creen que nosotros lo somos. La enorme distancia interestelar impide despejar la duda, porque para cuando una respuesta llega ya pasaron siglos y el interlocutor cambió.",
+        "A la sospecha se suma la <strong>explosión tecnológica</strong>: una civilización que hoy parece atrasada puede dar un salto y superar a cualquier otra en un lapso brevísimo. Por eso ni siquiera la debilidad presente ofrece garantías. La conclusión de Liu es que el universo se comporta como un bosque oscuro, donde cada civilización es un cazador armado que avanza en silencio y, si detecta a otro, dispara primero para no arriesgarse.",
+        "Conviene la honestidad. La teoría del bosque oscuro es una hipótesis narrativa, una entre las varias soluciones que se han propuesto a la paradoja de Fermi (Webb, 2002), y hoy no puede comprobarse ni refutarse. Su fuerza es otra: vuelve inteligible, con una lógica fría, por qué un cielo repleto de mundos podría permanecer callado. Y deja una pregunta incómoda para nosotros, que llevamos décadas transmitiendo hacia las estrellas."
+      ],
+      "references": [
+        {
+          "authors": "Drake, F. D.",
+          "year": 1965,
+          "title": "The radio search for intelligent extraterrestrial life",
+          "journal": "Current Aspects of Exobiology",
+          "pages": "323-345"
+        },
+        {
+          "authors": "Hart, M. H.",
+          "year": 1975,
+          "title": "An explanation for the absence of extraterrestrials on Earth",
+          "journal": "Quarterly Journal of the Royal Astronomical Society",
+          "volume": "16",
+          "pages": "128-135"
+        },
+        {
+          "authors": "Liu, C.",
+          "year": 2008,
+          "title": "El bosque oscuro",
+          "publisher": "Chongqing Publishing House"
+        },
+        {
+          "authors": "Webb, S.",
+          "year": 2002,
+          "title": "If the universe is teeming with aliens... where is everybody?",
+          "publisher": "Springer"
+        }
+      ]
+    }
+  },
+  "hint": {
+    "es": "en el bosque oscuro, encender tu luz es delatarte"
+  },
+  "hintDuration": 4,
+  "canvas": {
+    "w": 900,
+    "h": 520,
+    "bg": "#05081a",
+    "floor": "earth",
+    "sky": "space",
+    "horizon": 0.5,
+    "safeArea": 20,
+    "layers": [
+      {
+        "top": 0,
+        "bottom": 0.5,
+        "parallax": 0.1,
+        "gradient": [
+          {
+            "at": 0,
+            "color": "rgba(40,30,70,0)"
+          },
+          {
+            "at": 0.6,
+            "color": "rgba(64,44,96,0.20)"
+          },
+          {
+            "at": 1,
+            "color": "rgba(40,30,70,0)"
+          }
+        ]
+      }
+    ]
+  },
+  "ambient": {
+    "darkness": 0.3,
+    "darknessColor": "#03040e",
+    "particles": "stars"
+  },
+  "walls": [],
+  "zones": [],
+  "labels": [
+    {
+      "id": "ax1",
+      "html": "<span style='color:#b07d13;letter-spacing:0.12em;font-weight:700;'>PRIMER AXIOMA</span><br>la supervivencia es la necesidad primaria de toda civilización",
+      "x": 0.5,
+      "y": 0.29,
+      "anchor": "center",
+      "hidden": true,
+      "style": "background: rgba(246,242,232,0.95); color: #1F2547; padding: 9px 16px; border-radius: 11px; font: 500 13px 'Plus Jakarta Sans', system-ui, sans-serif; line-height: 1.5; box-shadow: 0 8px 22px rgba(0,0,0,0.45); max-width: 420px; text-align: center; border: 1px solid rgba(244,172,29,0.5);"
+    },
+    {
+      "id": "ax2",
+      "html": "<span style='color:#b07d13;letter-spacing:0.12em;font-weight:700;'>SEGUNDO AXIOMA</span><br>las civilizaciones crecen sin límite, pero la materia del cosmos es finita",
+      "x": 0.5,
+      "y": 0.42,
+      "anchor": "center",
+      "hidden": true,
+      "style": "background: rgba(246,242,232,0.95); color: #1F2547; padding: 9px 16px; border-radius: 11px; font: 500 13px 'Plus Jakarta Sans', system-ui, sans-serif; line-height: 1.5; box-shadow: 0 8px 22px rgba(0,0,0,0.45); max-width: 420px; text-align: center; border: 1px solid rgba(244,172,29,0.5);"
+    }
+  ],
+  "props": [
+    {
+      "type": "star",
+      "x": 330,
+      "y": 58,
+      "scale": 0.8
+    },
+    {
+      "type": "star",
+      "x": 620,
+      "y": 52,
+      "scale": 0.8
+    },
+    {
+      "type": "star",
+      "x": 150,
+      "y": 70,
+      "scale": 0.6
+    },
+    {
+      "type": "star",
+      "x": 545,
+      "y": 168,
+      "scale": 0.55
+    },
+    {
+      "type": "planet",
+      "id": "civA",
+      "x": 150,
+      "y": 96,
+      "scale": 1.3,
+      "color": "#5b8def"
+    },
+    {
+      "type": "planet",
+      "id": "civB",
+      "x": 470,
+      "y": 84,
+      "scale": 1.5,
+      "color": "#4f8a5e",
+      "alpha": 1
+    },
+    {
+      "type": "planet",
+      "id": "civC",
+      "x": 792,
+      "y": 104,
+      "scale": 1.3,
+      "color": "#c98a5a"
+    },
+    {
+      "type": "tree",
+      "x": 90,
+      "y": 432,
+      "scale": 2.3
+    },
+    {
+      "type": "tree",
+      "x": 235,
+      "y": 360,
+      "scale": 1.4
+    },
+    {
+      "type": "tree",
+      "x": 330,
+      "y": 336,
+      "scale": 1
+    },
+    {
+      "type": "tree",
+      "x": 660,
+      "y": 366,
+      "scale": 1.5
+    },
+    {
+      "type": "tree",
+      "x": 840,
+      "y": 440,
+      "scale": 2.4
+    },
+    {
+      "type": "tree",
+      "x": 775,
+      "y": 330,
+      "scale": 0.95
+    },
+    {
+      "type": "bush",
+      "x": 300,
+      "y": 452
+    },
+    {
+      "type": "rock",
+      "x": 600,
+      "y": 448,
+      "scale": 1.1
+    },
+    {
+      "type": "tall-grass",
+      "x": 160,
+      "y": 456
+    },
+    {
+      "type": "tall-grass",
+      "x": 715,
+      "y": 458
+    }
+  ],
+  "entities": [
+    {
+      "type": "learner",
+      "id": "cazA",
+      "x": 380,
+      "y": 396,
+      "scale": 5,
+      "hero": true,
+      "body": "#6e7896",
+      "behavior": null,
+      "sleepable": false,
+      "greets": false,
+      "lookAt": {
+        "x": 470,
+        "y": 110
+      }
+    },
+    {
+      "type": "learner",
+      "id": "cazB",
+      "x": 520,
+      "y": 398,
+      "scale": 5,
+      "hero": true,
+      "body": "#8a93b5",
+      "behavior": null,
+      "sleepable": false,
+      "greets": false,
+      "lookAt": {
+        "x": 470,
+        "y": 110
+      }
+    }
+  ],
+  "script": [
+    {
+      "wait": 0.8
+    },
+    {
+      "caption": "LA TEORÍA DEL BOSQUE OSCURO",
+      "style": "title"
+    },
+    {
+      "wait": 2.6
+    },
+    {
+      "caption": "",
+      "style": "title"
+    },
+    {
+      "caption": "El cosmos: cientos de miles de millones de estrellas. Y en casi todas, el mismo silencio."
+    },
+    {
+      "wait": 4.2
+    },
+    {
+      "say": "cazA",
+      "text": "Escuchamos el cielo hace décadas. Nadie responde.",
+      "duration": 3.2
+    },
+    {
+      "wait": 3.6
+    },
+    {
+      "say": "cazB",
+      "text": "Tantos mundos posibles. ¿Dónde está todo el mundo?",
+      "duration": 3.4
+    },
+    {
+      "wait": 3.9
+    },
+    {
+      "caption": "Enrico Fermi lo preguntó en 1950, en un almuerzo: ¿dónde está todo el mundo?"
+    },
+    {
+      "wait": 4
+    },
+    {
+      "caption": "Frank Drake escribió una fórmula para contarlos, término a término."
+    },
+    {
+      "wait": 2.6
+    },
+    {
+      "tween": "drake",
+      "to": 1,
+      "duration": 4.8,
+      "easing": "linear"
+    },
+    {
+      "tone": 349,
+      "dur": 0.3
+    },
+    {
+      "wait": 5.4
+    },
+    {
+      "caption": "Siete preguntas encadenadas: de cuántas estrellas nacen a cuánto duran sus señales."
+    },
+    {
+      "wait": 4
+    },
+    {
+      "tween": "drake",
+      "to": 0,
+      "duration": 0.8
+    },
+    {
+      "wait": 0.5
+    },
+    {
+      "caption": "Ahora pongamos números. Un mismo cálculo, dos lecturas de lo que nadie sabe."
+    },
+    {
+      "tween": "calc",
+      "to": 1,
+      "duration": 0.6
+    },
+    {
+      "wait": 2.8
+    },
+    {
+      "caption": "Los tres primeros factores ya los mide la astronomía. Van iguales para todos."
+    },
+    {
+      "tween": "rk",
+      "to": 1,
+      "duration": 2.2,
+      "easing": "easeOutCubic"
+    },
+    {
+      "tone": 349,
+      "dur": 0.25
+    },
+    {
+      "wait": 3.6
+    },
+    {
+      "caption": "De ahí salen unos pocos mundos templados por año. Hasta aquí, terreno firme."
+    },
+    {
+      "wait": 3.8
+    },
+    {
+      "caption": "Los otros cuatro nadie los conoce. Y ahí se decide todo."
+    },
+    {
+      "tween": "ru",
+      "to": 1,
+      "duration": 3,
+      "easing": "easeOutCubic"
+    },
+    {
+      "tone": 330,
+      "dur": 0.25
+    },
+    {
+      "wait": 4.4
+    },
+    {
+      "caption": "Con supuestos generosos, el producto da miles de civilizaciones."
+    },
+    {
+      "tween": "nOpt",
+      "to": 1,
+      "duration": 1.3,
+      "easing": "easeOutBack"
+    },
+    {
+      "tone": 392,
+      "dur": 0.3
+    },
+    {
+      "wait": 3.6
+    },
+    {
+      "caption": "Con supuestos cautos, el mismo cálculo dice que estamos solos."
+    },
+    {
+      "tween": "nPes",
+      "to": 1,
+      "duration": 1.3,
+      "easing": "easeOutBack"
+    },
+    {
+      "tone": 208,
+      "dur": 0.35
+    },
+    {
+      "wait": 3.8
+    },
+    {
+      "caption": "La fórmula no zanja nada: ordena nuestra ignorancia en siete casillas."
+    },
+    {
+      "wait": 4.2
+    },
+    {
+      "caption": "Pero toma el caso optimista. Si el cielo está lleno, su silencio es el enigma: la paradoja de Fermi."
+    },
+    {
+      "wait": 5.4
+    },
+    {
+      "tween": "calc",
+      "to": 0,
+      "duration": 1
+    },
+    {
+      "wait": 0.8
+    },
+    {
+      "caption": "Liu Cixin propone empezar por dos supuestos mínimos."
+    },
+    {
+      "wait": 3
+    },
+    {
+      "showLabel": "ax1"
+    },
+    {
+      "tone": 330,
+      "dur": 0.4
+    },
+    {
+      "wait": 3.4
+    },
+    {
+      "showLabel": "ax2"
+    },
+    {
+      "tone": 392,
+      "dur": 0.4
+    },
+    {
+      "wait": 4.2
+    },
+    {
+      "say": "cazA",
+      "text": "Sobrevivir es lo primero. Y no alcanza para todos.",
+      "duration": 3.4
+    },
+    {
+      "wait": 3.8
+    },
+    {
+      "hideLabel": "ax1"
+    },
+    {
+      "hideLabel": "ax2"
+    },
+    {
+      "wait": 0.8
+    },
+    {
+      "music": {
+        "mood": "tension",
+        "duration": 3
+      }
+    },
+    {
+      "caption": "Entonces detectamos una señal. Otra civilización, en algún punto del bosque."
+    },
+    {
+      "focus": "civB",
+      "color": "#7ce89a",
+      "radius": 60
+    },
+    {
+      "tone": 294,
+      "dur": 0.5
+    },
+    {
+      "wait": 1.4
+    },
+    {
+      "lookAt": "cazA",
+      "to": [
+        470,
+        84
+      ]
+    },
+    {
+      "lookAt": "cazB",
+      "to": [
+        470,
+        84
+      ]
+    },
+    {
+      "wait": 2.2
+    },
+    {
+      "caption": "¿Es amistosa? No hay forma de saberlo. Ahí empieza la cadena de sospecha."
+    },
+    {
+      "wait": 3.2
+    },
+    {
+      "focus": "civB",
+      "off": true
+    },
+    {
+      "tween": "chain",
+      "to": 0.5,
+      "duration": 1.8,
+      "easing": "easeOutCubic"
+    },
+    {
+      "wait": 2
+    },
+    {
+      "tween": "chain",
+      "to": 1,
+      "duration": 2.8,
+      "easing": "easeInOut"
+    },
+    {
+      "wait": 2.6
+    },
+    {
+      "say": "cazB",
+      "text": "Aunque supiéramos que son buenos, ellos no saben que nosotros lo sabemos.",
+      "duration": 4
+    },
+    {
+      "wait": 4.4
+    },
+    {
+      "caption": "Y la distancia lo sella: cuando la respuesta llegue, pasaron siglos. Ya no serán los mismos."
+    },
+    {
+      "wait": 4.4
+    },
+    {
+      "tween": "chain",
+      "to": 0,
+      "duration": 1
+    },
+    {
+      "wait": 0.8
+    },
+    {
+      "caption": "Queda una salida: confiar en que son más débiles. Pero el tiempo la cierra."
+    },
+    {
+      "wait": 3.4
+    },
+    {
+      "tween": "card4",
+      "to": 1,
+      "duration": 0.6
+    },
+    {
+      "wait": 1
+    },
+    {
+      "tone": 392,
+      "dur": 0.14
+    },
+    {
+      "tween": "reveal4",
+      "to": 1,
+      "duration": 3.8,
+      "easing": "easeInOutCubic"
+    },
+    {
+      "wait": 2.2
+    },
+    {
+      "caption": "La explosión tecnológica: una civilización atrasada da un salto y nos supera en un instante."
+    },
+    {
+      "wait": 4.4
+    },
+    {
+      "caption": "El débil de hoy es la amenaza de mañana. Nadie puede descartarlo."
+    },
+    {
+      "wait": 3.8
+    },
+    {
+      "tween": "card4",
+      "to": 0,
+      "duration": 0.6
+    },
+    {
+      "tween": "reveal4",
+      "to": 0,
+      "duration": 0.01
+    },
+    {
+      "wait": 1
+    },
+    {
+      "music": {
+        "volume": 0.5,
+        "duration": 1.5
+      }
+    },
+    {
+      "caption": "Reúne los dos supuestos y la conclusión es una sola, y es terrible."
+    },
+    {
+      "wait": 3.4
+    },
+    {
+      "camera": {
+        "to": [
+          470,
+          110
+        ],
+        "zoom": 1.35,
+        "letterbox": true
+      }
+    },
+    {
+      "wait": 1.2
+    },
+    {
+      "caption": "Una civilización, en algún lugar, decide dejar de esconderse. Transmite: aquí estoy."
+    },
+    {
+      "focus": "civB",
+      "color": "#7ce89a",
+      "radius": 82
+    },
+    {
+      "tween": "broadcast",
+      "to": 1,
+      "duration": 1.2
+    },
+    {
+      "sweep": [
+        330,
+        780
+      ],
+      "dur": 1
+    },
+    {
+      "surprise": "cazA"
+    },
+    {
+      "wait": 3.6
+    },
+    {
+      "music": {
+        "volume": 1.15,
+        "duration": 1.5
+      }
+    },
+    {
+      "caption": "En el bosque oscuro, cada civilización es un cazador armado. Y acaba de ver una luz."
+    },
+    {
+      "wait": 3.8
+    },
+    {
+      "tween": "shot",
+      "to": 1,
+      "duration": 0.7,
+      "easing": "easeInCubic"
+    },
+    {
+      "wait": 0.68
+    },
+    {
+      "camera": {
+        "shake": 14
+      }
+    },
+    {
+      "music": "stinger"
+    },
+    {
+      "music": {
+        "volume": 0,
+        "duration": 0.2
+      }
+    },
+    {
+      "particles": {
+        "x": 470,
+        "y": 84,
+        "color": "rgb(255,150,110)",
+        "count": 42,
+        "speed": 175,
+        "duration": 1.4,
+        "spread": 6.283,
+        "size": 3
+      }
+    },
+    {
+      "tween": "civB.alpha",
+      "to": 0,
+      "duration": 0.5
+    },
+    {
+      "tween": "broadcast",
+      "to": 0,
+      "duration": 0.3
+    },
+    {
+      "focus": "civB",
+      "off": true
+    },
+    {
+      "tone": 120,
+      "dur": 0.6
+    },
+    {
+      "mood": "cazA",
+      "value": "sad",
+      "duration": 5
+    },
+    {
+      "wait": 2.2
+    },
+    {
+      "tween": "shot",
+      "to": 0,
+      "duration": 0.01
+    },
+    {
+      "music": {
+        "volume": 0.7,
+        "duration": 2.5
+      }
+    },
+    {
+      "caption": "Un destello. Después, nada. El que encendió su luz dejó de existir."
+    },
+    {
+      "wait": 4.2
+    },
+    {
+      "camera": {
+        "reset": true
+      }
+    },
+    {
+      "wait": 1
+    },
+    {
+      "lookAt": "cazA",
+      "to": [
+        520,
+        398
+      ]
+    },
+    {
+      "lookAt": "cazB",
+      "to": [
+        380,
+        396
+      ]
+    },
+    {
+      "wait": 1.2
+    },
+    {
+      "say": "cazB",
+      "text": "Nosotros seguimos aquí. Callados. Sin encender nada.",
+      "duration": 3.6
+    },
+    {
+      "wait": 4
+    },
+    {
+      "music": {
+        "mood": "mystery",
+        "duration": 3
+      }
+    },
+    {
+      "caption": "El que se esconde, sobrevive. El que llama, se delata."
+    },
+    {
+      "wait": 3.6
+    },
+    {
+      "tween": "ambient.darkness",
+      "to": 0.55,
+      "duration": 3.2,
+      "easing": "easeInOutCubic"
+    },
+    {
+      "caption": "Por eso el cielo calla: está lleno de cazadores que no se atreven a hacer ruido."
+    },
+    {
+      "wait": 4.8
+    },
+    {
+      "music": {
+        "volume": 1,
+        "duration": 3
+      }
+    },
+    {
+      "caption": "La teoría del bosque oscuro es una hipótesis, una entre muchas. Pero da forma a un silencio que aún no sabemos leer."
+    },
+    {
+      "wait": 5.2
+    }
+  ],
+  "hooks": {
+    "onInit": "const s = world.state; s.drake = 0; s.chain = 0; s.card4 = 0; s.reveal4 = 0; s.broadcast = 0; s.shot = 0; s.calc = 0; s.rk = 0; s.ru = 0; s.nOpt = 0; s.nPes = 0;",
+    "onStep": "",
+    "onDraw": "const s = world.state; const t = world.t; for (const e of world.entities) { if (e.type === 'learner') world.draw.learner(e); } const bx = 470, by = 84; if ((s.broadcast || 0) > 0.01) { ctx.save(); ctx.globalCompositeOperation = 'lighter'; for (let i = 0; i < 4; i++) { const ph = (t * 0.6 + i / 4) % 1; const r = 14 + ph * 150; const a = (1 - ph) * 0.5 * s.broadcast; ctx.strokeStyle = 'rgba(126,232,154,' + a.toFixed(3) + ')'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(bx, by, r, 0, Math.PI * 2); ctx.stroke(); } ctx.restore(); } if ((s.shot || 0) > 0.001) { const ox = 860, oy = 44; const p = Math.min(1, s.shot); const hx = ox + (bx - ox) * p; const hy = oy + (by - oy) * p; ctx.save(); ctx.globalCompositeOperation = 'lighter'; const g = ctx.createLinearGradient(ox, oy, hx, hy); g.addColorStop(0, 'rgba(255,90,60,0)'); g.addColorStop(1, 'rgba(255,140,100,0.9)'); ctx.strokeStyle = g; ctx.lineWidth = 2.6; ctx.beginPath(); ctx.moveTo(ox, oy); ctx.lineTo(hx, hy); ctx.stroke(); ctx.fillStyle = 'rgba(255,210,180,0.95)'; ctx.beginPath(); ctx.arc(hx, hy, 3.6, 0, Math.PI * 2); ctx.fill(); ctx.restore(); } if ((s.chain || 0) > 0.01) { const c = s.chain; const a1 = Math.max(0, Math.min(1, c / 0.15)); const a2 = Math.max(0, Math.min(1, (c - 0.2) / 0.18)); const a3 = Math.max(0, Math.min(1, (c - 0.38) / 0.18)); const a4 = Math.max(0, Math.min(1, (c - 0.56) / 0.18)); const a5 = Math.max(0, Math.min(1, (c - 0.74) / 0.2)); ctx.save(); ctx.globalAlpha = a1; world.draw.rrect(175, 128, 550, 196, 16); ctx.fillStyle = 'rgba(9,13,28,0.95)'; ctx.fill(); world.draw.rrect(175, 128, 550, 196, 16); ctx.strokeStyle = 'rgba(120,140,180,0.32)'; ctx.lineWidth = 1; ctx.stroke(); const nA = world.draw.node(220, 150, 150, 46, { label: 'Nosotros', fill: '#1F2547', labelColor: '#FBFAF6', stroke: '#6E7896' }); const nB = world.draw.node(530, 150, 150, 46, { label: 'Ellos', fill: '#1F2547', labelColor: '#FBFAF6', stroke: '#6E7896' }); world.draw.connector(nA.right, nB.left, { color: '#8fa0c4', both: true }); ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.font = '500 14px ui-sans-serif, system-ui, sans-serif'; ctx.fillStyle = 'rgba(232,224,202,' + a2.toFixed(3) + ')'; if (a2 > 0.02) ctx.fillText('No sé si son una amenaza', 450, 232); ctx.fillStyle = 'rgba(232,224,202,' + a3.toFixed(3) + ')'; if (a3 > 0.02) ctx.fillText('Ni si creen que yo lo soy', 450, 258); ctx.fillStyle = 'rgba(232,224,202,' + a4.toFixed(3) + ')'; if (a4 > 0.02) ctx.fillText('Ni si saben que dudo', 450, 284); ctx.font = '600 14px ui-sans-serif, system-ui, sans-serif'; ctx.fillStyle = 'rgba(244,172,29,' + a5.toFixed(3) + ')'; if (a5 > 0.02) ctx.fillText('La cadena no termina', 450, 310); ctx.restore(); } if ((s.card4 || 0) > 0.01) { ctx.save(); ctx.globalAlpha = s.card4; world.draw.rrect(248, 104, 404, 292, 16); ctx.fillStyle = 'rgba(9,13,28,0.96)'; ctx.fill(); world.draw.rrect(248, 104, 404, 292, 16); ctx.strokeStyle = 'rgba(120,140,180,0.3)'; ctx.lineWidth = 1; ctx.stroke(); ctx.fillStyle = '#e6dec8'; ctx.font = '700 13px ui-sans-serif, system-ui, sans-serif'; ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic'; ctx.fillText('LA EXPLOSIÓN TECNOLÓGICA', 272, 136); const f = world.draw.axes(302, 158, 300, 178, { xDomain: [0, 10], yDomain: [0, 1050], xTicks: [], yTicks: [], xLabel: 'tiempo', yLabel: 'capacidad', color: 'rgba(232,226,210,0.4)', labelColor: '#9aa3bd' }); world.draw.plot(f, [[0, 240], [10, 240]], { color: '#c47a5a', dash: [5, 4], width: 1.4 }); ctx.fillStyle = '#c47a5a'; ctx.font = '600 10px ui-sans-serif, system-ui, sans-serif'; ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic'; ctx.fillText('nuestro nivel', 308, 158 + 178 * (1 - 240 / 1050) - 6); var pts = []; for (var xi = 0; xi <= 10.0001; xi += 0.25) { pts.push([xi, Math.pow(2, xi)]); } world.draw.plot(f, pts, { color: '#f4ac1d', width: 3, reveal: s.reveal4 || 0, head: (s.reveal4 || 0) > 0.02 ? { r: 4, color: '#f4ac1d', pulse: true, guides: true } : false }); ctx.restore(); } if ((s.drake || 0) > 0.01) { const dr = s.drake; const d0 = Math.max(0, Math.min(1, dr / 0.1)); ctx.save(); ctx.globalAlpha = d0; world.draw.rrect(150, 96, 600, 330, 16); ctx.fillStyle = 'rgba(9,13,28,0.97)'; ctx.fill(); world.draw.rrect(150, 96, 600, 330, 16); ctx.strokeStyle = 'rgba(120,140,180,0.3)'; ctx.lineWidth = 1; ctx.stroke(); ctx.fillStyle = '#e6dec8'; ctx.font = '700 13px ui-sans-serif, system-ui, sans-serif'; ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic'; ctx.fillText('LA ECUACIÓN DE DRAKE', 176, 126); ctx.fillStyle = '#9aa3bd'; ctx.font = '500 11px ui-sans-serif, system-ui, sans-serif'; ctx.fillText('cuántas civilizaciones deberían poder hablarnos', 176, 144); world.draw.math(450, 184, 'N = R_* \\\\cdot f_p \\\\cdot n_e \\\\cdot f_l \\\\cdot f_i \\\\cdot f_c \\\\cdot L', { px: 25, color: '#FBFAF6', align: 'center', valign: 'middle', alpha: d0 }); ctx.restore(); const rows = [['R_*', 'estrellas que nacen cada año'], ['f_p', 'las que tienen planetas'], ['n_e', 'planetas aptos para la vida, por estrella'], ['f_l', 'en cuántos surge vida'], ['f_i', 'en cuántos, vida inteligente'], ['f_c', 'cuántos emiten señales al cosmos'], ['L', 'cuánto tiempo siguen emitiendo']]; for (let i = 0; i < rows.length; i++) { const ai = Math.max(0, Math.min(1, (dr - (0.16 + i * 0.085)) / 0.09)); if (ai <= 0.02) continue; const ry = 212 + i * 27; world.draw.math(312, ry, rows[i][0], { px: 15, color: '#f4ac1d', align: 'right', valign: 'middle', alpha: ai }); ctx.save(); ctx.globalAlpha = ai; ctx.textBaseline = 'middle'; ctx.textAlign = 'left'; ctx.font = '500 13px ui-sans-serif, system-ui, sans-serif'; ctx.fillStyle = '#6E7896'; ctx.fillText('=', 324, ry); ctx.fillStyle = '#cdd4e4'; ctx.fillText(rows[i][1], 342, ry); ctx.restore(); }  } if ((s.calc || 0) > 0.01) {\n  const A = s.calc; const F = '\"Plus Jakarta Sans\", ui-sans-serif, system-ui, sans-serif';\n  ctx.save();\n  world.draw.rrect(150, 84, 600, 366, 16); ctx.globalAlpha = A; ctx.fillStyle = 'rgba(9,13,28,0.97)'; ctx.fill();\n  world.draw.rrect(150, 84, 600, 366, 16); ctx.strokeStyle = 'rgba(120,140,180,0.3)'; ctx.lineWidth = 1; ctx.stroke();\n  ctx.globalAlpha = A; ctx.textBaseline = 'alphabetic'; ctx.textAlign = 'left';\n  ctx.fillStyle = '#e6dec8'; ctx.font = '700 13px ' + F; ctx.fillText('PONGAMOS NÚMEROS', 176, 116);\n  ctx.fillStyle = '#9aa3bd'; ctx.font = '500 11px ' + F; ctx.fillText('un mismo cálculo, dos lecturas de lo que nadie sabe', 176, 134);\n  ctx.textAlign = 'center'; ctx.font = '700 11px ' + F;\n  ctx.fillStyle = '#7ce89a'; ctx.fillText('OPTIMISTA', 572, 168);\n  ctx.fillStyle = '#e8896e'; ctx.fillText('PESIMISTA', 690, 168);\n  const rows = [\n    ['R_*', 'estrellas nuevas al año', '7', '7', 0],\n    ['f_p', 'con planetas', '1', '1', 0],\n    ['n_e', 'mundos templados', '0.4', '0.4', 0],\n    ['f_l', 'surge vida', '0.5', '0.1', 1],\n    ['f_i', 'surge inteligencia', '0.5', '10^{-3}', 1],\n    ['f_c', 'emiten señales', '0.1', '0.01', 1],\n    ['L', 'años transmitiendo', '100 000', '300', 1]\n  ];\n  const y0 = 190, dy = 29;\n  for (let i = 0; i < rows.length; i++) {\n    const grp = rows[i][4]; const rv = grp === 0 ? (s.rk || 0) : (s.ru || 0); const idx = grp === 0 ? i : i - 3;\n    const ai = A * Math.max(0, Math.min(1, (rv - idx * 0.18) / 0.22));\n    if (ai <= 0.02) continue;\n    const ry = y0 + i * dy;\n    world.draw.math(248, ry, rows[i][0], { px: 14, color: '#f4ac1d', align: 'right', valign: 'middle', alpha: ai });\n    ctx.save(); ctx.globalAlpha = ai; ctx.textBaseline = 'middle'; ctx.textAlign = 'left'; ctx.font = '500 12px ' + F; ctx.fillStyle = '#cdd4e4'; ctx.fillText(rows[i][1], 264, ry); ctx.restore();\n    const same = grp === 0; const optCol = same ? '#9aa3bd' : '#7ce89a'; const pesCol = same ? '#9aa3bd' : '#e8896e';\n    if (rows[i][2].indexOf('^') >= 0) { world.draw.math(600, ry, rows[i][2], { px: 13, color: optCol, align: 'right', valign: 'middle', alpha: ai }); }\n    else { ctx.save(); ctx.globalAlpha = ai; ctx.textBaseline = 'middle'; ctx.textAlign = 'right'; ctx.font = '600 13px ' + F; ctx.fillStyle = optCol; ctx.fillText(rows[i][2], 600, ry); ctx.restore(); }\n    if (rows[i][3].indexOf('^') >= 0) { world.draw.math(722, ry, rows[i][3], { px: 13, color: pesCol, align: 'right', valign: 'middle', alpha: ai }); }\n    else { ctx.save(); ctx.globalAlpha = ai; ctx.textBaseline = 'middle'; ctx.textAlign = 'right'; ctx.font = '600 13px ' + F; ctx.fillStyle = pesCol; ctx.fillText(rows[i][3], 722, ry); ctx.restore(); }\n  }\n  const dvA = A * Math.min(1, (s.ru || 0));\n  if (dvA > 0.02) { ctx.save(); ctx.globalAlpha = dvA * 0.5; ctx.strokeStyle = 'rgba(120,140,180,0.5)'; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(178, 398); ctx.lineTo(722, 398); ctx.stroke(); ctx.restore(); }\n  if ((s.nOpt || 0) > 0.02) { const ao = A * s.nOpt; ctx.save(); ctx.globalAlpha = ao; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.font = '700 17px ' + F; ctx.fillStyle = '#7ce89a'; ctx.fillText('N ≈ 7 000', 572, 418); ctx.font = '500 10px ' + F; ctx.fillStyle = '#9aa3bd'; ctx.fillText('debería estar lleno', 572, 437); ctx.restore(); }\n  if ((s.nPes || 0) > 0.02) { const ap = A * s.nPes; ctx.save(); ctx.globalAlpha = ap; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.font = '700 17px ' + F; ctx.fillStyle = '#e8896e'; ctx.fillText('N ≈ 0.0008', 690, 418); ctx.font = '500 10px ' + F; ctx.fillStyle = '#9aa3bd'; ctx.fillText('estamos solos', 690, 437); ctx.restore(); }\n  ctx.restore();\n}",
+    "onClick": "",
+    "onReset": ""
+  }
+}

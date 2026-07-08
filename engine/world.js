@@ -2,27 +2,27 @@
 // World class: simulation state + tick + draw orchestration.
 // Owns entities, camera, scripts, fx, bubbles, labels, ambient, audio handles.
 
-import { mulberry32, ease, colorAlpha, mixColors, drawRichText, measureRichText, drawLabel, formatAPA, htmlToText } from './util.js?v=125';
-import { compileHooks } from './hooks.js?v=125';
-import { createAmbientSound } from './audio.js?v=125';
-import { SKY_PRESETS } from './sky-presets.js?v=125';
-import { computeSolidBox, drawProp } from './prop-draw.js?v=125';
-import { PROP_NATURAL_SCALE, PROP_SPRITES } from './prop-sprites.js?v=125';
-import { Draw } from './draw.js?v=125';
-import { initCamera, tickCamera } from './camera.js?v=125';
-import { makeAmbientParticle, tickAmbient, drawAmbient } from './ambient.js?v=125';
+import { mulberry32, ease, colorAlpha, mixColors, drawRichText, measureRichText, drawLabel, formatAPA, htmlToText } from './util.js?v=128';
+import { compileHooks } from './hooks.js?v=128';
+import { createAmbientSound } from './audio.js?v=128';
+import { SKY_PRESETS } from './sky-presets.js?v=128';
+import { computeSolidBox, drawProp } from './prop-draw.js?v=128';
+import { PROP_NATURAL_SCALE, PROP_SPRITES } from './prop-sprites.js?v=128';
+import { Draw } from './draw.js?v=128';
+import { initCamera, tickCamera } from './camera.js?v=128';
+import { makeAmbientParticle, tickAmbient, drawAmbient } from './ambient.js?v=128';
 import {
   runScript as _runScript, stopScripts as _stopScripts, tickScripts,
   evalScriptExpr, processScript, execScriptStep,
-} from './scripts.js?v=125';
-import { compileForm } from './forms.js?v=125';
-import { drawFloor } from './floor.js?v=125';
-import { tickAnimatedProps } from './animated-props.js?v=125';
-import { initLearner, touchLearner, tickLearner } from './learner.js?v=125';
-import { handleClick, togglePropInteraction } from './interaction.js?v=125';
+} from './scripts.js?v=128';
+import { compileForm } from './forms.js?v=128';
+import { drawFloor } from './floor.js?v=128';
+import { tickAnimatedProps } from './animated-props.js?v=128';
+import { initLearner, touchLearner, tickLearner } from './learner.js?v=128';
+import { handleClick, togglePropInteraction } from './interaction.js?v=128';
 import {
   createFxApi, spawnBubble, spawnParticles, tickFx, positionBubbles, drawFx,
-} from './fx.js?v=125';
+} from './fx.js?v=128';
 
 // Props que emiten luz solos cuando hay `ambient.darkness` (opt-out con
 // `light: false` en el prop). `dy` ubica la fuente en celdas del sprite
@@ -233,7 +233,21 @@ export class World {
     // Tracked timeouts: setTimeout calls registered here are cleared on reset.
     this._timeouts = this._timeouts || new Set();
     const W = this;
+    // Barrido silencioso de la línea de tiempo: durante un seek/medición se
+    // re-simula el guion en un bucle síncrono. Un setTimeout con delay real se
+    // dispararía en wall-clock DESPUÉS del barrido (efecto tardío fuera de
+    // lugar); esos efectos diferidos son cosméticos, así que se omiten mientras
+    // `_seeking`. El estado que importa lo maneja el runner time-based.
+    this._seeking = false;
+    // Duración total del contenido (fin del guion 'main'), medida al arrancar
+    // por measureDuration(). null = escena sin fin declarativo (hooks o loop):
+    // solo pausa, sin barra scrubbable. OJO: _loadEntities corre en CADA reset()
+    // y un seek hacia atrás llama reset(); `??=` preserva la duración ya medida
+    // (no es estado de simulación, es metadata de la escena). Sin esto, retroceder
+    // borraba la duración y la barra desaparecía para siempre.
+    this._duration ??= null;
     this.setTimeout = (fn, ms) => {
+      if (W._seeking) return -1;
       const id = setTimeout(() => { W._timeouts.delete(id); try { fn(); } catch (e) { console.warn('[noesis-scene] timeout error', e); } }, ms);
       W._timeouts.add(id);
       return id;
@@ -445,6 +459,11 @@ export class World {
     this.state = {};
     this.t = 0;
     this.frame = 0;
+    // Re-siembra el RNG para que cada corrida (replay o seek de la línea de
+    // tiempo) reproduzca EXACTAMENTE el mismo estado visual. Sin esto, un seek
+    // hacia atrás reconstruye la escena con el RNG en otro punto y los props
+    // auto-animados (nubes, pájaros) saltarían de posición.
+    this.rng = mulberry32(this.config.seed || 1);
     // Restore camera defaults: otherwise a stale follow target (a now-removed
     // entity), zoom, pan, or in-flight shake leaks into the next run.
     this._initCamera();
@@ -489,6 +508,59 @@ export class World {
     this._tickReplay();
     this._compiled.onStep && this._compiled.onStep(this, dt);
     this._positionBubbles();
+  }
+
+  // --- Línea de tiempo: seek por re-simulación determinista ---
+  // La escena es una simulación reproducible (RNG sembrado en reset, runner de
+  // scripts y tweens time-based). Para ir a un instante T se re-tickea en
+  // silencio hasta world.t == T. Ir hacia ADELANTE continúa desde el estado
+  // actual; ir hacia ATRÁS resetea y re-simula desde cero. El audio y los
+  // timeouts de efecto se suprimen durante el barrido (ver `_seeking`).
+  seek(targetT) {
+    const dur = this._duration;
+    targetT = Math.max(0, dur != null ? Math.min(targetT, dur) : targetT);
+    if (targetT < this.t - 1e-4) this.reset();
+    this._silentAdvance(targetT);
+    this.runDraw();
+  }
+
+  // Avanza la simulación hasta targetT sin dibujar ni sonar. Paso fijo (1/60)
+  // para que el barrido sea determinista e independiente del framerate.
+  _silentAdvance(targetT) {
+    const STEP = 1 / 60;
+    const wasMuted = this._muted;
+    this._muted = true;
+    this._seeking = true;
+    let guard = 0;
+    while (this.t < targetT - 1e-6 && guard++ < 200000) {
+      this.runStep(Math.min(STEP, targetT - this.t));
+    }
+    this._muted = wasMuted;
+    this._seeking = false;
+  }
+
+  // Corre la escena en silencio hasta que el guion 'main' termina (mismo
+  // criterio que _tickReplay) para conocer la duración del contenido, necesaria
+  // para dibujar el scrubber. Devuelve segundos, o null si no termina dentro
+  // del presupuesto (guiones con loop o escenas de solo-hooks). Deja la escena
+  // reseteada en t=0, lista para el usuario.
+  measureDuration() {
+    if (!this._replay || !this._replay.armed) { this._duration = null; return null; }
+    this.reset();
+    const STEP = 1 / 60, MAX_T = 600;
+    const wasMuted = this._muted;
+    this._muted = true;
+    this._seeking = true;
+    let dur = null;
+    while (this.t < MAX_T) {
+      this.runStep(STEP);
+      if (!(this._scripts && this._scripts.some(s => s.id === 'main'))) { dur = this.t; break; }
+    }
+    this._muted = wasMuted;
+    this._seeking = false;
+    this.reset();
+    this._duration = dur;
+    return dur;
   }
 
   runDraw() {

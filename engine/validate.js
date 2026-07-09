@@ -10,10 +10,10 @@
 // hooks) o se escanean del código fuente del motor (buildVocab recibe un
 // lector de fuentes), así el validador no se desincroniza al crecer el motor.
 
-import { PROP_SPRITES } from './prop-sprites.js?v=128';
-import { SKY_PRESETS } from './sky-presets.js?v=128';
-import { HOOK_NAMES, HOOK_ARGS } from './hooks.js?v=128';
-import { compileForm, FORM_TYPES } from './forms.js?v=128';
+import { PROP_SPRITES } from './prop-sprites.js?v=129';
+import { SKY_PRESETS } from './sky-presets.js?v=129';
+import { HOOK_NAMES, HOOK_ARGS } from './hooks.js?v=129';
+import { compileForm, FORM_TYPES } from './forms.js?v=129';
 
 // Fuentes del motor que buildVocab escanea con regex (enums de despachos
 // if/else que no se exportan como datos).

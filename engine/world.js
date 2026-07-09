@@ -2,27 +2,27 @@
 // World class: simulation state + tick + draw orchestration.
 // Owns entities, camera, scripts, fx, bubbles, labels, ambient, audio handles.
 
-import { mulberry32, ease, colorAlpha, mixColors, drawRichText, measureRichText, drawLabel, formatAPA, htmlToText } from './util.js?v=128';
-import { compileHooks } from './hooks.js?v=128';
-import { createAmbientSound } from './audio.js?v=128';
-import { SKY_PRESETS } from './sky-presets.js?v=128';
-import { computeSolidBox, drawProp } from './prop-draw.js?v=128';
-import { PROP_NATURAL_SCALE, PROP_SPRITES } from './prop-sprites.js?v=128';
-import { Draw } from './draw.js?v=128';
-import { initCamera, tickCamera } from './camera.js?v=128';
-import { makeAmbientParticle, tickAmbient, drawAmbient } from './ambient.js?v=128';
+import { mulberry32, ease, colorAlpha, mixColors, drawRichText, measureRichText, drawLabel, formatAPA, htmlToText } from './util.js?v=129';
+import { compileHooks } from './hooks.js?v=129';
+import { createAmbientSound } from './audio.js?v=129';
+import { SKY_PRESETS } from './sky-presets.js?v=129';
+import { computeSolidBox, drawProp } from './prop-draw.js?v=129';
+import { PROP_NATURAL_SCALE, PROP_SPRITES } from './prop-sprites.js?v=129';
+import { Draw } from './draw.js?v=129';
+import { initCamera, tickCamera } from './camera.js?v=129';
+import { makeAmbientParticle, tickAmbient, drawAmbient } from './ambient.js?v=129';
 import {
   runScript as _runScript, stopScripts as _stopScripts, tickScripts,
   evalScriptExpr, processScript, execScriptStep,
-} from './scripts.js?v=128';
-import { compileForm } from './forms.js?v=128';
-import { drawFloor } from './floor.js?v=128';
-import { tickAnimatedProps } from './animated-props.js?v=128';
-import { initLearner, touchLearner, tickLearner } from './learner.js?v=128';
-import { handleClick, togglePropInteraction } from './interaction.js?v=128';
+} from './scripts.js?v=129';
+import { compileForm } from './forms.js?v=129';
+import { drawFloor } from './floor.js?v=129';
+import { tickAnimatedProps } from './animated-props.js?v=129';
+import { initLearner, touchLearner, tickLearner } from './learner.js?v=129';
+import { handleClick, togglePropInteraction } from './interaction.js?v=129';
 import {
   createFxApi, spawnBubble, spawnParticles, tickFx, positionBubbles, drawFx,
-} from './fx.js?v=128';
+} from './fx.js?v=129';
 
 // Props que emiten luz solos cuando hay `ambient.darkness` (opt-out con
 // `light: false` en el prop). `dy` ubica la fuente en celdas del sprite
@@ -235,9 +235,10 @@ export class World {
     const W = this;
     // Barrido silencioso de la línea de tiempo: durante un seek/medición se
     // re-simula el guion en un bucle síncrono. Un setTimeout con delay real se
-    // dispararía en wall-clock DESPUÉS del barrido (efecto tardío fuera de
-    // lugar); esos efectos diferidos son cosméticos, así que se omiten mientras
-    // `_seeking`. El estado que importa lo maneja el runner time-based.
+    // dispararía en wall-clock DESPUÉS del barrido, fuera de lugar; durante
+    // `_seeking` se ejecutan inline (ver setTimeout más abajo) para que su
+    // efecto quede ASENTADO en el estado final del seek. El resto lo maneja el
+    // runner time-based.
     this._seeking = false;
     // Duración total del contenido (fin del guion 'main'), medida al arrancar
     // por measureDuration(). null = escena sin fin declarativo (hooks o loop):
@@ -247,7 +248,12 @@ export class World {
     // borraba la duración y la barra desaparecía para siempre.
     this._duration ??= null;
     this.setTimeout = (fn, ms) => {
-      if (W._seeking) return -1;
+      // Durante un barrido de seek/medición ejecutar el callback inline: colapsa
+      // su efecto al instante del barrido, así una transición de escena
+      // (transitionTo agenda el teleport de cámara y el fin del fade con
+      // setTimeout) queda asentada en el estado final del seek en vez de dejar
+      // la pantalla en negro con la cámara vieja. En play normal se agenda igual.
+      if (W._seeking) { try { fn(); } catch (e) { console.warn('[noesis-scene] seek timeout error', e); } return -1; }
       const id = setTimeout(() => { W._timeouts.delete(id); try { fn(); } catch (e) { console.warn('[noesis-scene] timeout error', e); } }, ms);
       W._timeouts.add(id);
       return id;
@@ -790,6 +796,11 @@ export class World {
     // inferior con fade, en screen-space sobre el mundo y bajo el HUD.
     this._letterbox = 0;
     this._letterboxTarget = 0;
+    // Scrim de transición de escena (fade a negro de transitionTo): limpiarlo
+    // en cada reset para que un seek/replay no arranque con la pantalla a medio
+    // fundir de una transición previa.
+    this._transitionScrim = 0;
+    this._transitionTarget = 0;
   }
 
   _tickLetterbox() {

@@ -79,9 +79,9 @@
     { "type": "learner", "id": "blanca", "x": 470, "y": 434, "scale": 5, "hero": true, "body": "#e6dcc8", "name": "Blancanieves", "accessory": "bow", "accessoryColor": "#a83a52", "behavior": null, "sleepable": false, "greets": false, "solid": false, "_alpha": 0 },
     { "type": "learner", "id": "reina", "x": 560, "y": 434, "scale": 5, "hero": true, "body": "#3a2f4a", "name": "La reina", "accessory": "crown", "accessoryColor": "#5a2535", "behavior": null, "sleepable": false, "greets": false, "solid": false, "_alpha": 0 },
     { "type": "learner", "id": "princesa", "x": 360, "y": 434, "scale": 5, "hero": true, "body": "#cf8fb8", "name": "Princesa", "accessory": "bow", "accessoryColor": "#b84a72", "behavior": null, "sleepable": false, "greets": false, "solid": false, "_alpha": 0 },
-    { "type": "learner", "id": "bruja", "x": 470, "y": 434, "scale": 5, "hero": true, "body": "#5a6a4e", "name": "La bruja", "accessory": "hat", "accessoryColor": "#2e3a2a", "behavior": null, "sleepable": false, "greets": false, "solid": false, "_alpha": 0 },
-    { "type": "learner", "id": "gretel", "x": 430, "y": 440, "scale": 4.5, "hero": true, "body": "#e0b886", "name": "Gretel", "accessory": "bow", "accessoryColor": "#c85a78", "behavior": null, "sleepable": false, "greets": false, "solid": false, "_alpha": 0 },
-    { "type": "learner", "id": "hansel", "x": 506, "y": 440, "scale": 4.5, "hero": true, "body": "#cda06a", "name": "Hansel", "accessory": "hat", "accessoryColor": "#6a4a2a", "behavior": null, "sleepable": false, "greets": false, "solid": false, "_alpha": 0 }
+    { "type": "learner", "id": "bruja", "x": 512, "y": 438, "scale": 5, "hero": true, "body": "#5a6a4e", "name": "La bruja", "accessory": "hat", "accessoryColor": "#2e3a2a", "behavior": null, "sleepable": false, "greets": false, "solid": false, "_alpha": 0 },
+    { "type": "learner", "id": "gretel", "x": 440, "y": 440, "scale": 4.5, "hero": true, "body": "#e0b886", "name": "Gretel", "accessory": "bow", "accessoryColor": "#c85a78", "behavior": null, "sleepable": false, "greets": false, "solid": false, "_alpha": 0 },
+    { "type": "learner", "id": "hansel", "x": 386, "y": 440, "scale": 4.5, "hero": true, "body": "#cda06a", "name": "Hansel", "accessory": "hat", "accessoryColor": "#6a4a2a", "behavior": null, "sleepable": false, "greets": false, "solid": false, "_alpha": 0 }
   ],
   "script": [
     { "wait": 0.8 },
@@ -204,7 +204,7 @@
     { "focus": "reina", "off": true },
     { "do": "var e=world.props.find(function(p){return p.id==='espejo';}); if(e) world.tween(e,'glow',0,{duration:1.0});" },
     { "caption": "Blancanieves sobrevivió. Y en su boda, castigaron a la reina." },
-    { "do": "var b=world.byId('blanca'); if(b) world.fx.vanish(b,0.7);" },
+    { "vanish": "blanca", "duration": 0.7 },
     { "do": "var e=world.props.find(function(p){return p.id==='espejo';}); if(e) world.tween(e,'alpha',0,{duration:0.8});" },
     { "wait": 3.6 },
     { "caption": "Le calzaron zapatos de hierro al rojo vivo, y la obligaron a bailar." },
@@ -230,7 +230,7 @@
     { "focus": [560, 462], "off": true },
     { "tween": "ambient.darkness", "to": 0.50, "duration": 1.6 },
     { "tone": 60, "dur": 1.0 },
-    { "do": "var r=world.byId('reina'); if(r) world.fx.vanish(r,1.0);" },
+    { "vanish": "reina", "duration": 1.0 },
     { "do": "var pr=world.props.find(function(p){return p.id==='pira';}); if(pr) world.tween(pr,'alpha',0,{duration:2.2});" },
     { "wait": 4.0 },
 
@@ -332,7 +332,7 @@
     { "do": "var b=world.byId('bruja'); if(b) b.lookAt={x:612,y:462};" },
     { "tone": 120, "dur": 0.3 },
     { "wait": 1.4 },
-    { "walk": "gretel", "to": [486, 442], "speed": 120 },
+    { "walk": "gretel", "to": [466, 442], "speed": 120 },
     { "waitFor": "arrive:gretel" },
     { "caption": "Y la dejan arder viva, aullando." },
     { "do": "var b=world.byId('bruja'); if(b) world.fx.mood(b,'scared',4);" },

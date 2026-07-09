@@ -2,8 +2,8 @@
 // Per-prop draw functions + dispatch (drawProp). Animated/bespoke props
 // have their own renderer; static props fall through to PROP_SPRITES.
 
-import { PROP_SPRITES } from './prop-sprites.js?v=129';
-import { mixColors } from './util.js?v=129';
+import { PROP_SPRITES } from './prop-sprites.js?v=145';
+import { mixColors } from './util.js?v=145';
 
 // Compute a default collision box for a solid prop: the bottom 60% of the
 // sprite, centered on prop.x. Authors can override with `solidBox: {x,y,w,h}`
@@ -1782,6 +1782,802 @@ export function drawNotebook(ctx, prop) {
   ctx.restore();
 }
 
+// Taza de café humeante. Punto de apoyo en (x, y) = base; el cuerpo sube desde
+// ahí y el vapor asciende sobre la boca. `color` tiñe la cerámica, `alpha` para
+// aparecer/desvanecer, `_t` (animated-props) mueve las volutas del vapor.
+// Sombrilla de terraza: poste + toldo de gajos bicolor con borde festoneado y
+// remate. (prop.x, prop.y) es la BASE del poste. `color`/`color2` alternan los
+// gajos. Da alegría de café al aire libre.
+export function drawUmbrella(ctx, prop) {
+  const s = prop.scale || 6;
+  const cx = Math.round(prop.x);
+  const cy = Math.round(prop.y);
+  const a = prop.alpha == null ? 1 : Math.max(0, Math.min(1, prop.alpha));
+  if (a <= 0.01) return;
+  const TAU = Math.PI * 2;
+  const c1 = prop.color || '#ef5f52';     // gajo cálido
+  const c2 = prop.color2 || '#fbf7ee';    // gajo crema
+  const c1d = mixColors(c1, '#000000', 0.16);
+  const c2d = mixColors(c2, '#000000', 0.12);
+  const pole = '#a68a6c', poleD = mixColors(pole, '#000000', 0.34), poleL = mixColors(pole, '#ffffff', 0.3);
+  const poleH = 20 * s;
+  const cR = 12.5 * s;
+  const domeH = 6 * s;
+  const hang = 2.6 * s;              // cuánto cuelga el borde en el centro
+  const canopyY = cy - poleH;
+  const apex = canopyY - domeH;
+  const N = 8;
+  const edge = (i) => {
+    const f = i / N;
+    const ex = cx - cR + f * 2 * cR;
+    const ey = canopyY + Math.sin(f * Math.PI) * hang;
+    return [ex, ey];
+  };
+  ctx.save();
+  ctx.globalAlpha *= a;
+  // Sombra en el suelo.
+  ctx.save(); ctx.globalAlpha *= 0.2; ctx.fillStyle = '#000000';
+  ctx.beginPath(); ctx.ellipse(cx, cy, 3 * s, 1.1 * s, 0, 0, TAU); ctx.fill(); ctx.restore();
+  // Poste.
+  ctx.fillStyle = pole;
+  ctx.fillRect(cx - 0.7 * s, apex, 1.5 * s, cy - apex);
+  ctx.fillStyle = poleL; ctx.fillRect(cx - 0.7 * s, apex, 0.5 * s, cy - apex);
+  ctx.fillStyle = poleD; ctx.fillRect(cx + 0.35 * s, apex, 0.4 * s, cy - apex);
+  // Gajos del toldo, alternando color, con borde festoneado.
+  for (let i = 0; i < N; i++) {
+    const [x1, y1] = edge(i);
+    const [x2, y2] = edge(i + 1);
+    const midX = (x1 + x2) / 2, midY = (y1 + y2) / 2 + 1.5 * s;   // festón que cuelga
+    const isA = i % 2 === 0;
+    const side = ((x1 + x2) / 2 < cx) ? 0.06 : 0;                 // leve luz al lado izquierdo
+    ctx.fillStyle = isA ? mixColors(c1, '#ffffff', side) : mixColors(c2, '#ffffff', side);
+    ctx.beginPath();
+    ctx.moveTo(cx, apex);
+    ctx.lineTo(x1, y1);
+    ctx.quadraticCurveTo(midX, midY, x2, y2);
+    ctx.closePath();
+    ctx.fill();
+    // Sombra sutil en la mitad derecha de cada gajo para dar volumen.
+    ctx.save(); ctx.globalAlpha *= 0.25; ctx.fillStyle = isA ? c1d : c2d;
+    ctx.beginPath();
+    ctx.moveTo(cx, apex); ctx.lineTo(midX, midY - 0.5 * s); ctx.lineTo(x2, y2); ctx.closePath();
+    ctx.fill(); ctx.restore();
+  }
+  // Costilla central marcada (línea del gajo frontal).
+  ctx.strokeStyle = 'rgba(0,0,0,0.12)'; ctx.lineWidth = Math.max(1, 0.2 * s);
+  for (let i = 1; i < N; i++) {
+    const [ex, ey] = edge(i);
+    ctx.beginPath(); ctx.moveTo(cx, apex); ctx.lineTo(ex, ey); ctx.stroke();
+  }
+  // Remate en el ápice.
+  ctx.fillStyle = poleD;
+  ctx.beginPath(); ctx.moveTo(cx, apex - 2.2 * s); ctx.lineTo(cx - 0.7 * s, apex); ctx.lineTo(cx + 0.7 * s, apex); ctx.closePath(); ctx.fill();
+  ctx.fillStyle = poleL;
+  ctx.beginPath(); ctx.arc(cx, apex - 2.4 * s, 0.7 * s, 0, TAU); ctx.fill();
+  ctx.restore();
+}
+
+// Avión de línea visto de lado, con estela de vapor. Cruza el cielo (movimiento
+// en animated-props). (x, y) = centro. `color` = fuselaje, `color2` = acento
+// (cola/franja). `_dir` (1/-1) lo espeja según hacia dónde vuela.
+export function drawPlane(ctx, prop) {
+  const s = prop.scale || 1.6;
+  const cx = Math.round(prop.x);
+  const cy = Math.round(prop.y);
+  const a = prop.alpha == null ? 1 : Math.max(0, Math.min(1, prop.alpha));
+  if (a <= 0.01) return;
+  const TAU = Math.PI * 2;
+  const dir = prop._dir || (prop.dir === 'left' ? -1 : 1);
+  const body = prop.color || '#eef1f4';
+  const bodyD = mixColors(body, '#000000', 0.16);
+  const accent = prop.color2 || '#5b8def';
+  ctx.save();
+  ctx.globalAlpha *= a;
+  ctx.translate(cx, cy);
+  ctx.scale(dir, 1);
+  // Estela de vapor (hacia atrás, -x).
+  for (let i = 0; i < 9; i++) {
+    ctx.globalAlpha = a * 0.22 * (1 - i / 9);
+    ctx.fillStyle = '#ffffff';
+    ctx.beginPath(); ctx.arc(-9 * s - i * 3.2 * s, -0.2 * s, (1.3 - i * 0.11) * s, 0, TAU); ctx.fill();
+  }
+  ctx.globalAlpha = a;
+  // Aleta de cola.
+  ctx.fillStyle = accent;
+  ctx.beginPath(); ctx.moveTo(-7.4 * s, 0.4 * s); ctx.lineTo(-9.2 * s, -3.6 * s); ctx.lineTo(-6 * s, 0.4 * s); ctx.closePath(); ctx.fill();
+  // Ala inferior (perspectiva).
+  ctx.fillStyle = mixColors(body, '#000000', 0.1);
+  ctx.beginPath(); ctx.moveTo(1.5 * s, 0.6 * s); ctx.lineTo(-3.5 * s, 4.2 * s); ctx.lineTo(2.5 * s, 1 * s); ctx.closePath(); ctx.fill();
+  // Fuselaje.
+  ctx.fillStyle = bodyD;
+  ctx.beginPath(); ctx.ellipse(0, 0.7 * s, 8 * s, 1.7 * s, 0, 0, TAU); ctx.fill();
+  ctx.fillStyle = body;
+  ctx.beginPath(); ctx.ellipse(0, 0, 8.4 * s, 2 * s, 0, 0, TAU); ctx.fill();
+  // Ala superior.
+  ctx.fillStyle = body;
+  ctx.beginPath(); ctx.moveTo(1.5 * s, -0.4 * s); ctx.lineTo(-2.5 * s, -2.8 * s); ctx.lineTo(2.5 * s, -0.4 * s); ctx.closePath(); ctx.fill();
+  // Franja de color.
+  ctx.fillStyle = accent; ctx.fillRect(-6.5 * s, -0.5 * s, 13 * s, 0.9 * s);
+  // Ventanillas.
+  ctx.fillStyle = '#33465a';
+  for (let i = 0; i < 7; i++) { ctx.beginPath(); ctx.arc(-4.5 * s + i * 1.5 * s, -0.4 * s, 0.34 * s, 0, TAU); ctx.fill(); }
+  // Cabina.
+  ctx.beginPath(); ctx.arc(6.4 * s, -0.5 * s, 0.8 * s, 0, TAU); ctx.fill();
+  ctx.restore();
+}
+
+// Skyline de ciudad europea como telón de fondo: fila de edificios de distintas
+// alturas con hileras de ventanas (algunas iluminadas), cornisas, tejados
+// mansarda y chimeneas, lavados con bruma para dar perspectiva atmosférica.
+// (x, y) = punto base central (nivel de calle). `w` fija el ancho total.
+// Determinista (sin random) para ser reproducible en cada corrida.
+export function drawCityscape(ctx, prop) {
+  const s = prop.scale || 6;
+  const cx = Math.round(prop.x);
+  const baseY = Math.round(prop.y);
+  const a = prop.alpha == null ? 1 : Math.max(0, Math.min(1, prop.alpha));
+  if (a <= 0.01) return;
+  const halfW = (prop.w || 68 * s) / 2;
+  const haze = prop.color2 || '#e7ddc8';
+  const mixHaze = (c) => mixColors(c, haze, 0.3);
+  const facades = ['#cc9a7a', '#e2d6bd', '#d3b072', '#bfb6a4', '#d2ac9c', '#adb9c0', '#c98f78'];
+  const widths = [17, 23, 14, 21, 16, 25, 18, 20];
+  const heights = [44, 58, 36, 50, 62, 40, 54, 46];
+  const roof = mixHaze('#5f5a54'), roofD = mixHaze('#443f3b');
+  ctx.save();
+  ctx.globalAlpha *= a;
+  let bx = cx - halfW, i = 0;
+  while (bx < cx + halfW - 1) {
+    const bw = widths[i % widths.length] * s;
+    const bh = heights[i % heights.length] * s;
+    const col = mixHaze(facades[i % facades.length]);
+    const colD = mixColors(col, '#000000', 0.13);
+    const colL = mixColors(col, '#ffffff', 0.16);
+    const topY = baseY - bh;
+    // Cuerpo con gradiente vertical.
+    const bg = ctx.createLinearGradient(0, topY, 0, baseY);
+    bg.addColorStop(0, colL); bg.addColorStop(1, colD);
+    ctx.fillStyle = bg; ctx.fillRect(bx, topY, bw, bh);
+    // Cornisa superior.
+    ctx.fillStyle = colD; ctx.fillRect(bx, topY, bw, 1.6 * s);
+    ctx.fillStyle = colL; ctx.fillRect(bx, topY + 1.6 * s, bw, 0.6 * s);
+    // Tejado mansarda con chimenea en edificios pares.
+    if (i % 2 === 0) {
+      ctx.fillStyle = roof;
+      ctx.beginPath();
+      ctx.moveTo(bx, topY); ctx.lineTo(bx + 1.6 * s, topY - 4 * s);
+      ctx.lineTo(bx + bw - 1.6 * s, topY - 4 * s); ctx.lineTo(bx + bw, topY);
+      ctx.closePath(); ctx.fill();
+      ctx.fillStyle = roofD; ctx.fillRect(bx + bw * 0.28, topY - 5.4 * s, 1.6 * s, 5.4 * s);
+      ctx.fillStyle = roof; ctx.fillRect(bx + bw * 0.28 - 0.3 * s, topY - 5.6 * s, 2.2 * s, 0.8 * s);
+    }
+    // Ventanas (grilla) con algunas iluminadas.
+    const cols = Math.max(2, Math.floor(bw / (4.4 * s)));
+    const winW = 2.3 * s, winH = 3.3 * s;
+    const gapX = (bw - cols * winW) / (cols + 1);
+    let wy = topY + 4.4 * s, r = 0;
+    while (wy + winH < baseY - 2 * s) {
+      for (let c = 0; c < cols; c++) {
+        const wx = bx + gapX * (c + 1) + winW * c;
+        const lit = ((i * 7 + r * 3 + c * 5) % 6) === 0;
+        ctx.fillStyle = colD; ctx.fillRect(wx - 0.4 * s, wy - 0.4 * s, winW + 0.8 * s, winH + 0.8 * s);
+        ctx.fillStyle = lit ? '#f4cb7c' : '#59687a';
+        ctx.fillRect(wx, wy, winW, winH);
+        ctx.fillStyle = lit ? 'rgba(255,232,175,0.5)' : 'rgba(255,255,255,0.12)';
+        ctx.fillRect(wx, wy, winW * 0.42, winH);
+        ctx.fillStyle = colD; ctx.fillRect(wx + winW / 2 - 0.15 * s, wy, 0.3 * s, winH);
+      }
+      wy += winH + 2.6 * s; r++;
+    }
+    bx += bw + 0.6 * s; i++;
+  }
+  ctx.restore();
+}
+
+// Fachada de café victoriano vista de frente: pared crema con molduras y
+// pilastras, cornisa con dentículos, puerta central con arco de medio punto y
+// cristal, dos ventanas arqueadas con cortina, toldo rayado, cartela dorada con
+// el nombre (prop.label) y apliques encendidos. (x, y) = CENTRO. `color` = pared,
+// `color2` = acento (toldo/cortinas). Es la pieza de ambiente de la escena.
+export function drawCafeFacade(ctx, prop) {
+  const s = prop.scale || 8;
+  const cx = Math.round(prop.x);
+  const cy = Math.round(prop.y);
+  const a = prop.alpha == null ? 1 : Math.max(0, Math.min(1, prop.alpha));
+  if (a <= 0.01) return;
+  const TAU = Math.PI * 2;
+  const wall = prop.color || '#ece3d0';
+  const wallD = mixColors(wall, '#000000', 0.13);
+  const wallL = mixColors(wall, '#ffffff', 0.5);
+  const trim = mixColors(wall, '#ffffff', 0.35), trimSh = mixColors(wall, '#000000', 0.22);
+  const gold = '#c9a24a', goldL = '#ead08a', goldD = '#977832';
+  const wood = '#5a3d28', woodD = '#33210f', woodL = '#7c5636';
+  const accent = prop.color2 || '#8f2f30';   // toldo / cortina (rojo vino)
+  const accentL = mixColors(accent, '#ffffff', 0.2);
+  const cream = '#f4ece0';
+  const glassA = '#a8c2ce', glassB = '#7592a1';
+  const W = 42 * s, H = 30 * s;
+  const x = cx - W / 2, y = cy - H / 2;
+  const rr = (rx, ry, rw, rh, r) => { ctx.beginPath(); ctx.roundRect(rx, ry, rw, rh, r); };
+  ctx.save();
+  ctx.globalAlpha *= a;
+  // Sombra ancha al pie.
+  ctx.save(); ctx.globalAlpha *= 0.16; ctx.fillStyle = '#000000';
+  ctx.beginPath(); ctx.ellipse(cx, y + H, W * 0.5, 2 * s, 0, 0, TAU); ctx.fill(); ctx.restore();
+  // Pared con gradiente.
+  const wg = ctx.createLinearGradient(0, y, 0, y + H);
+  wg.addColorStop(0, wallL); wg.addColorStop(0.5, wall); wg.addColorStop(1, wallD);
+  ctx.fillStyle = wg; ctx.fillRect(x, y, W, H);
+  // Sillares sutiles (líneas horizontales).
+  ctx.strokeStyle = 'rgba(120,100,70,0.10)'; ctx.lineWidth = 1;
+  for (let i = 1; i < 6; i++) { const ly = y + (H * 0.16) * i; ctx.beginPath(); ctx.moveTo(x, ly); ctx.lineTo(x + W, ly); ctx.stroke(); }
+  // Zócalo inferior.
+  ctx.fillStyle = trimSh; ctx.fillRect(x, y + H - 2.4 * s, W, 2.4 * s);
+  ctx.fillStyle = mixColors(wall, '#000000', 0.3); ctx.fillRect(x, y + H - 2.4 * s, W, 0.6 * s);
+  // Pilastras laterales con capitel y base.
+  for (const px0 of [x + 1.2 * s, x + W - 3.6 * s]) {
+    ctx.fillStyle = trim; ctx.fillRect(px0, y + 3.4 * s, 2.4 * s, H - 5.8 * s);
+    ctx.fillStyle = wallL; ctx.fillRect(px0, y + 3.4 * s, 0.7 * s, H - 5.8 * s);
+    ctx.fillStyle = trimSh; ctx.fillRect(px0 + 1.7 * s, y + 3.4 * s, 0.7 * s, H - 5.8 * s);
+    // capitel
+    ctx.fillStyle = trim; ctx.fillRect(px0 - 0.7 * s, y + 3.4 * s, 3.8 * s, 1.4 * s);
+    ctx.fillStyle = gold; ctx.fillRect(px0 - 0.7 * s, y + 4.5 * s, 3.8 * s, 0.4 * s);
+    // base
+    ctx.fillStyle = trim; ctx.fillRect(px0 - 0.7 * s, y + H - 4 * s, 3.8 * s, 1.6 * s);
+  }
+  // Cornisa / entablamento superior.
+  ctx.fillStyle = trim; ctx.fillRect(x, y, W, 3.4 * s);
+  ctx.fillStyle = wallL; ctx.fillRect(x, y, W, 0.8 * s);
+  ctx.fillStyle = gold; ctx.fillRect(x, y + 3.0 * s, W, 0.5 * s);
+  ctx.fillStyle = goldD; ctx.fillRect(x, y + 3.5 * s, W, 0.25 * s);
+  // Dentículos bajo la cornisa.
+  ctx.fillStyle = trimSh;
+  for (let dx = x + 1 * s; dx < x + W - 1 * s; dx += 2.2 * s) ctx.fillRect(dx, y + 2.3 * s, 1.1 * s, 0.9 * s);
+  // Cartela central con el nombre (letrero dorado).
+  const cw = 26 * s, ch = 4.6 * s, cyr = y + 4.4 * s;
+  ctx.fillStyle = woodD; rr(cx - cw / 2, cyr, cw, ch, 1 * s); ctx.fill();
+  const cgr = ctx.createLinearGradient(0, cyr, 0, cyr + ch);
+  cgr.addColorStop(0, '#3a2a1a'); cgr.addColorStop(1, '#23160b');
+  ctx.fillStyle = cgr; rr(cx - cw / 2 + 0.5 * s, cyr + 0.5 * s, cw - 1 * s, ch - 1 * s, 0.8 * s); ctx.fill();
+  ctx.strokeStyle = gold; ctx.lineWidth = Math.max(1, 0.35 * s);
+  rr(cx - cw / 2 + 0.5 * s, cyr + 0.5 * s, cw - 1 * s, ch - 1 * s, 0.8 * s); ctx.stroke();
+  // Volutas doradas en los extremos de la cartela.
+  for (const sgn of [-1, 1]) {
+    ctx.strokeStyle = goldL; ctx.lineWidth = Math.max(1, 0.4 * s);
+    ctx.beginPath();
+    ctx.arc(cx + sgn * (cw / 2 + 1.4 * s), cyr + ch / 2, 1.3 * s, sgn > 0 ? -Math.PI * 0.5 : Math.PI * 0.5, sgn > 0 ? Math.PI * 0.5 : Math.PI * 1.5);
+    ctx.stroke();
+  }
+  const label = prop.label || 'Coffee with Genially';
+  ctx.fillStyle = goldL;
+  ctx.font = `italic 600 ${(2.6 * s).toFixed(1)}px Fraunces, Georgia, serif`;
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.shadowColor = 'rgba(0,0,0,0.6)'; ctx.shadowOffsetY = 1;
+  ctx.fillText(label, cx, cyr + ch / 2 + 0.2 * s);
+  ctx.shadowColor = 'transparent';
+  // --- Puerta central con arco rebajado (no invade la cartela) ---
+  const dW = 11 * s, dH = 15 * s;
+  const dx = cx - dW / 2, dyB = y + H - 2.4 * s, dyT = dyB - dH;
+  const archH = 2.4 * s, archRx = dW / 2;
+  // marco de madera
+  ctx.fillStyle = wood;
+  ctx.beginPath();
+  ctx.moveTo(dx - 1 * s, dyB); ctx.lineTo(dx - 1 * s, dyT);
+  ctx.ellipse(cx, dyT, archRx + 1 * s, archH + 0.8 * s, 0, Math.PI, 0); ctx.lineTo(dx + dW + 1 * s, dyB); ctx.closePath(); ctx.fill();
+  // hoja / cristal
+  const dgr = ctx.createLinearGradient(0, dyT - archH, 0, dyB);
+  dgr.addColorStop(0, glassA); dgr.addColorStop(1, glassB);
+  ctx.fillStyle = dgr;
+  ctx.beginPath();
+  ctx.moveTo(dx, dyB); ctx.lineTo(dx, dyT); ctx.ellipse(cx, dyT, archRx, archH, 0, Math.PI, 0); ctx.lineTo(dx + dW, dyB); ctx.closePath(); ctx.fill();
+  // reflejo diagonal
+  ctx.save(); ctx.globalAlpha *= 0.5; ctx.fillStyle = '#ffffff';
+  ctx.beginPath(); ctx.moveTo(dx + 1.5 * s, dyB); ctx.lineTo(dx + 4 * s, dyB); ctx.lineTo(dx + 1.5 * s, dyT + 2 * s); ctx.closePath(); ctx.fill(); ctx.restore();
+  // panel inferior de madera y montante central
+  ctx.fillStyle = woodL; ctx.fillRect(dx, dyB - 4 * s, dW, 4 * s);
+  ctx.fillStyle = woodD; ctx.fillRect(cx - 0.4 * s, dyT - archH, 0.8 * s, dH + archH);
+  // manijas
+  ctx.fillStyle = gold;
+  ctx.beginPath(); ctx.arc(cx - 1.4 * s, dyB - 6 * s, 0.6 * s, 0, TAU); ctx.fill();
+  ctx.beginPath(); ctx.arc(cx + 1.4 * s, dyB - 6 * s, 0.6 * s, 0, TAU); ctx.fill();
+  // --- Dos ventanas arqueadas ---
+  const vW = 8 * s, vH = 9 * s;
+  for (const vcx of [x + 8 * s, x + W - 8 * s]) {
+    const vx = vcx - vW / 2, vyB = dyB - 1.5 * s, vyT = vyB - vH, vArch = vW / 2;
+    ctx.fillStyle = trimSh;
+    ctx.beginPath(); ctx.moveTo(vx - 0.8 * s, vyB); ctx.lineTo(vx - 0.8 * s, vyT); ctx.arc(vcx, vyT, vArch + 0.8 * s, Math.PI, 0); ctx.lineTo(vx + vW + 0.8 * s, vyB); ctx.closePath(); ctx.fill();
+    const vgr = ctx.createLinearGradient(0, vyT - vArch, 0, vyB);
+    vgr.addColorStop(0, glassA); vgr.addColorStop(1, glassB);
+    ctx.fillStyle = vgr;
+    ctx.beginPath(); ctx.moveTo(vx, vyB); ctx.lineTo(vx, vyT); ctx.arc(vcx, vyT, vArch, Math.PI, 0); ctx.lineTo(vx + vW, vyB); ctx.closePath(); ctx.fill();
+    // cortina de encaje (mitad inferior)
+    ctx.save(); ctx.globalAlpha *= 0.85; ctx.fillStyle = cream;
+    ctx.fillRect(vx, vyB - vH * 0.42, vW, vH * 0.42); ctx.restore();
+    ctx.strokeStyle = 'rgba(120,100,70,0.25)'; ctx.lineWidth = 1;
+    for (let k = 1; k < 4; k++) { ctx.beginPath(); ctx.moveTo(vx + (vW / 4) * k, vyB - vH * 0.42); ctx.lineTo(vx + (vW / 4) * k, vyB); ctx.stroke(); }
+    // parteluz
+    ctx.strokeStyle = trim; ctx.lineWidth = 0.5 * s;
+    ctx.beginPath(); ctx.moveTo(vcx, vyT - vArch); ctx.lineTo(vcx, vyB); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(vx, vyT); ctx.lineTo(vx + vW, vyT); ctx.stroke();
+    // apliques a un lado de cada ventana
+    ctx.fillStyle = goldD; ctx.fillRect(vcx + vW / 2 + 1 * s, vyT + 1 * s, 0.5 * s, 2.5 * s);
+    const glow = ctx.createRadialGradient(vcx + vW / 2 + 1.6 * s, vyT + 0.6 * s, 0, vcx + vW / 2 + 1.6 * s, vyT + 0.6 * s, 2 * s);
+    glow.addColorStop(0, 'rgba(255,210,120,0.75)'); glow.addColorStop(1, 'rgba(255,210,120,0)');
+    ctx.fillStyle = glow; ctx.beginPath(); ctx.arc(vcx + vW / 2 + 1.6 * s, vyT + 0.6 * s, 2 * s, 0, TAU); ctx.fill();
+  }
+  // --- Toldo rayado sobre la puerta ---
+  const aHalf = dW * 0.92, aTop = cyr + ch + 0.7 * s, aFront = aTop + 4.6 * s, aVal = 2.4 * s;
+  const N = 7, sw = (2 * aHalf) / N;
+  for (let i = 0; i < N; i++) {
+    const ax0 = cx - aHalf + i * sw;
+    ctx.fillStyle = (i % 2 === 0) ? accent : cream;
+    ctx.fillRect(ax0, aTop, sw, aFront - aTop);
+    ctx.fillStyle = (i % 2 === 0) ? accent : cream;
+    ctx.beginPath(); ctx.moveTo(ax0, aFront); ctx.lineTo(ax0 + sw, aFront); ctx.lineTo(ax0 + sw, aFront + aVal * 0.4); ctx.arc(ax0 + sw / 2, aFront + aVal * 0.4, sw / 2, 0, Math.PI); ctx.closePath(); ctx.fill();
+  }
+  ctx.save(); ctx.globalAlpha *= 0.18; ctx.fillStyle = '#000000'; ctx.fillRect(cx - aHalf, aTop, 2 * aHalf, 1.1 * s); ctx.restore();
+  ctx.restore();
+}
+
+// Toldo de café rayado con faldón festoneado. (x, y) = centro superior (pegado
+// a la pared); se proyecta hacia abajo. `color`/`color2` alternan las rayas.
+export function drawAwning(ctx, prop) {
+  const s = prop.scale || 7;
+  const cx = Math.round(prop.x);
+  const cy = Math.round(prop.y);
+  const a = prop.alpha == null ? 1 : Math.max(0, Math.min(1, prop.alpha));
+  if (a <= 0.01) return;
+  const c1 = prop.color || '#c0473e';
+  const c2 = prop.color2 || '#f4ece0';
+  const halfW = 12 * s;
+  const topY = cy;
+  const frontY = cy + 6.2 * s;
+  const valH = 3.4 * s;
+  const N = 8;
+  const sw = (2 * halfW) / N;
+  ctx.save();
+  ctx.globalAlpha *= a;
+  // Sombra que el toldo proyecta sobre la pared.
+  ctx.save(); ctx.globalAlpha *= 0.16; ctx.fillStyle = '#000000';
+  ctx.fillRect(cx - halfW - 1 * s, frontY + valH, 2 * halfW + 2 * s, 4 * s); ctx.restore();
+  // Superficie principal (rayas verticales).
+  for (let i = 0; i < N; i++) {
+    const x0 = cx - halfW + i * sw;
+    ctx.fillStyle = (i % 2 === 0) ? c1 : c2;
+    ctx.beginPath();
+    ctx.moveTo(x0, topY); ctx.lineTo(x0 + sw, topY);
+    ctx.lineTo(x0 + sw, frontY); ctx.lineTo(x0, frontY);
+    ctx.closePath(); ctx.fill();
+  }
+  // Sombra curva en el pliegue superior.
+  ctx.save(); ctx.globalAlpha *= 0.18; ctx.fillStyle = '#000000';
+  ctx.fillRect(cx - halfW, topY, 2 * halfW, 1.4 * s); ctx.restore();
+  // Borde frontal (varilla).
+  ctx.fillStyle = 'rgba(0,0,0,0.16)';
+  ctx.fillRect(cx - halfW, frontY - 0.6 * s, 2 * halfW, 0.9 * s);
+  // Faldón festoneado (semicírculos colgando, alternando color).
+  for (let i = 0; i < N; i++) {
+    const x0 = cx - halfW + i * sw;
+    ctx.fillStyle = (i % 2 === 0) ? c1 : c2;
+    ctx.beginPath();
+    ctx.moveTo(x0, frontY);
+    ctx.lineTo(x0 + sw, frontY);
+    ctx.lineTo(x0 + sw, frontY + valH * 0.35);
+    ctx.arc(x0 + sw / 2, frontY + valH * 0.35, sw / 2, 0, Math.PI);
+    ctx.closePath(); ctx.fill();
+  }
+  ctx.restore();
+}
+
+// Mesa de bistró de hierro forjado: pedestal de tres patas curvas + poste con
+// aro + tapa de mármol elíptica. (x, y) = base. `color` tiñe el hierro (crema),
+// `color2` la tapa.
+export function drawBistroTable(ctx, prop) {
+  const s = prop.scale || 2.4;
+  const cx = Math.round(prop.x);
+  const cy = Math.round(prop.y);
+  const a = prop.alpha == null ? 1 : Math.max(0, Math.min(1, prop.alpha));
+  if (a <= 0.01) return;
+  const TAU = Math.PI * 2;
+  const iron = prop.color || '#f3ede2';
+  const ironSh = mixColors(iron, '#000000', 0.26);
+  const ironHi = mixColors(iron, '#ffffff', 0.55);
+  const top = prop.color2 || '#e9e1d0';
+  const topEdge = mixColors(top, '#000000', 0.2);
+  const topHi = mixColors(top, '#ffffff', 0.45);
+  const H = 16 * s;
+  const topY = cy - H;
+  const topRx = 8.8 * s, topRy = 2.5 * s;
+  const midY = cy - H * 0.44;
+  ctx.save();
+  ctx.globalAlpha *= a;
+  // Sombra.
+  ctx.save(); ctx.globalAlpha *= 0.2; ctx.fillStyle = '#000000';
+  ctx.beginPath(); ctx.ellipse(cx, cy, 7 * s, 1.8 * s, 0, 0, TAU); ctx.fill(); ctx.restore();
+  // Tres patas curvas de hierro forjado.
+  ctx.strokeStyle = ironSh; ctx.lineWidth = 1.7 * s; ctx.lineCap = 'round';
+  const feet = [-6.2 * s, 0, 6.2 * s];
+  for (const fx of feet) {
+    ctx.beginPath();
+    ctx.moveTo(cx, midY);
+    ctx.quadraticCurveTo(cx + fx * 0.5, cy - 1.5 * s, cx + fx, cy);
+    ctx.stroke();
+  }
+  ctx.strokeStyle = iron; ctx.lineWidth = 0.9 * s;
+  for (const fx of feet) {
+    ctx.beginPath();
+    ctx.moveTo(cx - 0.3 * s, midY);
+    ctx.quadraticCurveTo(cx + fx * 0.5 - 0.3 * s, cy - 1.5 * s, cx + fx - 0.3 * s, cy - 0.2 * s);
+    ctx.stroke();
+  }
+  // Poste central.
+  ctx.fillStyle = iron; ctx.fillRect(cx - 0.9 * s, topY, 1.8 * s, midY - topY + 0.5 * s);
+  ctx.fillStyle = ironHi; ctx.fillRect(cx - 0.9 * s, topY, 0.6 * s, midY - topY);
+  ctx.fillStyle = ironSh; ctx.fillRect(cx + 0.4 * s, topY, 0.5 * s, midY - topY);
+  // Aro decorativo a media altura.
+  ctx.strokeStyle = iron; ctx.lineWidth = 0.8 * s;
+  ctx.beginPath(); ctx.ellipse(cx, cy - H * 0.6, 2.4 * s, 0.9 * s, 0, 0, TAU); ctx.stroke();
+  // Tapa de mármol.
+  ctx.fillStyle = topEdge;
+  ctx.beginPath(); ctx.ellipse(cx, topY + 0.7 * s, topRx, topRy, 0, 0, TAU); ctx.fill();
+  ctx.fillStyle = top;
+  ctx.beginPath(); ctx.ellipse(cx, topY, topRx, topRy, 0, 0, TAU); ctx.fill();
+  ctx.save(); ctx.globalAlpha *= 0.6; ctx.fillStyle = topHi;
+  ctx.beginPath(); ctx.ellipse(cx - 2 * s, topY - 0.5 * s, topRx * 0.5, topRy * 0.42, -0.2, 0, TAU); ctx.fill(); ctx.restore();
+  ctx.restore();
+}
+
+// Silla de bistró de hierro forjado con asiento redondo rosa capitoné y respaldo
+// de volutas. (x, y) = base. `color` = asiento (rosa), `color2` = hierro (crema).
+export function drawBistroChair(ctx, prop) {
+  const s = prop.scale || 1.8;
+  const cx = Math.round(prop.x);
+  const cy = Math.round(prop.y);
+  const a = prop.alpha == null ? 1 : Math.max(0, Math.min(1, prop.alpha));
+  if (a <= 0.01) return;
+  const TAU = Math.PI * 2;
+  const dir = prop.dir === 'left' ? -1 : 1;
+  const seat = prop.color || '#e3a9b7';
+  const seatSh = mixColors(seat, '#000000', 0.2);
+  const seatHi = mixColors(seat, '#ffffff', 0.4);
+  const iron = prop.color2 || '#f3ede2';
+  const ironSh = mixColors(iron, '#000000', 0.26);
+  const seatY = cy - 9 * s;
+  const seatRx = 5.2 * s, seatRy = 1.9 * s;
+  const backY = seatY - 8 * s;
+  ctx.save();
+  ctx.globalAlpha *= a;
+  // Sombra.
+  ctx.save(); ctx.globalAlpha *= 0.18; ctx.fillStyle = '#000000';
+  ctx.beginPath(); ctx.ellipse(cx, cy, 5 * s, 1.4 * s, 0, 0, TAU); ctx.fill(); ctx.restore();
+  // Respaldo de volutas (detrás del asiento).
+  ctx.strokeStyle = ironSh; ctx.lineWidth = 1.4 * s; ctx.lineCap = 'round';
+  ctx.beginPath();
+  ctx.moveTo(cx - 3 * s, seatY - 0.5 * s);
+  ctx.quadraticCurveTo(cx - 3.4 * s, backY, cx, backY - 0.5 * s);
+  ctx.quadraticCurveTo(cx + 3.4 * s, backY, cx + 3 * s, seatY - 0.5 * s);
+  ctx.stroke();
+  // Voluta central (corazón/scroll).
+  ctx.strokeStyle = iron; ctx.lineWidth = 1.1 * s;
+  ctx.beginPath();
+  ctx.moveTo(cx, seatY - 1 * s);
+  ctx.quadraticCurveTo(cx - 1.8 * s, backY + 2 * s, cx, backY + 1 * s);
+  ctx.quadraticCurveTo(cx + 1.8 * s, backY + 2 * s, cx, seatY - 1 * s);
+  ctx.stroke();
+  // Patas curvas.
+  ctx.strokeStyle = ironSh; ctx.lineWidth = 1.4 * s;
+  for (const fx of [-3.6 * s, 3.6 * s]) {
+    ctx.beginPath();
+    ctx.moveTo(cx + fx * 0.5, seatY + 0.5 * s);
+    ctx.quadraticCurveTo(cx + fx, cy - 3 * s, cx + fx, cy);
+    ctx.stroke();
+  }
+  // Asiento redondo rosa con capitoné.
+  ctx.fillStyle = seatSh;
+  ctx.beginPath(); ctx.ellipse(cx, seatY + 0.8 * s, seatRx, seatRy, 0, 0, TAU); ctx.fill();
+  ctx.fillStyle = seat;
+  ctx.beginPath(); ctx.ellipse(cx, seatY, seatRx, seatRy, 0, 0, TAU); ctx.fill();
+  ctx.save(); ctx.globalAlpha *= 0.5; ctx.fillStyle = seatHi;
+  ctx.beginPath(); ctx.ellipse(cx - 1.4 * s, seatY - 0.4 * s, seatRx * 0.5, seatRy * 0.45, 0, 0, TAU); ctx.fill(); ctx.restore();
+  // Botones de capitoné.
+  ctx.fillStyle = seatSh;
+  for (const bx of [-2.2 * s, 0, 2.2 * s]) {
+    ctx.beginPath(); ctx.arc(cx + bx, seatY, 0.4 * s, 0, TAU); ctx.fill();
+  }
+  ctx.restore();
+}
+
+// Marco ovalado dorado ornamentado montado en la pared. Con `live: true` el
+// interior es una pantalla de videollamada con chip "EN VIVO" pulsante (el
+// ponente remoto se dibuja como learner encima); sin él, un lienzo de retrato.
+// (x, y) = centro. `color` = oro del marco, `color2` = fondo interior.
+export function drawFrameOval(ctx, prop) {
+  const s = prop.scale || 6;
+  const cx = Math.round(prop.x);
+  const cy = Math.round(prop.y);
+  const a = prop.alpha == null ? 1 : Math.max(0, Math.min(1, prop.alpha));
+  if (a <= 0.01) return;
+  const TAU = Math.PI * 2;
+  const t = prop._t || 0;
+  const FONT = '"Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif';
+  const gold = prop.color || '#c9a24a';
+  const goldHi = mixColors(gold, '#fff6d8', 0.6);
+  const goldSh = mixColors(gold, '#000000', 0.4);
+  const rx = 11 * s, ry = 14 * s;
+  const fw = 1.9 * s;   // grosor del marco
+  ctx.save();
+  ctx.globalAlpha *= a;
+  // Sombra en la pared.
+  ctx.save(); ctx.globalAlpha *= 0.22; ctx.fillStyle = '#000000';
+  ctx.beginPath(); ctx.ellipse(cx + 1.5 * s, cy + 2 * s, rx, ry, 0, 0, TAU); ctx.fill(); ctx.restore();
+  // Marco dorado (anillo exterior con relieve).
+  ctx.fillStyle = goldSh;
+  ctx.beginPath(); ctx.ellipse(cx, cy, rx + fw, ry + fw, 0, 0, TAU); ctx.fill();
+  const gg = ctx.createLinearGradient(cx - rx, cy - ry, cx + rx, cy + ry);
+  gg.addColorStop(0, goldHi); gg.addColorStop(0.5, gold); gg.addColorStop(1, goldSh);
+  ctx.fillStyle = gg;
+  ctx.beginPath(); ctx.ellipse(cx, cy, rx + fw * 0.55, ry + fw * 0.55, 0, 0, TAU); ctx.fill();
+  // Interior (lienzo / pantalla).
+  const inner = prop.live ? '#12243d' : (prop.color2 || '#efe6d4');
+  ctx.save();
+  ctx.beginPath(); ctx.ellipse(cx, cy, rx, ry, 0, 0, TAU); ctx.clip();
+  if (prop.live) {
+    const sg = ctx.createLinearGradient(0, cy - ry, 0, cy + ry);
+    sg.addColorStop(0, '#2c456a'); sg.addColorStop(1, '#0d1a2e');
+    ctx.fillStyle = sg;
+  } else {
+    ctx.fillStyle = inner;
+  }
+  ctx.fillRect(cx - rx, cy - ry, rx * 2, ry * 2);
+  ctx.restore();
+  // Filo interior dorado.
+  ctx.strokeStyle = goldHi; ctx.lineWidth = Math.max(1, 0.4 * s);
+  ctx.beginPath(); ctx.ellipse(cx, cy, rx, ry, 0, 0, TAU); ctx.stroke();
+  // Cartelas ornamentales arriba y abajo.
+  for (const sy of [-1, 1]) {
+    ctx.fillStyle = gold;
+    ctx.beginPath();
+    ctx.moveTo(cx, cy + sy * (ry + fw + 2.4 * s));
+    ctx.quadraticCurveTo(cx - 2.6 * s, cy + sy * (ry + fw + 0.4 * s), cx - 1 * s, cy + sy * (ry + fw - 0.3 * s));
+    ctx.quadraticCurveTo(cx, cy + sy * (ry + fw + 1.2 * s), cx + 1 * s, cy + sy * (ry + fw - 0.3 * s));
+    ctx.quadraticCurveTo(cx + 2.6 * s, cy + sy * (ry + fw + 0.4 * s), cx, cy + sy * (ry + fw + 2.4 * s));
+    ctx.fill();
+    ctx.fillStyle = goldHi;
+    ctx.beginPath(); ctx.arc(cx, cy + sy * (ry + fw + 1.3 * s), 0.7 * s, 0, TAU); ctx.fill();
+  }
+  // Chip "EN VIVO" si es una transmisión.
+  if (prop.live) {
+    const pulse = 0.5 + 0.5 * Math.sin(t * 4);
+    const chy = cy + ry - 2.6 * s;
+    ctx.fillStyle = 'rgba(6,10,18,0.55)';
+    ctx.beginPath(); ctx.roundRect(cx - 5 * s, chy - 1.5 * s, 10 * s, 3 * s, 0.8 * s); ctx.fill();
+    ctx.fillStyle = `rgba(255,77,77,${(0.55 + 0.45 * pulse).toFixed(2)})`;
+    ctx.beginPath(); ctx.arc(cx - 3.4 * s, chy, 0.85 * s, 0, TAU); ctx.fill();
+    ctx.fillStyle = '#FBFAF6';
+    ctx.font = `700 ${(1.9 * s).toFixed(1)}px ${FONT}`;
+    ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+    ctx.fillText('EN VIVO', cx - 2 * s, chy + 0.1 * s);
+  }
+  ctx.restore();
+}
+
+// Computador portátil abierto, de frente: pantalla vertical (con contenido de
+// colores cuando `glow` la enciende) y teclado en escorzo. (x, y) = base frontal.
+// `color` = chasis, `glow` 0..1 = pantalla encendida (creando). No confundir con
+// `notebook`, que es una libreta de espiral.
+export function drawLaptop(ctx, prop) {
+  const s = prop.scale || 2;
+  const cx = Math.round(prop.x);
+  const cy = Math.round(prop.y);
+  const a = prop.alpha == null ? 1 : Math.max(0, Math.min(1, prop.alpha));
+  if (a <= 0.01) return;
+  const TAU = Math.PI * 2;
+  const body = prop.color || '#cbd0d8';
+  const bodyD = mixColors(body, '#000000', 0.34);
+  const bodyL = mixColors(body, '#ffffff', 0.5);
+  const bezel = '#2a2f38';
+  const glow = prop.glow == null ? 0 : Math.max(0, Math.min(1, prop.glow));
+  const t = prop._t || 0;
+  const scW = 11 * s, scH = 7.6 * s;
+  const kbDepth = 3.2 * s;
+  // Coordenadas RELATIVAS al origen: tras translate(cx, cy) el borde frontal del
+  // teclado queda en y=0, la bisagra arriba y la pantalla más arriba aún.
+  const hingeY = -kbDepth;
+  const scTop = hingeY - scH;
+  ctx.save();
+  ctx.globalAlpha *= a;
+  ctx.translate(cx, cy);
+  // Sombra de contacto.
+  ctx.save(); ctx.globalAlpha *= 0.24; ctx.fillStyle = '#000000';
+  ctx.beginPath(); ctx.ellipse(0, 0, 8.6 * s, 1.5 * s, 0, 0, TAU); ctx.fill(); ctx.restore();
+  // Resplandor de la pantalla al crear.
+  if (glow > 0.01) {
+    const pulse = 0.8 + 0.2 * Math.sin(t * 3);
+    const g = ctx.createRadialGradient(0, scTop + scH * 0.4, scW * 0.3, 0, scTop + scH * 0.4, scW * 1.5);
+    g.addColorStop(0, `rgba(124,180,255,${(0.32 * glow * pulse).toFixed(3)})`);
+    g.addColorStop(1, 'rgba(124,180,255,0)');
+    ctx.save(); ctx.fillStyle = g; ctx.beginPath(); ctx.arc(0, scTop + scH * 0.4, scW * 1.5, 0, TAU); ctx.fill(); ctx.restore();
+  }
+  // Tapa/pantalla (marco vertical).
+  ctx.fillStyle = bodyD;
+  ctx.beginPath(); ctx.roundRect(-scW / 2 - 0.7 * s, scTop - 0.7 * s, scW + 1.4 * s, scH + 1.4 * s, 0.9 * s); ctx.fill();
+  ctx.fillStyle = bezel;
+  ctx.beginPath(); ctx.roundRect(-scW / 2, scTop, scW, scH, 0.5 * s); ctx.fill();
+  // Interior de la pantalla.
+  if (glow > 0.05) {
+    const sg = ctx.createLinearGradient(0, scTop, 0, scTop + scH);
+    sg.addColorStop(0, '#3a6ea5'); sg.addColorStop(1, '#6a4fd0');
+    ctx.fillStyle = sg; ctx.fillRect(-scW / 2 + 0.7 * s, scTop + 0.7 * s, scW - 1.4 * s, scH - 1.4 * s);
+    const cols = ['#ff5e7e', '#f4c430', '#4fd0e0', '#c850c0'];
+    for (let i = 0; i < 4; i++) { ctx.fillStyle = cols[i]; ctx.fillRect(-scW / 2 + 1.3 * s, scTop + 1.5 * s + i * 1.35 * s, (2 + i * 0.9) * s, 0.85 * s); }
+  } else {
+    ctx.fillStyle = '#161f2c'; ctx.fillRect(-scW / 2 + 0.7 * s, scTop + 0.7 * s, scW - 1.4 * s, scH - 1.4 * s);
+    ctx.save(); ctx.globalAlpha *= 0.28; ctx.fillStyle = '#ffffff';
+    ctx.beginPath(); ctx.moveTo(-scW / 2 + 1.2 * s, scTop + scH - 1.2 * s); ctx.lineTo(-scW / 2 + 3.4 * s, scTop + scH - 1.2 * s); ctx.lineTo(-scW / 2 + 1.2 * s, scTop + 1.2 * s); ctx.closePath(); ctx.fill(); ctx.restore();
+  }
+  // Base/teclado en escorzo (trapecio, más ancho al frente).
+  ctx.fillStyle = body;
+  ctx.beginPath();
+  ctx.moveTo(-scW / 2, hingeY); ctx.lineTo(scW / 2, hingeY);
+  ctx.lineTo(scW / 2 + 1.6 * s, 0); ctx.lineTo(-scW / 2 - 1.6 * s, 0);
+  ctx.closePath(); ctx.fill();
+  ctx.fillStyle = bodyL; ctx.fillRect(-scW / 2, hingeY - 0.2 * s, scW, 0.35 * s);
+  ctx.fillStyle = bodyD; ctx.fillRect(-scW / 2 - 1.6 * s, -0.35 * s, scW + 3.2 * s, 0.9 * s);
+  // Teclas (filas) y touchpad.
+  ctx.strokeStyle = bodyD; ctx.lineWidth = Math.max(1, 0.16 * s);
+  for (let r = 0; r < 3; r++) {
+    const ky = hingeY + kbDepth * (0.3 + r * 0.2);
+    const kx = (scW / 2) * (0.82 + r * 0.07);
+    ctx.beginPath(); ctx.moveTo(-kx, ky); ctx.lineTo(kx, ky); ctx.stroke();
+  }
+  ctx.fillStyle = bodyD; ctx.fillRect(-1.6 * s, -1 * s, 3.2 * s, 0.6 * s);
+  ctx.restore();
+}
+
+export function drawCoffee(ctx, prop) {
+  const s = prop.scale || 1.4;
+  const cx = Math.round(prop.x);
+  const cy = Math.round(prop.y);
+  const a = prop.alpha == null ? 1 : Math.max(0, Math.min(1, prop.alpha));
+  if (a <= 0.01) return;
+  const TAU = Math.PI * 2;
+  const t = prop._t || 0;
+  const mug = prop.color || '#f3ede0';            // cerámica cálida
+  const mugSh = mixColors(mug, '#000000', 0.24);
+  const mugHi = mixColors(mug, '#ffffff', 0.55);
+  const rim = mixColors(mug, '#000000', 0.12);
+  const brew = '#3a2318';                          // café
+  const brewHi = mixColors(brew, '#9a6438', 0.7);
+  const bw = 5.6 * s;      // media anchura en la boca
+  const bwB = 4.7 * s;     // media anchura en la base (cónica)
+  const bh = 6.8 * s;      // alto del cuerpo
+  const topY = -bh;        // boca
+  const botY = -0.5 * s;   // base, un pelo sobre cy para asentar
+  ctx.save();
+  ctx.globalAlpha *= a;
+  ctx.translate(cx, cy);
+  // Sombra de contacto.
+  ctx.save(); ctx.globalAlpha *= 0.28; ctx.fillStyle = '#000000';
+  ctx.beginPath(); ctx.ellipse(0, 0, 7.4 * s, 1.7 * s, 0, 0, TAU); ctx.fill(); ctx.restore();
+  // Vapor: dos volutas sinusoidales que suben y se desvanecen.
+  ctx.save();
+  ctx.lineCap = 'round';
+  ctx.strokeStyle = '#ffffff';
+  for (let i = 0; i < 2; i++) {
+    const ph = t * 1.6 + i * 2.1;
+    const baseX = (i === 0 ? -2.0 : 2.2) * s;
+    const segs = 5;
+    for (let k = 0; k < segs; k++) {
+      const y0 = topY - 0.6 * s - k * 2.4 * s;
+      const y1 = y0 - 2.4 * s;
+      const x0 = baseX + Math.sin(ph + k * 0.8) * 1.7 * s;
+      const x1 = baseX + Math.sin(ph + (k + 1) * 0.8) * 1.7 * s;
+      ctx.globalAlpha = a * 0.5 * (1 - k / segs);
+      ctx.lineWidth = (1.7 - k * 0.2) * s;
+      ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(x1, y1); ctx.stroke();
+    }
+  }
+  ctx.restore();
+  // Asa a la derecha, detrás del cuerpo.
+  ctx.save();
+  ctx.strokeStyle = mugSh; ctx.lineWidth = 2.0 * s;
+  ctx.beginPath(); ctx.arc(bw - 0.6 * s, topY + bh * 0.48, 2.9 * s, -Math.PI * 0.5, Math.PI * 0.5); ctx.stroke();
+  ctx.strokeStyle = mug; ctx.lineWidth = 1.0 * s;
+  ctx.beginPath(); ctx.arc(bw - 0.9 * s, topY + bh * 0.48, 2.9 * s, -Math.PI * 0.45, Math.PI * 0.45); ctx.stroke();
+  ctx.restore();
+  // Cuerpo de la taza (trapecio con esquinas suaves).
+  ctx.fillStyle = mug;
+  ctx.beginPath();
+  ctx.moveTo(-bw, topY + 0.7 * s);
+  ctx.quadraticCurveTo(-bw, topY, -bw + 0.7 * s, topY);
+  ctx.lineTo(bw - 0.7 * s, topY);
+  ctx.quadraticCurveTo(bw, topY, bw, topY + 0.7 * s);
+  ctx.lineTo(bwB, botY - 0.9 * s);
+  ctx.quadraticCurveTo(bwB, botY, bwB - 0.9 * s, botY);
+  ctx.lineTo(-bwB + 0.9 * s, botY);
+  ctx.quadraticCurveTo(-bwB, botY, -bwB, botY - 0.9 * s);
+  ctx.closePath();
+  ctx.fill();
+  // Sombra de volumen (flanco izquierdo).
+  ctx.save(); ctx.globalAlpha *= 0.4; ctx.fillStyle = mugSh;
+  ctx.beginPath();
+  ctx.moveTo(-bw, topY + 0.7 * s);
+  ctx.lineTo(-bw + 1.7 * s, topY + 0.5 * s);
+  ctx.lineTo(-bwB + 1.5 * s, botY);
+  ctx.lineTo(-bwB, botY - 0.9 * s);
+  ctx.closePath(); ctx.fill(); ctx.restore();
+  // Highlight vertical (flanco derecho).
+  ctx.save(); ctx.globalAlpha *= 0.55; ctx.fillStyle = mugHi;
+  ctx.beginPath(); ctx.roundRect(bw - 2.1 * s, topY + 1.6 * s, 0.9 * s, bh - 3.0 * s, 0.4 * s); ctx.fill(); ctx.restore();
+  // Boca de la taza + café.
+  ctx.fillStyle = rim;
+  ctx.beginPath(); ctx.ellipse(0, topY, bw, 1.6 * s, 0, 0, TAU); ctx.fill();
+  ctx.fillStyle = brew;
+  ctx.beginPath(); ctx.ellipse(0, topY, bw - 1.0 * s, 1.15 * s, 0, 0, TAU); ctx.fill();
+  ctx.save(); ctx.globalAlpha *= 0.5; ctx.fillStyle = brewHi;
+  ctx.beginPath(); ctx.ellipse(-1.5 * s, topY - 0.2 * s, 1.9 * s, 0.5 * s, -0.3, 0, TAU); ctx.fill(); ctx.restore();
+  ctx.restore();
+}
+
+// Pantalla de videollamada montada en la pared: marco de monitor, pantalla con
+// gradiente frío, chip "EN VIVO" con punto rojo pulsante y una barra de
+// controles. (prop.x, prop.y) es el CENTRO; el ponente remoto se dibuja como un
+// learner por separado, encima del área de la pantalla. `_t` late el indicador.
+export function drawScreen(ctx, prop) {
+  const s = prop.scale || 7;
+  const cx = Math.round(prop.x);
+  const cy = Math.round(prop.y);
+  const a = prop.alpha == null ? 1 : Math.max(0, Math.min(1, prop.alpha));
+  if (a <= 0.01) return;
+  const TAU = Math.PI * 2;
+  const t = prop._t || 0;
+  const FONT = '"Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif';
+  const w = 23 * s, h = 14.5 * s;
+  const x = cx - w / 2, y = cy - h / 2;
+  const bez = 1.4 * s;
+  ctx.save();
+  ctx.globalAlpha *= a;
+  // Sombra proyectada bajo el marco.
+  ctx.save(); ctx.globalAlpha *= 0.22; ctx.fillStyle = '#000000';
+  ctx.beginPath(); ctx.ellipse(cx, y + h + bez + 1.6 * s, w * 0.44, 1.7 * s, 0, 0, TAU); ctx.fill(); ctx.restore();
+  // Marco del monitor (con barra inferior para los controles).
+  ctx.fillStyle = '#191c24';
+  ctx.beginPath(); ctx.roundRect(x - bez, y - bez, w + bez * 2, h + bez * 2 + 3 * s, 1.6 * s); ctx.fill();
+  ctx.fillStyle = '#2b303c';
+  ctx.beginPath(); ctx.roundRect(x - bez, y - bez, w + bez * 2, h + bez * 2, 1.3 * s); ctx.fill();
+  ctx.strokeStyle = '#3d4553'; ctx.lineWidth = Math.max(1, 0.3 * s);
+  ctx.beginPath(); ctx.roundRect(x - bez + 0.4 * s, y - bez + 0.4 * s, w + bez * 2 - 0.8 * s, h + bez * 2 - 0.8 * s, 1.1 * s); ctx.stroke();
+  // Pantalla: gradiente frío de videollamada.
+  const g = ctx.createLinearGradient(0, y, 0, y + h);
+  g.addColorStop(0, '#2c456a'); g.addColorStop(1, '#0d1a2e');
+  ctx.save();
+  ctx.beginPath(); ctx.roundRect(x, y, w, h, 0.7 * s); ctx.clip();
+  ctx.fillStyle = g; ctx.fillRect(x, y, w, h);
+  // Viñeta suave hacia las esquinas.
+  const vg = ctx.createRadialGradient(cx, cy - 1 * s, w * 0.2, cx, cy, w * 0.62);
+  vg.addColorStop(0, 'rgba(0,0,0,0)'); vg.addColorStop(1, 'rgba(4,8,16,0.5)');
+  ctx.fillStyle = vg; ctx.fillRect(x, y, w, h);
+  ctx.restore();
+  // Chip "EN VIVO" con punto rojo pulsante (arriba izquierda).
+  const pulse = 0.5 + 0.5 * Math.sin(t * 4);
+  ctx.fillStyle = 'rgba(6,10,18,0.5)';
+  ctx.beginPath(); ctx.roundRect(x + 1.2 * s, y + 1.2 * s, 10 * s, 3.4 * s, 0.8 * s); ctx.fill();
+  ctx.fillStyle = `rgba(255,77,77,${(0.55 + 0.45 * pulse).toFixed(2)})`;
+  ctx.beginPath(); ctx.arc(x + 3.1 * s, y + 2.9 * s, 0.95 * s, 0, TAU); ctx.fill();
+  ctx.fillStyle = '#FBFAF6';
+  ctx.font = `700 ${(2.0 * s).toFixed(1)}px ${FONT}`;
+  ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+  ctx.fillText('EN VIVO', x + 4.9 * s, y + 3.0 * s);
+  // Barra de controles bajo la pantalla (dentro del marco).
+  const by = y + h + bez * 0.5 + 1.2 * s;
+  const icons = ['#4f9dff', 'rgba(255,255,255,0.22)', '#ff5e6c'];
+  for (let i = 0; i < icons.length; i++) {
+    ctx.fillStyle = icons[i];
+    ctx.beginPath(); ctx.arc(cx + (i - 1) * 3.4 * s, by, 1.3 * s, 0, TAU); ctx.fill();
+  }
+  ctx.restore();
+}
+
 export function drawGenially(ctx, prop) {
   const s = prop.scale || 3;
   const cx = Math.round(prop.x);
@@ -2960,6 +3756,17 @@ export function drawProp(ctx, prop) {
   if (prop.type === 'fence') return drawFence(ctx, prop);
   if (prop.type === 'genially') return drawGenially(ctx, prop);
   if (prop.type === 'notebook') return drawNotebook(ctx, prop);
+  if (prop.type === 'laptop') return drawLaptop(ctx, prop);
+  if (prop.type === 'coffee') return drawCoffee(ctx, prop);
+  if (prop.type === 'umbrella') return drawUmbrella(ctx, prop);
+  if (prop.type === 'cityscape') return drawCityscape(ctx, prop);
+  if (prop.type === 'plane') return drawPlane(ctx, prop);
+  if (prop.type === 'cafe-facade') return drawCafeFacade(ctx, prop);
+  if (prop.type === 'awning') return drawAwning(ctx, prop);
+  if (prop.type === 'bistro-table') return drawBistroTable(ctx, prop);
+  if (prop.type === 'bistro-chair') return drawBistroChair(ctx, prop);
+  if (prop.type === 'frame-oval') return drawFrameOval(ctx, prop);
+  if (prop.type === 'screen') return drawScreen(ctx, prop);
   if (prop.type === 'cat') return drawCat(ctx, prop);
   if (prop.type === 'vault') return drawVault(ctx, prop);
   if (prop.type === 'aiorb') return drawAiOrb(ctx, prop);

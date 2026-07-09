@@ -183,10 +183,37 @@ export function tickAnimatedProps(world, dt) {
       // Reloj para la corona de spikes que rota y el latido de la cápside.
       if (p._t == null) p._t = world.rng() * Math.PI * 2;
       p._t += dt;
-    } else if (p.type === 'notebook') {
-      // Reloj para el pulso del resplandor cuando la IA procesa.
+    } else if (p.type === 'notebook' || p.type === 'laptop') {
+      // Reloj para el pulso del resplandor de la pantalla al crear.
       if (p._t == null) p._t = world.rng() * Math.PI * 2;
       p._t += dt;
+    } else if (p.type === 'coffee') {
+      // Reloj para las volutas de vapor que suben.
+      if (p._t == null) p._t = world.rng() * Math.PI * 2;
+      p._t += dt;
+    } else if (p.type === 'genially') {
+      // El aro arcoíris del logo gira solo, despacio.
+      p.spin = (p.spin || 0) + dt * 0.5;
+    } else if (p.type === 'screen' || p.type === 'frame-oval') {
+      // Reloj para el punto rojo pulsante de "EN VIVO".
+      if (p._t == null) p._t = world.rng() * Math.PI * 2;
+      p._t += dt;
+    } else if (p.type === 'plane') {
+      // Cruza el cielo con velocidad constante, leve cabeceo, y reaparece por el
+      // otro borde. `_dir` (1/-1) lo lee el drawer para espejarlo.
+      if (p._planeInit == null) {
+        p._planeInit = true;
+        p._anchorY = p.y;
+        p._t = world.rng() * Math.PI * 2;
+        p._speed = 30 + world.rng() * 16;
+        p._dir = p.dir === 'left' ? -1 : 1;
+      }
+      p._t += dt;
+      p.x += p._dir * p._speed * dt;
+      p.y = p._anchorY + Math.sin(p._t * 0.5) * 2.5;
+      const right = world.worldRight || world.W;
+      if (p._dir > 0 && p.x > right + 120) p.x = -120;
+      else if (p._dir < 0 && p.x < -120) p.x = right + 120;
     } else if (p.type === 'grinder') {
       // Reloj para el pulso de la luz interna cuando la moledora muele.
       if (p._t == null) p._t = world.rng() * Math.PI * 2;

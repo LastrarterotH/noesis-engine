@@ -2,27 +2,27 @@
 // World class: simulation state + tick + draw orchestration.
 // Owns entities, camera, scripts, fx, bubbles, labels, ambient, audio handles.
 
-import { mulberry32, ease, colorAlpha, mixColors, drawRichText, measureRichText, drawLabel, formatAPA, htmlToText } from './util.js?v=129';
-import { compileHooks } from './hooks.js?v=129';
-import { createAmbientSound } from './audio.js?v=129';
-import { SKY_PRESETS } from './sky-presets.js?v=129';
-import { computeSolidBox, drawProp } from './prop-draw.js?v=129';
-import { PROP_NATURAL_SCALE, PROP_SPRITES } from './prop-sprites.js?v=129';
-import { Draw } from './draw.js?v=129';
-import { initCamera, tickCamera } from './camera.js?v=129';
-import { makeAmbientParticle, tickAmbient, drawAmbient } from './ambient.js?v=129';
+import { mulberry32, ease, colorAlpha, mixColors, drawRichText, measureRichText, drawLabel, formatAPA, htmlToText } from './util.js?v=145';
+import { compileHooks } from './hooks.js?v=145';
+import { createAmbientSound } from './audio.js?v=145';
+import { SKY_PRESETS } from './sky-presets.js?v=145';
+import { computeSolidBox, drawProp } from './prop-draw.js?v=145';
+import { PROP_NATURAL_SCALE, PROP_SPRITES, depthScale } from './prop-sprites.js?v=145';
+import { Draw } from './draw.js?v=145';
+import { initCamera, tickCamera } from './camera.js?v=145';
+import { makeAmbientParticle, tickAmbient, drawAmbient } from './ambient.js?v=145';
 import {
   runScript as _runScript, stopScripts as _stopScripts, tickScripts,
   evalScriptExpr, processScript, execScriptStep,
-} from './scripts.js?v=129';
-import { compileForm } from './forms.js?v=129';
-import { drawFloor } from './floor.js?v=129';
-import { tickAnimatedProps } from './animated-props.js?v=129';
-import { initLearner, touchLearner, tickLearner } from './learner.js?v=129';
-import { handleClick, togglePropInteraction } from './interaction.js?v=129';
+} from './scripts.js?v=145';
+import { compileForm } from './forms.js?v=145';
+import { drawFloor } from './floor.js?v=145';
+import { tickAnimatedProps } from './animated-props.js?v=145';
+import { initLearner, touchLearner, tickLearner } from './learner.js?v=145';
+import { handleClick, togglePropInteraction } from './interaction.js?v=145';
 import {
   createFxApi, spawnBubble, spawnParticles, tickFx, positionBubbles, drawFx,
-} from './fx.js?v=129';
+} from './fx.js?v=145';
 
 // Props que emiten luz solos cuando hay `ambient.darkness` (opt-out con
 // `light: false` en el prop). `dy` ubica la fuente en celdas del sprite
@@ -205,6 +205,21 @@ export class World {
         // coherentes entre sí y con los aprendices). Ver PROP_NATURAL_SCALE.
         scale: p.scale || PROP_NATURAL_SCALE[p.type] || 3,
       };
+      // Profundidad declarativa: `far` (0 = primer plano … 1 = horizonte) hace
+      // DOS cosas coherentes de un tiro: encoge el tamaño aparente (lo lejano se
+      // ve chico, factor `depthScale`) y lo manda a su capa (z automático, más
+      // atrás cuanto más lejos). El autor pone el `scale` como el tamaño del
+      // objeto DE CERCA (proporcional a su tamaño real, ver la tabla de escala de
+      // referencia) y la profundidad hace el resto: un avión grande que vuela
+      // lejos sale chico y por DETRÁS de los edificios, nunca diminuto y por
+      // delante. `z` explícito, si se declara, gana sobre el z de la profundidad.
+      // (Es `far`, no `depth`, porque `depth` ya es un parámetro de dibujo del
+      // prop `pasture`.)
+      if (p.far != null) {
+        const d = Math.max(0, Math.min(1, p.far));
+        prop.scale = prop.scale * depthScale(d);
+        if (p.z == null) prop.z = -Math.round(d * 100);
+      }
       if (prop.solid) computeSolidBox(prop);
       return prop;
     });

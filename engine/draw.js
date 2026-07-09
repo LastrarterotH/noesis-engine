@@ -2,9 +2,9 @@
 // Pixel-art draw primitives: learner blob, eye geometry, mood-routing,
 // accessories overlay. Instantiated once per World.
 
-import { mixColors, drawMath, measureMath as _measureMath, drawLabel, measureLabel } from './util.js?v=129';
-import { drawMoodOverlays } from './mood.js?v=129';
-import { drawAccessories } from './accessories.js?v=129';
+import { mixColors, drawMath, measureMath as _measureMath, drawLabel, measureLabel } from './util.js?v=145';
+import { drawMoodOverlays } from './mood.js?v=145';
+import { drawAccessories } from './accessories.js?v=145';
 
 export class Draw {
   constructor(world) { this.world = world; }
@@ -204,7 +204,8 @@ export class Draw {
       ctx.fill();
     }
 
-    if (opts.shadow !== false) {
+    const noShadow = opts.noShadow ?? entity?.noShadow;
+    if (opts.shadow !== false && !noShadow) {
       // Sombra de contacto: elipse suave anclada al PISO (cy sin bob ni
       // salto). Cuando el cuerpo se eleva, la sombra se queda abajo y se
       // encoge y aclara con la altura: eso es lo que vende el salto.

@@ -2,9 +2,9 @@
 // <noesis-scene> custom element. Owns the canvas, loads scene config,
 // instantiates World, runs the RAF loop, exposes labels via Shadow DOM.
 
-import { escapeHtml, anchorTransform, formatAPA, richToHtml } from './util.js?v=129';
-import { audioCtx, audioUnlock, getRecordingStream } from './audio.js?v=129';
-import { World } from './world.js?v=129';
+import { escapeHtml, anchorTransform, formatAPA, richToHtml } from './util.js?v=145';
+import { audioCtx, audioUnlock, getRecordingStream } from './audio.js?v=145';
+import { World } from './world.js?v=145';
 
 export class NoesisScene extends HTMLElement {
   constructor() {

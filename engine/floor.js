@@ -6,7 +6,7 @@
 // world._floorCache); World exposes _drawFloor as a thin wrapper and owns the
 // cache invalidation (world._floorCache = null on reload).
 
-import { mulberry32 } from './util.js?v=129';
+import { mulberry32 } from './util.js?v=145';
 
 export function drawFloor(world, ctx) {
   const kind = world.config.canvas?.floor;

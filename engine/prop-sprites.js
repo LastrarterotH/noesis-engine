@@ -1266,11 +1266,29 @@ export const PROP_SPRITES = {
   },
 };
 
+// --- Escala de referencia del motor (proporciones realistas) ---
+// noesis no tiene perspectiva 3D, pero SÍ una escala coherente, y respetarla es
+// lo que hace creíble una escena. Ancla: un aprendiz `hero` a scale 5 mide
+// ~55 px y representa una persona de ~1,75 m, así que EN PRIMER PLANO 1 metro
+// ≈ PX_PER_M px. El tamaño aparente de cualquier objeto es:
+//     tamaño_real(m) × PX_PER_M × factor_de_profundidad
+// donde el factor de profundidad es 1 en primer plano, ~0,35 en el fondo urbano
+// (los edificios del `cityscape`) y ~0,12 en el cielo lejano (avión, nubes). Por
+// eso un avión (26 m) allá arriba se dibuja chico aunque sea enorme, pero SIEMPRE
+// más grande que un gorrión (0,18 m) que vuela cerca. `depthScale(depth)` da ese
+// factor. Referencias de tamaño real (altura; * = largo, para lo que se ve de
+// costado): taza 0,1 · gorrión 0,18 · paloma 0,32 · silla 0,9 · mesa 0,75 ·
+// persona 1,75 · farola 4 · auto* 4,3 · árbol 8 · edificio 6 pisos 20 ·
+// avión* 26. Al agregar un prop, derivá su scale de esta tabla y su profundidad,
+// no a ojo.
+export const PX_PER_M = 31;
+export function depthScale(depth = 0) { return 1 - Math.max(0, Math.min(1, depth)) * 0.88; }
+
 // Tamaño natural por tipo: el scale que recibe un prop cuando la escena no
-// declara uno. Curado para que las proporciones salgan coherentes contra el
-// personaje de referencia (un aprendiz hero a scale 5 mide ~55 px): la flor
-// a la rodilla, la mesa a la cintura, el árbol al doble de la persona, el
-// edificio dominando. Una escena siempre puede overridear con `scale`.
+// declara uno. Curado para respetar la escala de referencia de arriba contra el
+// personaje ancla (un aprendiz hero a scale 5 mide ~55 px): la flor a la rodilla,
+// la mesa a la cintura, el árbol al doble de la persona, el edificio dominando.
+// Una escena siempre puede overridear con `scale`.
 export const PROP_NATURAL_SCALE = {
   // celestes / espacio
   sun: 2.5, moon: 2, star: 1.6, planet: 3, rocket: 4, cloud: 3, balloon: 2.5,
@@ -1282,7 +1300,7 @@ export const PROP_NATURAL_SCALE = {
   rug: 4, 'rug-stripes': 4, 'rug-medallion': 3.5, 'rug-checker': 4, book: 1.6, computer: 2.5,
   // objetos
   crate: 3.5, barrel: 2, chest: 3, coin: 2, gem: 1.8, pokeball: 2, pedestal: 2.5, bell: 3, domino: 3, field: 1,
-  cat: 3, vault: 3.5, pomegranate: 1.6, column: 4, wheat: 3, chasm: 4, wonderflower: 2.4, 'tree-bare': 3.5, basilisk: 6, aiorb: 3, notebook: 3, genially: 3, grinder: 4.5,
+  cat: 3, vault: 3.5, pomegranate: 1.6, column: 4, wheat: 3, chasm: 4, wonderflower: 2.4, 'tree-bare': 3.5, basilisk: 6, aiorb: 3, notebook: 3, genially: 3, grinder: 4.5, coffee: 1.5, screen: 7, umbrella: 6, awning: 7, 'cafe-facade': 8, cityscape: 6, plane: 1.4, laptop: 2, 'bistro-table': 2.4, 'bistro-chair': 1.8, 'frame-oval': 6,
   // comunes (tragedia de los comunes)
   pasture: 3, sheep: 3, fence: 3.5,
   // paradoja de Zenón

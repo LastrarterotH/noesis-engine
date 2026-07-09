@@ -2,9 +2,9 @@
 // <noesis-scene> custom element. Owns the canvas, loads scene config,
 // instantiates World, runs the RAF loop, exposes labels via Shadow DOM.
 
-import { escapeHtml, anchorTransform, formatAPA, richToHtml } from './util.js?v=80';
-import { audioCtx, audioUnlock, getRecordingStream } from './audio.js?v=80';
-import { World } from './world.js?v=80';
+import { escapeHtml, anchorTransform, formatAPA, richToHtml } from './util.js?v=145';
+import { audioCtx, audioUnlock, getRecordingStream } from './audio.js?v=145';
+import { World } from './world.js?v=145';
 
 export class NoesisScene extends HTMLElement {
   constructor() {
@@ -284,6 +284,82 @@ export class NoesisScene extends HTMLElement {
           transition: opacity 0.6s ease;
         }
         .hint.gone { opacity: 0; }
+        /* Línea de tiempo (scrubber). Sutil: una línea de progreso fina siempre
+           visible al pie del lienzo; al pasar el mouse se expande a una fila con
+           play/pausa, barra arrastrable y tiempo, y se auto-oculta. Vive fuera de
+           .overlays (hermano en .stage) para no entrar en la grabación de video
+           (el rec canvas copia el canvas + .overlays, no esto). */
+        .timeline {
+          position: absolute; left: 0; right: 0; bottom: 0;
+          z-index: 6; pointer-events: none;
+          opacity: 0; transition: opacity 0.3s ease;
+          font: 600 calc(10px * var(--ui-scale))/1 'Plus Jakarta Sans', system-ui, sans-serif;
+        }
+        .timeline.armed { opacity: 1; }
+        /* Línea fina siempre visible (idle) */
+        .tl-mini {
+          position: absolute; left: 0; right: 0; bottom: 0;
+          height: 3px; background: rgba(251,250,246,0.24);
+          transition: opacity 0.25s ease;
+        }
+        .tl-mini > i {
+          display: block; height: 100%; width: 0;
+          background: var(--amber);
+        }
+        .timeline.hot .tl-mini { opacity: 0; }
+        /* Fila de controles (hover) */
+        .tl-row {
+          display: flex; align-items: center; gap: calc(9px * var(--ui-scale));
+          padding: calc(7px * var(--ui-scale)) calc(11px * var(--ui-scale)) calc(9px * var(--ui-scale));
+          background: linear-gradient(to top, rgba(14,20,48,0.62), rgba(14,20,48,0));
+          opacity: 0; transform: translateY(5px);
+          transition: opacity 0.25s ease, transform 0.25s ease;
+          pointer-events: none;
+        }
+        .timeline.hot .tl-row { opacity: 1; transform: none; pointer-events: auto; }
+        .tl-play {
+          flex: 0 0 auto;
+          width: calc(20px * var(--ui-scale)); height: calc(20px * var(--ui-scale));
+          padding: 0; border: none; background: none;
+          color: var(--paper); cursor: pointer;
+          font-size: calc(13px * var(--ui-scale)); line-height: 1;
+          display: flex; align-items: center; justify-content: center;
+          opacity: 0.9; transition: opacity 0.15s ease, color 0.15s ease;
+        }
+        .tl-play:hover { opacity: 1; color: var(--amber); }
+        .tl-track {
+          position: relative; flex: 1 1 auto;
+          height: calc(4px * var(--ui-scale));
+          background: rgba(251,250,246,0.22);
+          border-radius: 999px; cursor: pointer;
+        }
+        /* Zona de captura del puntero más alta que la barra visible, para que
+           agarrar el scrubber sea cómodo sin engordar la línea. */
+        .tl-track::before {
+          content: ''; position: absolute;
+          left: 0; right: 0; top: -8px; bottom: -8px;
+        }
+        .tl-track-fill {
+          position: absolute; left: 0; top: 0; bottom: 0; width: 0;
+          background: var(--amber); border-radius: 999px;
+        }
+        .tl-knob {
+          position: absolute; top: 50%; left: 0;
+          width: calc(11px * var(--ui-scale)); height: calc(11px * var(--ui-scale));
+          margin-left: calc(-5.5px * var(--ui-scale));
+          border-radius: 50%; background: var(--amber);
+          box-shadow: 0 0 0 2px rgba(14,20,48,0.5);
+          transform: translateY(-50%) scale(0);
+          transition: transform 0.18s ease;
+        }
+        .timeline.hot .tl-knob, .timeline.dragging .tl-knob { transform: translateY(-50%) scale(1); }
+        .timeline.dragging .tl-row { opacity: 1; transform: none; pointer-events: auto; }
+        .tl-time {
+          flex: 0 0 auto; color: var(--paper); opacity: 0.85;
+          letter-spacing: 0.06em; white-space: nowrap;
+          font-variant-numeric: tabular-nums;
+        }
+        :host([layout="bare"]) .timeline { display: none !important; }
       </style>
       ${textBlock}
       <div class="wrap">
@@ -291,6 +367,14 @@ export class NoesisScene extends HTMLElement {
           <canvas width="${w * SS}" height="${h * SS}"></canvas>
           <div class="overlays"></div>
           ${hintText ? `<div class="hint">${escapeHtml(hintText)}</div>` : ''}
+          <div class="timeline">
+            <div class="tl-row">
+              <button class="tl-play" title="pausar">⏸</button>
+              <div class="tl-track"><div class="tl-track-fill"></div><div class="tl-knob"></div></div>
+              <span class="tl-time">0:00 / 0:00</span>
+            </div>
+            <div class="tl-mini"><i></i></div>
+          </div>
         </div>
         <button class="rec" title="grabar como video webm" data-on="false">●</button>
         ${config.meta?.music ? `<button class="music" title="musica ambiental" data-on="false">♪</button>` : ''}
@@ -363,6 +447,9 @@ export class NoesisScene extends HTMLElement {
           await this._ensureFontsLoaded();
           // Reset to start so the recording captures the full scene from t=0.
           if (this._world && this._world.reset) this._world.reset();
+          // La grabación debe correr de t=0 sin pausa ni seeks pendientes.
+          this._pendingSeek = null;
+          this._setPaused?.(false);
           // If the scene declares music and the user hasn't toggled it, turn it on
           // so the recording has audio. Restore prior state on stop is not needed:
           // the user can mute manually post-recording with the ♪ button.
@@ -422,6 +509,97 @@ export class NoesisScene extends HTMLElement {
         }
       });
     }
+    // --- Línea de tiempo (scrubber) ---
+    // Play/pausa desde el loop; drag/seek por re-simulación determinista
+    // (world.seek). Los seeks del arrastre se acumulan en _pendingSeek y el
+    // loop aplica uno por frame (coalescing), así arrastrar es fluido.
+    const stage = this.shadowRoot.querySelector('.stage');
+    const tlEl = this.shadowRoot.querySelector('.timeline');
+    const tlPlay = this.shadowRoot.querySelector('.tl-play');
+    const tlTrack = this.shadowRoot.querySelector('.tl-track');
+    this._timeline = tlEl ? {
+      el: tlEl, play: tlPlay, track: tlTrack,
+      fill: this.shadowRoot.querySelector('.tl-track-fill'),
+      mini: this.shadowRoot.querySelector('.tl-mini > i'),
+      knob: this.shadowRoot.querySelector('.tl-knob'),
+      time: this.shadowRoot.querySelector('.tl-time'),
+    } : null;
+    this._userPaused = false;
+    this._dragging = false;
+    this._pendingSeek = null;
+    // Visibilidad de la barra. Se muestra completa (`.hot`) mientras el mouse
+    // está sobre el lienzo, mientras se arrastra o mientras está en pausa; se
+    // colapsa a la línea fina tras 3 s de inactividad SOLO si está reproduciendo
+    // y el mouse no está encima. `_hoverStage` y el estado de pausa/drag mandan;
+    // así "usar la barra una vez" nunca la esconde de forma irrecuperable.
+    this._hoverStage = false;
+    const refreshHot = () => {
+      if (!tlEl) return;
+      const sticky = this._dragging || this._userPaused || this._hoverStage;
+      clearTimeout(this._hotTimer);
+      if (sticky) { tlEl.classList.add('hot'); return; }
+      tlEl.classList.add('hot');
+      this._hotTimer = setTimeout(() => {
+        if (!this._dragging && !this._userPaused && !this._hoverStage) tlEl.classList.remove('hot');
+      }, 3000);
+    };
+    this._refreshHot = refreshHot;
+    this._setPaused = (p) => {
+      this._userPaused = p;
+      if (tlPlay) { tlPlay.textContent = p ? '▶' : '⏸'; tlPlay.title = p ? 'reproducir' : 'pausar'; }
+      if (!p) this._lastT = performance.now(); // al reanudar, no acumular el dt de la pausa
+      refreshHot();
+    };
+    // Hover con mouse-events (independientes del pointer capture del drag, que
+    // usa listeners en window; mezclarlos en el mismo elemento dejaba la barra
+    // pegada tras el primer arrastre).
+    if (tlEl && stage) {
+      stage.addEventListener('mousemove', () => { this._hoverStage = true; refreshHot(); });
+      stage.addEventListener('mouseenter', () => { this._hoverStage = true; refreshHot(); });
+      stage.addEventListener('mouseleave', () => { this._hoverStage = false; refreshHot(); });
+    }
+    if (tlPlay) {
+      tlPlay.addEventListener('click', (ev) => {
+        ev.stopPropagation();
+        this._setPaused(!this._userPaused);
+      });
+    }
+    if (tlTrack) {
+      const seekFromEvent = (ev) => {
+        const dur = this._world._duration;
+        if (!dur) return;
+        const r = tlTrack.getBoundingClientRect();
+        const frac = Math.max(0, Math.min(1, (ev.clientX - r.left) / r.width));
+        this._pendingSeek = frac * dur;
+      };
+      let onMove = null, onUp = null;
+      const endDrag = () => {
+        if (!this._dragging) return;
+        this._dragging = false;
+        tlEl.classList.remove('dragging');
+        window.removeEventListener('pointermove', onMove);
+        window.removeEventListener('pointerup', onUp);
+        window.removeEventListener('pointercancel', onUp);
+        this._lastT = performance.now(); // retoma sin saltar dt
+        refreshHot();
+      };
+      onMove = (ev) => { seekFromEvent(ev); };
+      onUp = () => endDrag();
+      tlTrack.addEventListener('pointerdown', (ev) => {
+        if (!this._world._duration) return;
+        ev.stopPropagation();
+        ev.preventDefault();
+        this._dragging = true;
+        tlEl.classList.add('dragging', 'hot');
+        // Listeners en window: siguen el arrastre aunque el mouse salga del
+        // track (delgado) o del lienzo, y se limpian solos al soltar.
+        window.addEventListener('pointermove', onMove);
+        window.addEventListener('pointerup', onUp);
+        window.addEventListener('pointercancel', onUp);
+        seekFromEvent(ev);
+      });
+    }
+
     this._world._hintEl = hint;
     this._world.setHint = (text, opts = {}) => {
       if (!hint) return;
@@ -471,6 +649,9 @@ export class NoesisScene extends HTMLElement {
 
     resetBtn.addEventListener('click', () => {
       this._world.reset();
+      this._pendingSeek = null;
+      this._setPaused?.(false);
+      this._updateTimeline?.();
       clearTimeout(this._world._hintTimer);
       if (hint) {
         hint.textContent = hintText;
@@ -494,6 +675,10 @@ export class NoesisScene extends HTMLElement {
       if (isActive && !wasActive) {
         if (!this._initialized) {
           this._world.runInit();
+          // Mide la duración del contenido para el scrubber (corre la escena en
+          // silencio hasta el fin del guion y resetea a t=0). Barato: no dibuja.
+          try { this._world.measureDuration(); } catch (e) { console.warn('[noesis-scene] measureDuration', e); }
+          this._updateTimeline();
           this._initialized = true;
           if (hint && hintText && hintDur > 0) {
             this._world._hintTimer = setTimeout(() => hint.classList.add('gone'), hintDur * 1000);
@@ -530,12 +715,42 @@ export class NoesisScene extends HTMLElement {
       if (!this._visible) { this._raf = null; return; }
       const dt = Math.min(0.05, (now - this._lastT) / 1000);
       this._lastT = now;
-      this._world.runStep(dt);
-      this._world.runDraw();
+      // Prioridad: seek pendiente del arrastre (uno por frame). Si no, avanzar
+      // salvo que el usuario haya pausado o esté arrastrando (en pausa el
+      // canvas conserva su último frame; solo se refresca la UI del scrubber).
+      if (this._pendingSeek != null) {
+        this._world.seek(this._pendingSeek);
+        this._pendingSeek = null;
+      } else if (!this._userPaused && !this._dragging) {
+        this._world.runStep(dt);
+        this._world.runDraw();
+      }
       if (this._recording) this._paintRecFrame();
+      this._updateTimeline();
       this._raf = requestAnimationFrame(tick);
     };
     this._raf = requestAnimationFrame(tick);
+  }
+
+  _updateTimeline() {
+    const tl = this._timeline;
+    if (!tl) return;
+    const dur = this._world._duration;
+    if (!dur) { tl.el.classList.remove('armed'); return; }
+    tl.el.classList.add('armed');
+    const t = Math.max(0, Math.min(dur, this._world.t));
+    const pct = (dur > 0 ? (t / dur) * 100 : 0).toFixed(2) + '%';
+    tl.fill.style.width = pct;
+    tl.mini.style.width = pct;
+    tl.knob.style.left = pct;
+    const label = this._fmtTime(t) + ' / ' + this._fmtTime(dur);
+    if (tl.time.textContent !== label) tl.time.textContent = label;
+  }
+
+  _fmtTime(s) {
+    s = Math.max(0, Math.round(s));
+    const m = Math.floor(s / 60);
+    return m + ':' + String(s % 60).padStart(2, '0');
   }
 
   _buildLabels(config, lang) {

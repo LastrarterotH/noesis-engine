@@ -1,5 +1,5 @@
 {
-  "meta": { "id": "06-basilisco-roko", "number": 6, "version": "0.2", "lang": ["es"], "music": "electronic" },
+  "meta": { "id": "06-basilisco-roko", "number": 6, "version": "0.2", "lang": ["es"], "music": "tension" },
   "text": {
     "es": {
       "title": "El Basilisco de Roko: una amenaza que vive de tu creencia",
@@ -89,6 +89,7 @@
     { "say": "pensador", "text": "No puedo dejar de pensarlo. Si lo ignoro, me alcanzará.", "duration": 4.0 },
     { "wait": 4.4 },
 
+    { "music": { "volume": 0.5, "duration": 2 } },
     { "caption": "Pero alguien más entra en la habitación." },
     { "appear": "esceptica", "duration": 0.7 },
     { "walk": "esceptica", "to": [248, 434] },
@@ -120,6 +121,7 @@
     { "tone": 523, "dur": 0.18 },
     { "wait": 4.0 },
 
+    { "music": { "volume": 0.25, "duration": 2 } },
     { "caption": "La amenaza vivía de su crédito. Al quitárselo, se apaga." },
     { "tween": "basi.alpha", "to": 0, "duration": 2.0 },
     { "tween": "basi.eye", "to": 0, "duration": 1.4 },
@@ -137,6 +139,7 @@
     { "do": "var l=world.byId('pensador'); if(l) l.lookAt={x:150,y:434}; var e=world.byId('esceptica'); if(e) e.lookAt={x:262,y:432};" },
     { "wait": 2.2 },
 
+    { "music": { "volume": 0.9, "duration": 2.5 } },
     { "caption": "El Basilisco nació en 2010, en un foro, de un usuario apodado Roko." },
     { "wait": 4.2 },
     { "caption": "Lo borraron para proteger a la gente, y la censura lo volvió famoso: el efecto Streisand." },
@@ -146,6 +149,7 @@
     { "wait": 3.6 },
     { "say": "esceptica", "text": "Solo el poder que tú le des. Lo demás es cómo elegimos pensar.", "duration": 4.0 },
     { "wait": 4.2 },
+    { "music": { "volume": 1, "duration": 2 } },
     { "caption": "Casi todos los que lo estudian creen que el argumento no se sostiene." },
     { "wait": 4.8 }
   ]

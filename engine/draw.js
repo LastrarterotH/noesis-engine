@@ -2,9 +2,9 @@
 // Pixel-art draw primitives: learner blob, eye geometry, mood-routing,
 // accessories overlay. Instantiated once per World.
 
-import { mixColors } from './util.js?v=80';
-import { drawMoodOverlays } from './mood.js?v=80';
-import { drawAccessories } from './accessories.js?v=80';
+import { mixColors, drawMath, measureMath as _measureMath, drawLabel, measureLabel } from './util.js?v=145';
+import { drawMoodOverlays } from './mood.js?v=145';
+import { drawAccessories } from './accessories.js?v=145';
 
 export class Draw {
   constructor(world) { this.world = world; }
@@ -103,6 +103,12 @@ export class Draw {
     const prevAlpha = ctx.globalAlpha;
     if (alpha < 1) ctx.globalAlpha = prevAlpha * alpha;
 
+    // Mirada declarada por la entidad (efecto narrativo): `entity.look = 'blank'`
+    // suprime las pupilas y deja solo la esclerótica (un personaje cegado), y
+    // manda sobre el motion/lookAt de abajo. Vale también un vector {x, y}.
+    if (opts.look == null && entity && entity.look != null) {
+      opts = { ...opts, look: entity.look };
+    }
     // Gaze rule: eyes follow the blob's motion vector. If moving, both
     // pupils point in the direction of motion. If not moving, idle.
     // `opts.look = 'blank'` still suppresses pupils for narrative effect.
@@ -198,7 +204,8 @@ export class Draw {
       ctx.fill();
     }
 
-    if (opts.shadow !== false) {
+    const noShadow = opts.noShadow ?? entity?.noShadow;
+    if (opts.shadow !== false && !noShadow) {
       // Sombra de contacto: elipse suave anclada al PISO (cy sin bob ni
       // salto). Cuando el cuerpo se eleva, la sombra se queda abajo y se
       // encoge y aclara con la altura: eso es lo que vende el salto.
@@ -515,13 +522,13 @@ export class Draw {
       ctx.font = opts.font || '600 12px "Plus Jakarta Sans", ui-sans-serif, system-ui, -apple-system, sans-serif';
       ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
       if (opts.labelBg !== false) {
-        const tw = ctx.measureText(String(opts.label)).width;
+        const tw = measureLabel(ctx, opts.label).w;
         const padX = 5, h = 16;
         this.rrect(mx - tw / 2 - padX, my - h / 2, tw + padX * 2, h, 5);
         ctx.fillStyle = opts.labelBg || 'rgba(20,22,40,0.82)'; ctx.fill();
       }
       ctx.fillStyle = opts.labelColor || '#eef1f6';
-      ctx.fillText(String(opts.label), mx, my + 0.5);
+      drawLabel(ctx, opts.label, mx, my + 0.5);
       ctx.restore();
     }
   }
@@ -547,7 +554,7 @@ export class Draw {
       ctx.font = opts.font || '600 13px "Plus Jakarta Sans", ui-sans-serif, system-ui, -apple-system, sans-serif';
       ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
       ctx.fillStyle = opts.labelColor || '#1F2547';
-      ctx.fillText(String(opts.label), x + w / 2, y + h / 2 + 0.5);
+      drawLabel(ctx, opts.label, x + w / 2, y + h / 2 + 0.5);
     }
     ctx.restore();
     const cx = x + w / 2, cy = y + h / 2;
@@ -577,18 +584,28 @@ export class Draw {
     const color = opts.color || '#6E7896';
     const labelColor = opts.labelColor || '#c5cbdb';
     const font = opts.font || '500 11px "Plus Jakarta Sans", ui-sans-serif, system-ui, -apple-system, sans-serif';
+    // Escala logarítmica opcional por eje (xScale/yScale: 'log'): el fenómeno
+    // exponencial (contagio, decaimiento, Moore, pH) deja de aplastarse. El map
+    // transforma con log10; gridlines/plot/scatter/area heredan la escala gratis
+    // porque todos mapean por frame.map. Requiere dominio > 0 (lo chequea vChart).
+    const lx = opts.xScale === 'log', ly = opts.yScale === 'log';
+    const tX = (v) => lx ? Math.log10(Math.max(v, 1e-12)) : v;
+    const tY = (v) => ly ? Math.log10(Math.max(v, 1e-12)) : v;
+    const xd0 = tX(xD[0]), xd1 = tX(xD[1]), yd0 = tY(yD[0]), yd1 = tY(yD[1]);
     const map = (dx, dy) => ({
-      x: x + ((dx - xD[0]) / ((xD[1] - xD[0]) || 1)) * w,
-      y: y + h - ((dy - yD[0]) / ((yD[1] - yD[0]) || 1)) * h,
+      x: x + ((tX(dx) - xd0) / ((xd1 - xd0) || 1)) * w,
+      y: y + h - ((tY(dy) - yd0) / ((yd1 - yd0) || 1)) * h,
     });
-    const ax = (xD[0] <= 0 && xD[1] >= 0) ? map(0, 0).x : x;        // y-axis x-position
-    const ay = (yD[0] <= 0 && yD[1] >= 0) ? map(0, 0).y : y + h;    // x-axis y-position
+    const ax = (!lx && xD[0] <= 0 && xD[1] >= 0) ? map(0, 0).x : x;        // y-axis x-position
+    const ay = (!ly && yD[0] <= 0 && yD[1] >= 0) ? map(0, 0).y : y + h;    // x-axis y-position
     const tickLen = opts.tickLen ?? 4;
-    const ticksOf = (spec, D) => Array.isArray(spec) ? spec
-      : (typeof spec === 'number' ? Array.from({ length: spec + 1 }, (_, i) => D[0] + (D[1] - D[0]) * i / spec) : []);
-    const frame = { x, y, w, h, xDomain: xD, yDomain: yD, map };
-    const xticks = ticksOf(opts.xTicks, xD);
-    const yticks = ticksOf(opts.yTicks, yD);
+    const decades = (D) => { const out = []; for (let k = Math.ceil(Math.log10(D[0]) - 1e-9); k <= Math.floor(Math.log10(D[1]) + 1e-9); k++) out.push(Math.pow(10, k)); return out; };
+    const ticksOf = (spec, D, log) => Array.isArray(spec) ? spec
+      : (typeof spec === 'number' ? Array.from({ length: spec + 1 }, (_, i) => D[0] + (D[1] - D[0]) * i / spec) : (log ? decades(D) : []));
+    const logFmt = (v) => '10^{' + Math.round(Math.log10(v)) + '}';
+    const frame = { x, y, w, h, xDomain: xD, yDomain: yD, xScale: lx ? 'log' : 'linear', yScale: ly ? 'log' : 'linear', map };
+    const xticks = ticksOf(opts.xTicks, xD, lx);
+    const yticks = ticksOf(opts.yTicks, yD, ly);
     // Background gridlines first (behind axes + data).
     if (opts.grid) this.gridlines(frame, { x: xticks, y: yticks, color: typeof opts.grid === 'string' ? opts.grid : undefined });
     if (opts.axis !== false) {
@@ -605,19 +622,19 @@ export class Draw {
     for (const tv of xticks) {
       const p = map(tv, 0), py = opts.frame ? y + h : ay;
       ctx.beginPath(); ctx.moveTo(p.x, py - tickLen); ctx.lineTo(p.x, py + tickLen); ctx.stroke();
-      const t = opts.xFormat ? opts.xFormat(tv) : String(Math.round(tv * 100) / 100);
-      if (t !== '') ctx.fillText(t, p.x, py + tickLen + 2);
+      const t = opts.xFormat ? opts.xFormat(tv) : (lx ? logFmt(tv) : String(Math.round(tv * 100) / 100));
+      if (t !== '') drawLabel(ctx, t, p.x, py + tickLen + 2);
     }
     ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
     for (const tv of yticks) {
       const p = map(0, tv), px2 = opts.frame ? x : ax;
       ctx.beginPath(); ctx.moveTo(px2 - tickLen, p.y); ctx.lineTo(px2 + tickLen, p.y); ctx.stroke();
-      const t = opts.yFormat ? opts.yFormat(tv) : String(Math.round(tv * 100) / 100);
-      if (t !== '') ctx.fillText(t, px2 - tickLen - 3, p.y);
+      const t = opts.yFormat ? opts.yFormat(tv) : (ly ? logFmt(tv) : String(Math.round(tv * 100) / 100));
+      if (t !== '') drawLabel(ctx, t, px2 - tickLen - 3, p.y);
     }
     ctx.fillStyle = labelColor;
-    if (opts.xLabel) { ctx.textAlign = 'right'; ctx.textBaseline = 'top'; ctx.fillText(opts.xLabel, x + w, ay + tickLen + 14); }
-    if (opts.yLabel) { ctx.textAlign = 'left'; ctx.textBaseline = 'bottom'; ctx.fillText(opts.yLabel, ax + 6, y - 4); }
+    if (opts.xLabel) { ctx.textAlign = 'right'; ctx.textBaseline = 'top'; drawLabel(ctx, opts.xLabel, x + w, ay + tickLen + 14); }
+    if (opts.yLabel) { ctx.textAlign = 'left'; ctx.textBaseline = 'bottom'; drawLabel(ctx, opts.yLabel, ax + 6, y - 4); }
     ctx.restore();
     return frame;
   }
@@ -645,7 +662,10 @@ export class Draw {
   // coords) or a function fx→fy sampled across the frame's xDomain.
   // opts: color, width, dash, samples (for fn, default 64), reveal (0..1
   //   fraction of the path drawn, for animation), fill (true | rgba: area to
-  //   the baseline), baseline (data-y), dots (marker radius; 0 = none), dotColor.
+  //   the baseline), baseline (data-y), dots (marker radius; 0 = none), dotColor,
+  //   head (true | { r, color, pulse, guides, label }): marcador en el FRENTE
+  //   del reveal (el punto viajero), con guías punteadas opcionales a ambos ejes
+  //   y una etiqueta del valor actual. Lo que la escena 01 hacía a mano.
   plot(frame, data, opts = {}) {
     const ctx = this.world.ctx;
     const color = opts.color || '#5b8def';
@@ -672,6 +692,31 @@ export class Draw {
     ctx.beginPath(); P.forEach((p, i) => i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y)); ctx.stroke();
     ctx.setLineDash([]);
     if (opts.dots) { ctx.fillStyle = opts.dotColor || color; for (const p of P) { ctx.beginPath(); ctx.arc(p.x, p.y, opts.dots, 0, Math.PI * 2); ctx.fill(); } }
+    // Punto viajero: marcador en el frente del reveal (el punto exacto que la
+    // escena 01 dibujaba a mano duplicando la aritmética del frame).
+    if (opts.head && P.length) {
+      const front = P[P.length - 1];
+      const [fdx, fdy] = pts[last - 1];
+      const H = opts.head === true ? {} : opts.head;
+      const hr = H.r ?? 4, hcol = H.color || color;
+      if (H.guides) {
+        ctx.save();
+        ctx.strokeStyle = H.guideColor || 'rgba(232,226,210,0.35)'; ctx.lineWidth = 1; ctx.setLineDash([4, 4]);
+        ctx.beginPath(); ctx.moveTo(front.x, front.y); ctx.lineTo(front.x, frame.y + frame.h); ctx.stroke();   // guía al eje x
+        ctx.beginPath(); ctx.moveTo(front.x, front.y); ctx.lineTo(frame.x, front.y); ctx.stroke();             // guía al eje y
+        ctx.restore();
+      }
+      const pulse = H.pulse ? (1 + 0.25 * Math.sin(this.world.t * 5)) : 1;
+      if (H.pulse) { ctx.save(); ctx.globalAlpha *= 0.3; ctx.fillStyle = hcol; ctx.beginPath(); ctx.arc(front.x, front.y, hr * pulse * 2.4, 0, Math.PI * 2); ctx.fill(); ctx.restore(); }
+      ctx.fillStyle = hcol; ctx.beginPath(); ctx.arc(front.x, front.y, hr * pulse, 0, Math.PI * 2); ctx.fill();
+      if (H.label) {
+        const txt = typeof H.label === 'function' ? H.label(fdx, fdy) : (H.label === true ? String(Math.round(fdy * 100) / 100) : String(H.label));
+        ctx.fillStyle = H.labelColor || hcol;
+        ctx.font = H.font || '600 11px "Plus Jakarta Sans", ui-sans-serif, system-ui, -apple-system, sans-serif';
+        ctx.textAlign = 'left'; ctx.textBaseline = 'bottom';
+        drawLabel(ctx, txt, front.x + hr + 4, front.y - hr - 2);
+      }
+    }
     ctx.restore();
   }
 
@@ -698,7 +743,7 @@ export class Draw {
       ctx.fillStyle = col; ctx.fill();
       if (opts.labels && typeof v === 'object' && v.label != null) {
         ctx.fillStyle = opts.labelColor || '#c5cbdb'; ctx.textAlign = 'center'; ctx.textBaseline = 'top';
-        ctx.fillText(String(v.label), cx, by + 4);
+        drawLabel(ctx, v.label, cx, by + 4);
       }
     });
     ctx.restore();
@@ -795,7 +840,7 @@ export class Draw {
       }
       if (opts.labels && g.label != null) {
         ctx.fillStyle = opts.labelColor || '#c5cbdb'; ctx.textAlign = 'center'; ctx.textBaseline = 'top';
-        ctx.fillText(String(g.label), cx, by + 4);
+        drawLabel(ctx, g.label, cx, by + 4);
       }
     });
     ctx.restore();
@@ -839,5 +884,23 @@ export class Draw {
       a0 = a1;
     });
     ctx.restore();
+  }
+
+  // math: render a stacked LaTeX-subset formula on the canvas (real vertical
+  // fractions, roots, sub/superscripts, symbols), unlike drawRichText/captions
+  // which flatten $\frac{a}{b}$ to inline "a/b". (x,y) anchors per opts.align
+  // (left|center|right) and opts.valign (baseline|middle|top|bottom, default
+  // baseline). opts: px (16), color (default current fillStyle), weight, family,
+  // alpha, align, valign. Returns { w, ascent, descent, height, x, baseline } so
+  // callers can position adjacent parts (e.g. a highlighted result in another
+  // color). Accepts the tex with or without surrounding `$`. See util.js.
+  math(x, y, tex, opts = {}) {
+    return drawMath(this.world.ctx, tex, x, y, opts);
+  }
+
+  // measureMath: layout-measure a formula without drawing. Returns
+  // { w, ascent, descent, height }. Use to size a panel or center a derivation.
+  measureMath(tex, opts = {}) {
+    return _measureMath(this.world.ctx, tex, opts);
   }
 }

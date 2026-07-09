@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script>document.documentElement.classList.add('has-js');
+  if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
+  window.scrollTo(0, 0);
+  // failsafe: si GSAP/main.js no cargan, igual quita el loader
+  window.addEventListener('load', function () { setTimeout(function () {
+    var l = document.querySelector('.loader'); if (l && !l.dataset.done) { l.style.transition = 'opacity .5s'; l.style.opacity = '0'; setTimeout(function(){ l.style.display = 'none'; }, 520); }
+  }, 4000); });</script>
+<title>noesis · conceptos que se ven, no que se memorizan</title>
+<meta name="description" content="noesis es un motor de animaciones explicativas: cada idea se construye como algo que se ve ocurrir, con su texto académico al lado. Open source, se autorea con Claude Code.">
+<meta property="og:title" content="noesis · conceptos que se ven, no que se memorizan">
+<meta property="og:description" content="Motor de animaciones explicativas. Open source, nativo de Claude.">
+<meta property="og:type" content="website">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- ===== cursor (el punto ámbar: el lenguaje de interacción cosedor) ===== -->
+<div class="cursor" data-cursor aria-hidden="true"><span class="cursor-dot"></span></div>
+
+<!-- ===== loader con intención (marco de registro + el punto) ===== -->
+<div class="loader" data-loader aria-hidden="true">
+  <span class="crop crop--tl"></span><span class="crop crop--tr"></span>
+  <span class="crop crop--bl"></span><span class="crop crop--br"></span>
+  <span class="loader-mark"><span class="loader-name">noesis</span><span class="loader-dot"></span></span>
+  <span class="loader-count" data-loader-count>0</span>
+</div>
+
+<!-- ===== HEADER ===== -->
+<header class="topbar" data-topbar>
+  <a class="wordmark" href="#hero" aria-label="noesis, inicio" data-hover>
+    <span class="wm-name">noesis<span class="wm-dot">.</span></span>
+  </a>
+  <nav class="topnav">
+    <a href="#repertorio" data-hover>Repertorio</a>
+    <a href="#autoria" data-hover>Cómo se usa</a>
+    <a class="ghlink" href="https://github.com/LastrarterotH/noesis-engine" target="_blank" rel="noopener" data-hover>GitHub</a>
+  </nav>
+</header>
+
+<main data-main>
+
+<!-- ====================== 1 · HERO (C: el wordmark se ensambla y cede a la escena viva) ====================== -->
+<section id="hero" class="hero" data-section="hero">
+  <div class="hero-type" data-hero-type>
+    <h1 class="hero-wm" data-hero-wm aria-label="noesis.">
+      <span class="ch">n</span><span class="ch">o</span><span class="ch">e</span><span class="ch">s</span><span class="ch">i</span><span class="ch">s</span><span class="ch ch--dot">.</span>
+    </h1>
+    <p class="hero-headline" data-split>Conceptos que se <em>ven</em>, no que se memorizan.</p>
+    <p class="hero-sub" data-fade>Un motor de animaciones explicativas. Cada idea se construye como algo
+      que se ve ocurrir, con su texto académico al lado. No es un video, no es una diapositiva.</p>
+    <a class="scroll-cue" href="#mecanicas" aria-label="Bajar" data-hover>
+      <span class="cue-dot"></span><span>baja para verlo</span>
+    </a>
+  </div>
+
+  <div class="hero-scene" data-hero-scene>
+    <div class="hero-scene-frame">
+      <noesis-scene src="scenes/01-netflix-prize.json" lang="es" layout="bare"></noesis-scene>
+    </div>
+    <p class="hero-scene-cap" data-fade>Esto no es un video ni una diapositiva. Es una <em>simulación</em>
+      que corre en tu página, generada cuadro a cuadro por el motor.</p>
+  </div>
+</section>
+
+<!-- ====================== 2 · MECÁNICAS ====================== -->
+<section id="mecanicas" class="section section--paper mecanicas" data-section="mecanicas">
+  <p class="label" data-reveal><span class="bullet"></span>El vocabulario</p>
+  <h2 class="section-title" data-reveal>Nueve maneras de hacer que una idea <em>ocurra</em> frente a ti.</h2>
+  <p class="section-lead" data-reveal>Cada concepto pide una forma. El motor sabe contar estas nueve,
+    y cada escena se construye deliberadamente alrededor de una.</p>
+  <ol class="mech-grid" data-stagger>
+    <li class="mech"><span class="mech-glyph" data-glyph="viajero"></span><span class="mech-num">01</span><span class="mech-name">el viajero</span><span class="mech-desc">Alguien recorre el cambio y lo vemos avanzar.</span></li>
+    <li class="mech"><span class="mech-glyph" data-glyph="poblacion"></span><span class="mech-num">02</span><span class="mech-name">la población</span><span class="mech-desc">Muchos cuerpos hacen visible lo estadístico.</span></li>
+    <li class="mech"><span class="mech-glyph" data-glyph="umbral"></span><span class="mech-num">03</span><span class="mech-name">el umbral</span><span class="mech-desc">Un valor cruza una línea y algo cambia de estado.</span></li>
+    <li class="mech"><span class="mech-glyph" data-glyph="convergencia"></span><span class="mech-num">04</span><span class="mech-name">la convergencia</span><span class="mech-desc">Piezas dispersas se reúnen en una.</span></li>
+    <li class="mech"><span class="mech-glyph" data-glyph="antesdespues"></span><span class="mech-num">05</span><span class="mech-name">el antes y después</span><span class="mech-desc">Dos mundos, un corte que los separa.</span></li>
+    <li class="mech"><span class="mech-glyph" data-glyph="diseccion"></span><span class="mech-num">06</span><span class="mech-name">la disección</span><span class="mech-desc">Una cosa se abre en sus partes con nombre.</span></li>
+    <li class="mech"><span class="mech-glyph" data-glyph="analogia"></span><span class="mech-num">07</span><span class="mech-name">la analogía</span><span class="mech-desc">Una forma se deforma hasta rimar con otra.</span></li>
+    <li class="mech"><span class="mech-glyph" data-glyph="cadena"></span><span class="mech-num">08</span><span class="mech-name">la cadena</span><span class="mech-desc">Una causa vuelca a la siguiente, en orden.</span></li>
+    <li class="mech"><span class="mech-glyph" data-glyph="transformacion"></span><span class="mech-num">09</span><span class="mech-name">la transformación en sitio</span><span class="mech-desc">El orden se vuelve desorden sin moverse de lugar.</span></li>
+  </ol>
+</section>
+
+<!-- ====================== 4 · REPERTORIO ====================== -->
+<section id="repertorio" class="section section--navy repertorio" data-section="repertorio">
+  <p class="label" data-reveal><span class="bullet"></span>El repertorio</p>
+  <h2 class="section-title" data-reveal>Se construye una escena a la vez,<br>cada una sostenida por su <em>fuente</em>.</h2>
+  <div class="gallery" data-stagger>
+    <a class="scene-card scene-card--vara" href="examples/scene-01.html"><span class="thumb"><img src="previews/scene-01.png" alt="Escena 01, Netflix Prize" loading="lazy" onerror="this.style.display='none'"></span><span class="scene-meta"><span class="scene-num">01</span><span class="scene-title">Netflix Prize</span><span class="scene-concept">la competencia que enseñó a medir</span><span class="scene-src">Bennett y Lanning, 2007</span></span></a>
+    <a class="scene-card" href="examples/scene-02.html"><span class="thumb"><img src="previews/scene-02.png" alt="Escena 02, el cuarto de Mary" loading="lazy" onerror="this.style.display='none'"></span><span class="scene-meta"><span class="scene-num">02</span><span class="scene-title">El cuarto de Mary</span><span class="scene-concept">conocer sin haber vivido</span><span class="scene-src">Jackson, 1982</span></span></a>
+    <a class="scene-card" href="examples/scene-03.html"><span class="thumb"><img src="previews/scene-03.png" alt="Escena 03, el gato de Schrödinger" loading="lazy" onerror="this.style.display='none'"></span><span class="scene-meta"><span class="scene-num">03</span><span class="scene-title">El gato de Schrödinger</span><span class="scene-concept">vivo y muerto a la vez</span><span class="scene-src">Schrödinger, 1935</span></span></a>
+    <a class="scene-card" href="examples/scene-04.html"><span class="thumb"><img src="previews/scene-04.png" alt="Escena 04, TPACK" loading="lazy" onerror="this.style.display='none'"></span><span class="scene-meta"><span class="scene-num">04</span><span class="scene-title">TPACK</span><span class="scene-concept">el saber que integra el docente</span><span class="scene-src">Mishra y Koehler, 2006</span></span></a>
+    <a class="scene-card" href="examples/scene-05.html"><span class="thumb"><img src="previews/scene-05.png" alt="Escena 05, Perséfone y Deméter" loading="lazy" onerror="this.style.display='none'"></span><span class="scene-meta"><span class="scene-num">05</span><span class="scene-title">Perséfone y Deméter</span><span class="scene-concept">el origen de las estaciones</span><span class="scene-src">mito griego, la inclinación del eje</span></span></a>
+    <a class="scene-card" href="examples/scene-06.html"><span class="thumb"><img src="previews/scene-06.png" alt="Escena 06, el basilisco de Roko" loading="lazy" onerror="this.style.display='none'"></span><span class="scene-meta"><span class="scene-num">06</span><span class="scene-title">El basilisco de Roko</span><span class="scene-concept">una amenaza que vive de tu creencia</span><span class="scene-src">Roko, 2010</span></span></a>
+    <a class="scene-card" href="examples/scene-07.html"><span class="thumb"><img src="previews/scene-07.png" alt="Escena 07, la tragedia de los comunes" loading="lazy" onerror="this.style.display='none'"></span><span class="scene-meta"><span class="scene-num">07</span><span class="scene-title">La tragedia de los comunes</span><span class="scene-concept">el costo de lo compartido</span><span class="scene-src">Hardin, 1968</span></span></a>
+    <a class="scene-card" href="examples/scene-08.html"><span class="thumb"><img src="previews/scene-08.png" alt="Escena 08, el contagio y el R0" loading="lazy" onerror="this.style.display='none'"></span><span class="scene-meta"><span class="scene-num">08</span><span class="scene-title">El contagio y el R0</span><span class="scene-concept">de un caso a una pandemia</span><span class="scene-src">Anderson y May, 1991</span></span></a>
+    <a class="scene-card" href="examples/scene-09.html"><span class="thumb"><img src="previews/scene-09.png" alt="Escena 09, el mito de la caverna" loading="lazy" onerror="this.style.display='none'"></span><span class="scene-meta"><span class="scene-num">09</span><span class="scene-title">El mito de la caverna</span><span class="scene-concept">la caverna en la era de la IA</span><span class="scene-src">Platón, c. 380 a. C.</span></span></a>
+    <a class="scene-card" href="examples/scene-10.html"><span class="thumb"><img src="previews/scene-10.png" alt="Escena 10, el fuera de juego" loading="lazy" onerror="this.style.display='none'"></span><span class="scene-meta"><span class="scene-num">10</span><span class="scene-title">El fuera de juego</span><span class="scene-concept">la línea y el instante</span><span class="scene-src">IFAB, 2024</span></span></a>
+    <a class="scene-card" href="examples/scene-11.html"><span class="thumb"><img src="previews/scene-11.png" alt="Escena 11, los cuentos de los Grimm" loading="lazy" onerror="this.style.display='none'"></span><span class="scene-meta"><span class="scene-num">11</span><span class="scene-title">Los cuentos de los Grimm</span><span class="scene-concept">el original antes del azúcar</span><span class="scene-src">Grimm, 1812</span></span></a>
+  </div>
+</section>
+
+<!-- ====================== 5 · AUTORÍA + CONSEGUIRLO ====================== -->
+<section id="autoria" class="section section--paper autoria" data-section="autoria">
+  <p class="label" data-reveal><span class="bullet"></span>Cómo se autorea</p>
+  <h2 class="section-title" data-reveal>Del concepto al JSON a la escena.<br>La calidad la pone <em>quien la autoría</em>.</h2>
+  <div class="get" data-stagger>
+    <div class="get-block">
+      <h3 class="get-title">Se obtiene en GitHub</h3>
+      <p class="get-text">noesis es open source. Lo clonas, lo sirves estático y ya tienes el motor,
+        el repertorio y la skill de autoría. No hay paquete que instalar.</p>
+      <pre class="get-code"><code>git clone https://github.com/LastrarterotH/noesis-engine
+cd noesis-engine
+python3 -m http.server 8765</code></pre>
+      <a class="btn btn--primary" href="https://github.com/LastrarterotH/noesis-engine" target="_blank" rel="noopener" data-hover>Ver el repositorio</a>
+    </div>
+    <div class="get-block">
+      <h3 class="get-title">Se autorea con Claude Code</h3>
+      <p class="get-text">Las escenas se construyen dialogando el concepto con Claude Code: la skill
+        <code>/noesis</code> arma el JSON con el vocabulario del motor, lo valida y lo previsualiza.
+        Quien encarga la escena aporta el criterio, no escribe el JSON a mano.</p>
+      <a class="btn" href="manual.html" data-hover>Leer el manual</a>
+      <span class="get-soon">manual de uso con Claude Code, en preparación</span>
+    </div>
+  </div>
+</section>
+
+<!-- ====================== 6 · LÍMITES (blueprint: cada negación se CONSTRUYE con guías técnicas) ====================== -->
+<section id="limites" class="limites" data-section="limites">
+  <header class="bp-head">
+    <p class="bp-eyebrow" data-reveal><span class="bullet"></span>FIG. 06 — LO QUE NO ES</p>
+    <h2 class="bp-title" data-reveal>Tres especificaciones que noesis <em>no</em> cumple.</h2>
+  </header>
+
+  <div class="bp-specs">
+    <article class="bp-spec" data-bp>
+      <div class="bp-frame">
+        <span class="bp-guide bp-guide--h" aria-hidden="true"></span>
+        <span class="bp-guide bp-guide--v" aria-hidden="true"></span>
+        <span class="bp-tag">DEF.01 / rechazado</span>
+        <i class="bp-h bp-h--tl" aria-hidden="true"></i><i class="bp-h bp-h--tr" aria-hidden="true"></i><i class="bp-h bp-h--bl" aria-hidden="true"></i><i class="bp-h bp-h--br" aria-hidden="true"></i>
+        <i class="bp-h bp-h--t" aria-hidden="true"></i><i class="bp-h bp-h--b" aria-hidden="true"></i><i class="bp-h bp-h--l" aria-hidden="true"></i><i class="bp-h bp-h--r" aria-hidden="true"></i>
+        <p class="bp-myth">No es <span class="kill">self-serve<i class="slash" aria-hidden="true"></i></span></p>
+        <span class="bp-ruler" aria-hidden="true"></span>
+        <span class="bp-readout" aria-hidden="true">000</span>
+      </div>
+      <p class="bp-note"><span class="bp-note-pre">» nota</span>Una escena decente pide criterio de diseño y conocimiento del motor.</p>
+    </article>
+
+    <article class="bp-spec" data-bp>
+      <div class="bp-frame">
+        <span class="bp-guide bp-guide--h" aria-hidden="true"></span>
+        <span class="bp-guide bp-guide--v" aria-hidden="true"></span>
+        <span class="bp-tag">DEF.02 / rechazado</span>
+        <i class="bp-h bp-h--tl" aria-hidden="true"></i><i class="bp-h bp-h--tr" aria-hidden="true"></i><i class="bp-h bp-h--bl" aria-hidden="true"></i><i class="bp-h bp-h--br" aria-hidden="true"></i>
+        <i class="bp-h bp-h--t" aria-hidden="true"></i><i class="bp-h bp-h--b" aria-hidden="true"></i><i class="bp-h bp-h--l" aria-hidden="true"></i><i class="bp-h bp-h--r" aria-hidden="true"></i>
+        <p class="bp-myth">No <span class="kill">reemplaza al docente<i class="slash" aria-hidden="true"></i></span></p>
+        <span class="bp-ruler" aria-hidden="true"></span>
+        <span class="bp-readout" aria-hidden="true">000</span>
+      </div>
+      <p class="bp-note"><span class="bp-note-pre">» nota</span>Es una pieza que el docente decide cuándo y cómo usar.</p>
+    </article>
+
+    <article class="bp-spec" data-bp>
+      <div class="bp-frame">
+        <span class="bp-guide bp-guide--h" aria-hidden="true"></span>
+        <span class="bp-guide bp-guide--v" aria-hidden="true"></span>
+        <span class="bp-tag">DEF.03 / rechazado</span>
+        <i class="bp-h bp-h--tl" aria-hidden="true"></i><i class="bp-h bp-h--tr" aria-hidden="true"></i><i class="bp-h bp-h--bl" aria-hidden="true"></i><i class="bp-h bp-h--br" aria-hidden="true"></i>
+        <i class="bp-h bp-h--t" aria-hidden="true"></i><i class="bp-h bp-h--b" aria-hidden="true"></i><i class="bp-h bp-h--l" aria-hidden="true"></i><i class="bp-h bp-h--r" aria-hidden="true"></i>
+        <p class="bp-myth">No es un <span class="kill">generador automático<i class="slash" aria-hidden="true"></i></span></p>
+        <span class="bp-ruler" aria-hidden="true"></span>
+        <span class="bp-readout" aria-hidden="true">000</span>
+      </div>
+      <p class="bp-note"><span class="bp-note-pre">» nota</span>La calidad la pone el autor, no el botón.</p>
+    </article>
+  </div>
+
+  <div class="lim-coda">
+    <p class="cost" data-reveal>Y una honestidad de frente: noesis se autorea con <strong>Claude Code</strong>, que
+      tiene un costo. No vamos a forzar que sea gratis al cien por ciento. Las buenas herramientas a
+      veces se pagan, y está bien decirlo sin letra chica.</p>
+  </div>
+</section>
+
+<!-- ====================== 7 · CIERRE ====================== -->
+<footer id="cierre" class="section section--dark cierre" data-section="cierre">
+  <div class="cierre-wm" data-cierre-wm aria-label="noesis.">
+    <span class="ch">n</span><span class="ch">o</span><span class="ch">e</span><span class="ch">s</span><span class="ch">i</span><span class="ch">s</span><span class="ch ch--dot">.</span>
+  </div>
+  <p class="cierre-line" data-reveal>El código está abierto para quien lo maneje.</p>
+  <nav class="cierre-links" data-reveal>
+    <a href="https://github.com/LastrarterotH/noesis-engine" target="_blank" rel="noopener" data-hover>Ver el repositorio</a>
+    <span class="div-amber" aria-hidden="true"></span>
+    <a href="manual.html" data-hover>Leer el manual</a>
+    <span class="div-amber" aria-hidden="true"></span>
+    <a href="vision.html" data-hover>La visión</a>
+  </nav>
+  <p class="cierre-author" data-reveal>Autoría y dirección: <a href="https://invocoluislastra.cl" target="_blank" rel="noopener" data-hover>Luis Lastra</a></p>
+  <p class="cierre-fine">Open source. Sin build, sin dependencias, sin tracking. Nativo de Claude.</p>
+</footer>
+
+</main>
+
+<!-- GSAP + ScrollTrigger + Lenis (smooth-scroll) por CDN: la única dependencia -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/lenis@1.1.14/dist/lenis.min.js"></script>
+<!-- el motor del propio repo, para la escena viva del hero -->
+<script type="module" src="engine/noesis-engine.js?v=125"></script>
+<!-- la coreografía -->
+<script src="main.js"></script>
+</body>
+</html>

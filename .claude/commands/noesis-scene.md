@@ -174,11 +174,14 @@ Step keys (one primary action per step; combine multiple keys if they should fir
 - `exclaim: <id>` / `surprise: <id>` / `wonder: <id>` / `flash: <id>` / `reinforce: <id>`.
 - `mood: <id>, value: 'happy', duration?: 1.4`.
 - `tone: <freq>, dur?, opts?` / `sweep: [from, to], dur?, opts?`.
+- `music: { volume: <0..1.5>, duration?: 1.2 }` — música reactiva al guion: agacha o levanta la música ambiental con un fade. `volume` es FRACCIÓN del volumen base del mood (1 = normal, 0 = silencio; el autor no necesita conocer la mezcla). Usos: bajar a ~0.35 antes de un caption fuerte, silencio súbito (`volume: 0, duration: 0.2`) en el golpe más duro, crecida leve (1.2) para la tesis final. `music: "stinger"` dispara un golpe musical (acorde del compás actual + timbal) CUANTIZADO al siguiente tiempo fuerte de la grilla: el momento de revelación aterriza en el compás. `music: { mood: "<mood>", duration?: 1.5 }` cambia el mood a MITAD de escena con crossfade, para escenas multi-acto (el inframundo de la 05 pasa a `solemn` y la primavera vuelve a `pastoral`); no combinar `mood` y `volume` en el mismo step, y usarlo solo entre actos largos (cambiarlo por beat marea). Requiere `meta.music` declarado (sin ♪ activo es no-op: la escena corre idéntica); el replay restaura volumen base y mood original solos. El validador lintea la dramaturgia: stingers a <3 s o música agachada sin restaurar al final dan warning. Fixtures: escena 11 (volumen/stinger), escena 05 (mood switch).
 - `particles: { x, y, color, count, ... }` / `floatNumber: { x, y, text }`.
-- `set: { key: value }` — assign to `world.state[key]`.
+- `set: { key: value }` — assign to `world.state[key]`; una clave con punto (`'granada.seeds'`, `'puerta.open'`) escribe la propiedad de esa entidad/prop por id.
+- `lookAt: '<id>', to: '<otroId>' | [x,y] | {x,y}` — dirige la mirada de un personaje (sin `to` la suelta). NO uses `do` para esto.
+- `jump: '<id>', duration?` — salto expresivo de una entidad.
 - `add: { key: delta }` — additive (numbers only).
 - `clamp: { key: [min, max] }` — clamp `state.key`.
-- `tween: '<key>' | '<id>.<prop>', to: <num>, duration?: 0.6, easing?: 'easeInOut'` — animate a `world.state` key (`'deuda'`) or an entity property by id (`'alma._alpha'`) without JS. Don't combine with `walk`/`meter` in the same step (all read `to`).
+- `tween: '<key>' | '<id>.<prop>', to: <num>, duration?: 0.6, easing?: 'easeInOut'` — animate a `world.state` key (`'deuda'`), an entity/prop property by id (`'alma._alpha'`, `'d1.fall'`), `'ambient.darkness'`, or a GROUP of props: `'type:tree.alpha'` (todos los props de ese type) o `'tag:primavera.alpha'` (props con ese `tag`). Don't combine with `walk`/`meter`/`lookAt` in the same step (all read `to`).
 - `chart: '<id>', show?: true | hide?: true | alpha?: <0..1>, reveal?: <0..1>, series?: '<seriesId>', duration?, easing?` — declarative charts: show/hide a top-level `charts` entry and reveal its line series (or its bars, without `series`) at the right beat. Charts draw in world space (camera push-in magnifies them). See scene 91 for the fixture.
 - `do: '<js code>'` — escape hatch, scope: `world`, `state`, `s`, `e` (last walked entity).
 - `call: '<expr>'` — eval expression, if it returns a function, invoke it.
@@ -216,7 +219,7 @@ leaveTombstone: true            show tombstone after death
 extinguishable: false           opt-in to Skinner-style fade
 extinctionThreshold: 8          s without reinforce before fade
 imitates: otherEntity           copies target's mood periodically
-lookAt: id | {x,y}              blob quieto mira a esa entidad o punto (el movimiento manda; cámbialo con `do`)
+lookAt: id | {x,y}              blob quieto mira a esa entidad o punto (el movimiento manda; cámbialo a mitad con el step `lookAt`)
 sleepable: true                 false = never sleep (scripted scenes)
 greets: true                    false = never auto-greet
 solid: true                     false = no collision with other learners
@@ -255,13 +258,23 @@ If `behavior` is set, engine auto-applies velocity, bounces off canvas edges, se
 
 **Símbolos didácticos**: `lightbulb`, `hourglass`, `scale`, `magnifier`, `key`, `trophy`, `flag` (color), `flask` (color = líquido), `globe`, `scroll`, `gear`; paisaje: `mountain`.
 
-**Notación científica/matemática**: en cualquier texto (captions, diálogos, título, body, labels) usa `_` para subíndice y `^` para superíndice: `CO_2`, `H_2O`, `x^2`, `m^3`, o varios caracteres entre llaves: `SO_4^{2-}`, `10^{-9}`, `E = mc^2`. Nunca escribas «CO2» plano. Para una ecuación con notación LaTeX completa (fracciones apiladas, raíces, griegas, operadores) envuélvela en `$...$` y usa el subconjunto LaTeX (`\frac{}{}`, `\sqrt{}`, `\Delta`, `\ln`, `\le`, `\to`, `\cdot`...): `$\Delta S = nR\ln\frac{V_f}{V_i} > 0$`. Lo natural es ponerla en un `label` y revelarla con `showLabel`.
+**Epidemiología (bespoke)**: `virus` (patógeno: cápside central con material genético que gira y una corona de spikes que rota sola; `color` tiñe la cápside, `glow` 0..1 enciende un halo rojizo de contagio que late, `alpha`; flota, no se apoya en el suelo. Ícono del contagio, para el caso cero).
+
+**Notación científica/matemática**: en cualquier texto (captions, diálogos, título, body, labels) usa `_` para subíndice y `^` para superíndice: `CO_2`, `H_2O`, `x^2`, `m^3`, o varios caracteres entre llaves: `SO_4^{2-}`, `10^{-9}`, `E = mc^2`. Nunca escribas «CO2» plano. Para una ecuación con notación LaTeX completa (fracciones apiladas, raíces, griegas, operadores) envuélvela en `$...$` y usa el subconjunto LaTeX (`\frac{}{}`, `\sqrt{}`, `\Delta`, `\ln`, `\le`, `\to`, `\cdot`...): `$\Delta S = nR\ln\frac{V_f}{V_i} > 0$`. En un `label` o el `body` (HTML) las fracciones se apilan solas. En el **canvas**, un caption con `$...$` NO apila (se aplana a `a/b` inline): para una fórmula apilada de verdad sobre el lienzo dibújala desde `onDraw` con `world.draw.math(x, y, tex, opts)`. Cubre fracción real, raíz n-ésima (`\sqrt[n]{}`), sub/super, operadores grandes con límites (`\sum_{i=1}^{n}`, `\int_a^b`, `\lim_{x\to0}`), delimitadores auto-escalables (`\left(\right)`, `\left[`, `\left\{`) y matrices/casos (`\begin{pmatrix}`, `\begin{cases}`). `opts`: `px`, `color`, `align`, `valign`, `weight`; devuelve la geometría para posicionar partes. No dibujes fracciones a mano. Batería de referencia: `tools/math-test.html`. Para una escena DECLARATIVA no escribas `onDraw`: usa el bloque top-level `formulas` (`{ id, tex, x, y, px, color, align, valign, alpha, screen?, panel? }`, con `tex` string o array de segmentos `{tex,color}` para resaltar un resultado) y el step `{ "formula": "<id>", show|hide|alpha, duration }` para revelarla/animarla. La escena 08 lo usa.
 
 **Conceptual / morph**: `field` (campo de partículas orden→desorden: `w`, `h`, `cols`, `rows`, `color`/`color2`, y `disorder` 0..1 animable con `tween "id.disorder"`; opcionales `homeFrac` = el orden ocupa solo esa fracción izquierda y el desorden esparce por todo, para un gas confinado que se expande, y `jitter` = tembleque base de gas). Para entropía, mezcla, difusión, cambio de fase, expansión libre. El desorden se ve en las partículas: no le pongas una barra.
 
 **Personajes / escena (bespoke, dibujados en vivo)**: `cat` (gato con formas suaves, no pixel: `pose` `walk`/`curl`/`fall`, `color` recolorea el pelaje entero, `dir` espeja, `alpha` 0..1 lo vuelve fantasma para doble exposición, respira en `curl`) y `vault` (caja fuerte de frente en dos capas que el z-index intercala con otros props: `face` `back`/`front`, `glass` 0..1 vuelve la cara translúcida para ver el interior, `wheel` en radianes gira el volante, `lift` en celdas la eleva sobre una mesa con ruedas, `color` tiñe el metal).
 
 **Mitología / naturaleza (bespoke salvo donde se indica)**: `pomegranate` (granada partida con anillo de seis semillas glossy; `seeds` 0..6, comerlas las quita una a una), `column` (sprite: columna de inframundo), `wheat` (espigas de trigo dorado con vaivén), `chasm` (grieta en la tierra con luz rojiza pulsante; `open` 0..1, animable con `tween "id.open"`), `wonderflower` (flor que cicla de color con resplandor) y `tree-bare` (árbol desnudo de invierno con nieve; gemelo de `tree`, se cruza con él vía `alpha` por temporada).
+
+**IA / tecnología (bespoke)**: `aiorb` (orbe de IA: anillo segmentado que rota, núcleo-lente que late y puntos en órbita; `color`, `alpha`; flota, no se apoya en el suelo), `notebook` (cuaderno de espiral: tapa con `color`, anillos metálicos y etiqueta; `glow` 0..1 para el resplandor cuando la IA procesa), `genially` (logo de Genially: aro arcoíris, disco navy y espiral blanca con punto; `color` tiñe el disco, `spin` en radianes gira el aro, `glow` 0..1, `alpha`) y `basilisk` (criatura digital: `eye` 0..1 modula su poder, emite chispas verde/cian y lluvia de código). También `grinder` (la moledora: caja de hierro con embudo arriba, dos engranajes que muerden, ranura de salida y patas; `color` tiñe el hierro, `crank` en radianes gira la manivela y los engranajes, `glow` 0..1 enciende la luz interna que se filtra por la boca, las junturas y la ranura, `alpha`. En oscuridad su glow propio solo se ve dentro de un `focus` o `light` que perfore el scrim).
+
+**Paradoja de Zenón (bespoke)**: `turtle` (la tortuga: caparazón en domo con escudos en tres tonos, piel verde-amarilla, cuatro patas y una cabeza que asoma y se mece sola; `color` tiñe el caparazón, `dir` espeja, `alpha`. Se mueve por el mundo con `tween "id.x"` o `path`, no camina sola). Un prop no habla: para darle voz, ancla un learner invisible (`_alpha: 0`) a su posición en `onStep` y emite los `say` desde ahí.
+
+**Comunes / pastoreo (bespoke)**: `pasture` (el prado común: manto de hierba con tréboles, ranúnculos y dientes de león sobre una banda de suelo; `wear` 0..1 lo agota, abriendo claros de tierra que nacen en el centro pisoteado y crecen hacia los bordes hasta fusionarse, mientras las flores se cierran y desaparecen; `w` ancho, `depth` fondo, `color` el verde, animable con `tween "id.wear"`; el verde que falta deja ver el piso `earth`), `sheep` (oveja de lana en tres tonos con cabeza oscura y respiración suave; `color` tiñe el vellón, `dir` espeja: para un rebaño que crece, suma varias) y `fence` (cerca de madera con postes y travesaños, sombra y veta; `panels` controla el largo, `color` la madera, `alpha` para que entre al cerrar el guion).
+
+**Cuentos de los Grimm (bespoke)**: `tower` (torre de cuento con sillería en tres tonos, almenas, techo cónico y una ventana arcada en lo alto; `braid` 0..1 es la trenza dorada que cae del alféizar y ondea sola, `glow` 0..1 enciende la ventana, `color` tiñe la piedra), `oven` (horno de ladrillo abovedado con boca de arco; `fire` o `glow` 0..1 enciende lenguas de fuego y el resplandor que sale por la boca, animadas solas), `candy-house` (casa de pan de jengibre con glaseado, caramelos en los aleros, piruletas, ventanas y humo en la chimenea), `shoe` (zapatilla de tacón; `color` la tiñe -oro, o rojo cuando la sangre la llena-, `glass` 0..1 la vuelve de cristal) y `mirror` (espejo mágico ovalado con marco dorado sobre un pie; `glow` 0..1 enciende el aura mágica y un destello que recorre el cristal). Todos se apoyan en el suelo: su `(x, y)` es la base. Para teñir un prop en vivo, cambia `prop.color` en un `do`.
 
 **`alpha` en sprites y capas**: además de los bespoke, los props de sprite y las `canvas.layers` aceptan `alpha` (0..1), animable con `tween "id.alpha"` (flores que brotan/marchitan) o, para una capa de fondo, con un `do` que tweenee el objeto de `canvas.layers`. Declara un `alpha` inicial para que el tween tenga origen.
 
@@ -415,12 +428,12 @@ El engine estampa "noesis." en la esquina inferior derecha de cada lienzo (ver `
   <div class="wordmark">noesis-engine · escena NN · {{slug}}</div>
   <noesis-scene src="../scenes/NN-slug.json" lang="es"></noesis-scene>
 </div>
-<script src="../engine/noesis-engine.js?v=NN-1"></script>
+<script type="module" src="../engine/noesis-engine.js?v=94"></script>
 </body>
 </html>
 ```
 
-The cache-buster version (`?v=...`) should be unique per scene so the browser fetches a fresh engine bytecode bundle when the user reloads.
+**El `type="module"` es obligatorio:** el engine se carga como árbol de ES modules; sin él, el `import` de la primera línea de `noesis-engine.js` lanza `SyntaxError: Cannot use import statement outside a module`, el custom element nunca se registra y `<noesis-scene>` queda inerte (no dibuja nada). El cache-buster (`?v=...`) NO es por-escena: usa el valor unificado vigente del proyecto (hoy `?v=94`, ver la regla de cache busters en `CLAUDE.md`), el mismo que llevan todos los `examples/*.html` y los imports internos de `engine/`. Comprueba el valor actual con `grep -rho '?v=[0-9]*' engine examples | sort -u`.
 
 ## Output format when reporting back
 

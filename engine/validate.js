@@ -10,10 +10,10 @@
 // hooks) o se escanean del código fuente del motor (buildVocab recibe un
 // lector de fuentes), así el validador no se desincroniza al crecer el motor.
 
-import { PROP_SPRITES } from './prop-sprites.js?v=80';
-import { SKY_PRESETS } from './sky-presets.js?v=80';
-import { HOOK_NAMES, HOOK_ARGS } from './hooks.js?v=80';
-import { compileForm, FORM_TYPES } from './forms.js?v=80';
+import { PROP_SPRITES } from './prop-sprites.js?v=145';
+import { SKY_PRESETS } from './sky-presets.js?v=145';
+import { HOOK_NAMES, HOOK_ARGS } from './hooks.js?v=145';
+import { compileForm, FORM_TYPES } from './forms.js?v=145';
 
 // Fuentes del motor que buildVocab escanea con regex (enums de despachos
 // if/else que no se exportan como datos).
@@ -69,19 +69,24 @@ const FLOOR_PROPS = new Set([
   'cactus', 'palm', 'crate', 'barrel', 'streetlamp', 'building', 'lighthouse', 'boat',
   'pedestal', 'bonfire', 'swing', 'door', 'sign', 'chest', 'switch', 'path-tile',
   'flag', 'mountain', 'domino', 'cat', 'vault', 'wheat', 'column', 'wonderflower', 'chasm', 'tree-bare', 'basilisk',
+  'sheep', 'fence', 'turtle', 'grinder',
+  'tower', 'oven', 'candy-house', 'shoe', 'mirror', 'wall', 'coffee', 'notebook', 'umbrella',
+  'bistro-table', 'bistro-chair', 'laptop',
 ]);
 
 const LABEL_ANCHORS = ['top-left', 'top', 'top-right', 'left', 'center', 'right', 'bottom-left', 'bottom', 'bottom-right'];
 const HEALTH_KINDS = ['normal', 'sick', 'feverish', 'frozen'];
 const ZONE_EFFECTS = ['mood', 'reinforce', 'quiet', 'sleep'];
 
-const TOP_KEYS = ['meta', 'text', 'hint', 'hintDuration', 'canvas', 'entities', 'props', 'labels', 'walls', 'zones', 'ambient', 'hooks', 'script', 'meters', 'charts', 'sets', 'seed', 'form'];
+const TOP_KEYS = ['meta', 'text', 'hint', 'hintDuration', 'canvas', 'entities', 'props', 'labels', 'walls', 'zones', 'ambient', 'hooks', 'script', 'meters', 'charts', 'formulas', 'sets', 'seed', 'form'];
+const FORMULA_KEYS = ['id', 'tex', 'x', 'y', 'px', 'color', 'weight', 'family', 'align', 'valign', 'alpha', 'screen', 'panel'];
+const FORMULA_PANEL_KEYS = ['title', 'titleColor', 'bg', 'border', 'pad', 'radius'];
 const SET_KEYS = ['id', 'cx', 'cy', 'zoom'];
-const CHART_KEYS = ['id', 'type', 'x', 'y', 'w', 'h', 'xDomain', 'yDomain', 'xTicks', 'yTicks', 'xLabel', 'yLabel', 'xFormat', 'yFormat', 'title', 'target', 'panel', 'alpha', 'reveal', 'gap', 'color', 'series', 'values'];
-const SERIES_KEYS = ['id', 'color', 'width', 'fill', 'dash', 'dots', 'data', 'reveal'];
+const CHART_KEYS = ['id', 'type', 'x', 'y', 'w', 'h', 'xDomain', 'yDomain', 'xScale', 'yScale', 'xTicks', 'yTicks', 'xLabel', 'yLabel', 'xFormat', 'yFormat', 'title', 'target', 'panel', 'alpha', 'reveal', 'gap', 'color', 'series', 'values'];
+const SERIES_KEYS = ['id', 'color', 'width', 'fill', 'dash', 'dots', 'data', 'fn', 'reveal', 'head'];
 const CANVAS_KEYS = ['w', 'h', 'bg', 'ss', 'sky', 'horizon', 'floor', 'safeArea', 'ysort', 'layers'];
-const ENTITY_KEYS = ['id', 'type', 'x', 'y', 'name', 'body', 'color2', 'scale', 'hero', 'mood', 'accessory', 'accessoryColor', 'behavior', 'look', 'lookAt', 'health', 'extinguishable', 'extinctionThreshold', 'ageRate', 'maxAge', 'skybound', 'greets', 'sleepable', 'solid', 'stage'];
-const PROP_KEYS = ['type', 'id', 'x', 'y', 'scale', 'color', 'color2', 'beakColor', 'interactive', 'solid', 'solidBox', 'z', 'dir', 'state', 'open', 'label', 'light', 'fall', 'w', 'h', 'cols', 'rows', 'disorder', 'homeFrac', 'jitter', 'pose', 'alpha', 'glass', 'wheel', 'face', 'lift', 'seeds', 'eye', 'glow'];
+const ENTITY_KEYS = ['id', 'type', 'x', 'y', 'name', 'body', 'color2', 'scale', 'hero', 'mood', 'accessory', 'accessoryColor', 'behavior', 'look', 'lookAt', 'health', 'extinguishable', 'extinctionThreshold', 'ageRate', 'maxAge', 'skybound', 'greets', 'sleepable', 'solid', 'stage', 'noShadow'];
+const PROP_KEYS = ['type', 'id', 'tag', 'x', 'y', 'scale', 'color', 'color2', 'beakColor', 'interactive', 'solid', 'solidBox', 'z', 'dir', 'state', 'open', 'label', 'light', 'fall', 'w', 'h', 'cols', 'rows', 'disorder', 'homeFrac', 'jitter', 'pose', 'alpha', 'glass', 'wheel', 'face', 'lift', 'seeds', 'eye', 'glow', 'spin', 'wear', 'depth', 'panels', 'crank', 'braid', 'fire', 'live', 'far'];
 const LABEL_KEYS = ['id', 'html', 'text', 'x', 'y', 'anchor', 'style', 'hidden'];
 const METER_KEYS = ['id', 'label', 'x', 'y', 'w', 'h', 'color', 'max', 'value', 'showValue'];
 // Un step puede combinar varias acciones; esto es la unión de claves que
@@ -91,13 +96,13 @@ const STEP_KEYS = [
   'walk', 'to', 'speed', 'path', 'points', 'duration', 'easing', 'curve', 'fromCurrent',
   'stop', 'say', 'think', 'text', 'exclaim', 'surprise', 'wonder', 'mood', 'value',
   'flash', 'reinforce', 'tone', 'dur', 'opts', 'sweep', 'particles', 'floatNumber',
-  'celebrate', 'cry', 'thinking', 'appear', 'vanish', 'camera', 'caption', 'meter',
-  'tween', 'chart', 'show', 'hide', 'alpha', 'series', 'reveal',
+  'celebrate', 'cry', 'thinking', 'jump', 'lookAt', 'appear', 'vanish', 'camera', 'caption', 'meter',
+  'tween', 'chart', 'formula', 'show', 'hide', 'alpha', 'series', 'reveal',
   'focus', 'off', 'radius', 'color', 'style', 'scene', 'move', 'weather', 'intensity',
-  'showLabel', 'hideLabel',
+  'showLabel', 'hideLabel', 'music',
   'set', 'add', 'clamp', 'do', 'call', 'runScript', 'runScriptOpts',
 ];
-const STEP_ENTITY_REFS = ['walk', 'stop', 'say', 'think', 'exclaim', 'surprise', 'wonder', 'mood', 'flash', 'reinforce', 'celebrate', 'cry', 'thinking', 'appear', 'vanish'];
+const STEP_ENTITY_REFS = ['walk', 'stop', 'say', 'think', 'exclaim', 'surprise', 'wonder', 'mood', 'flash', 'reinforce', 'celebrate', 'cry', 'thinking', 'appear', 'vanish', 'jump', 'lookAt'];
 
 const ANCHOR_RE = /^(left|right|center|top|bottom|middle)([+-]\d+(\.\d+)?)?$/;
 const COLOR_RE = /^(#[0-9a-fA-F]{3,8}|rgba?\(|hsla?\()/;
@@ -222,6 +227,140 @@ function checkMovement(ctx, config) {
       }
     }
   });
+}
+
+// Alcanzabilidad de walk/path: los clamps del motor (banda de subtítulos y
+// horizonte) retienen al learner por debajo/encima de una línea; un destino más
+// allá de esa línea NUNCA se alcanza (el umbral de arribo es 4 px), y un
+// `waitFor: "arrive"` sobre él CUELGA el guion para siempre, sin error de
+// runtime. También caza un path con loop (que nunca termina) esperado por
+// arrive, y un `arrive:<id>` huérfano que no espera a nada. Estático y lineal:
+// sigue el guion top-level, no ramas ni cambios por `do`. Números en sintonía
+// con learner.js (CAPTION_BAND 56, NAME_RESERVE 20, umbral de arribo 4).
+function checkReachability(ctx, config) {
+  const steps = Array.isArray(config.script) ? config.script : null;
+  if (!steps) return;
+  const c = config.canvas || {};
+  const H = typeof c.h === 'number' ? c.h : 400;
+  const hasSky = c.sky != null;
+  const horizonY = Math.round(H * (typeof c.horizon === 'number' ? c.horizon : 0.45));
+  const footBand = H - 56 - 20;              // CAPTION_BAND + NAME_RESERVE
+  const ARRIVE = 4;                          // stopAt default del walkTo (learner.js)
+  const hasHooks = Object.values(config.hooks || {}).some(v => typeof v === 'string' && v.trim());
+  const ents = new Map();
+  for (const e of (config.entities || [])) {
+    if (!e || !e.id) continue;
+    const half = ((e.hero !== false ? 11 : 7) * (typeof e.scale === 'number' ? e.scale : 4)) / 2;
+    ents.set(e.id, { yMax: footBand - half, yMin: (hasSky && e.skybound !== true) ? horizonY : 0 });
+  }
+  // Razón por la que una `y` destino es inalcanzable para una entidad (o null).
+  const yReason = (info, y) => {
+    if (y == null) return null;
+    if (y > info.yMax + ARRIVE) return `su y=${Math.round(y)} cae bajo la banda de subtítulos (el motor lo clampa a y=${Math.round(info.yMax)} y el arribo, umbral ${ARRIVE}px, nunca ocurre). Baja el destino a y<=${Math.round(info.yMax)}`;
+    if (info.yMin && y < info.yMin - ARRIVE) return `su y=${Math.round(y)} queda sobre el horizonte (el motor lo clampa a y=${info.yMin}). Marca la entidad "skybound": true o baja el destino a y>=${info.yMin}`;
+    return null;
+  };
+  const lastMove = new Map();   // id -> { reason, loop, stepIdx }
+  let lastMover = null;
+  steps.forEach((s, i) => {
+    if (!s || typeof s !== 'object') return;
+    if (s.walk != null && ents.has(s.walk)) {
+      const info = ents.get(s.walk);
+      const t = s.to;
+      let ty = null;
+      if (Array.isArray(t)) ty = resolveCoord(t[1], H);
+      else if (t && typeof t === 'object' && !Array.isArray(t)) ty = resolveCoord(t.y, H);
+      // destino = otra entidad (string): su posición ya está clampeada → alcanzable; no se evalúa.
+      const reason = yReason(info, ty);
+      lastMove.set(s.walk, { reason, loop: false, kind: 'walk', stepIdx: i });
+      lastMover = s.walk;
+      if (reason) ctx.warn(`script[${i}].to`, `"${s.walk}" camina a un destino inalcanzable: ${reason}. Aunque no cuelgue el guion, el personaje no llega adonde lo mandas.`);
+    }
+    if (s.path != null && ents.has(s.path) && Array.isArray(s.points) && s.points.length) {
+      const info = ents.get(s.path);
+      const last = s.points[s.points.length - 1];
+      const ly = resolveCoord(Array.isArray(last) ? last[1] : (last && last.y), H);
+      const reason = yReason(info, ly);
+      lastMove.set(s.path, { reason, loop: s.loop === true, kind: 'path', stepIdx: i });
+      lastMover = s.path;
+      // Un `path` (followPath) llega por DISTANCIA recorrida, no por proximidad
+      // (learner.js: `_dist += speed*dt` hasta `>= _total`), así que SIEMPRE
+      // completa aunque el clamp impida tocar el waypoint: no cuelga. Solo es
+      // aviso visual (no llega adonde apuntas); el cuelgue real es el loop.
+      if (reason) ctx.warn(`script[${i}].points`, `el path de "${s.path}" termina en un punto inalcanzable: ${reason}. El personaje no llega ahí (aunque el path completa igual, no cuelga).`);
+    }
+    const wf = s.waitFor;
+    if (wf === 'arrive' || (typeof wf === 'string' && wf.startsWith('arrive:'))) {
+      const target = wf === 'arrive' ? lastMover : wf.slice(7);
+      if (!target) return;
+      const mv = lastMove.get(target);
+      if (!mv) {
+        if (wf !== 'arrive' && ents.has(target)) {
+          ctx.warn(`script[${i}].waitFor`, `"arrive:${target}" pero "${target}" no tiene ningún walk/path antes en el guion: no espera a nada (resuelve al instante). ¿Querías esperar a otra entidad, o mover a "${target}" primero?`);
+        }
+        return;
+      }
+      // Cuelga SOLO si: (a) un path con loop:true (nunca termina), o (b) un
+      // `walk` (walkTo, llegada por proximidad d<4px) a un destino inalcanzable.
+      // Un `path` no-loop a un punto inalcanzable NO cuelga (completa por
+      // distancia): ese caso quedó en el aviso visual de arriba, no en ERROR.
+      const hangs = mv.loop || (mv.reason && mv.kind === 'walk');
+      if (hangs) {
+        const why = mv.loop
+          ? `su path (script[${mv.stepIdx}]) tiene "loop": true y nunca termina`
+          : `su destino es inalcanzable (${mv.reason})`;
+        const msg = `CUELGA la escena: "waitFor: ${wf}" espera a que "${target}" llegue, pero ${why}. El arribo nunca ocurre y el guion se congela para siempre (nunca aparece "Ver nuevamente"). Corrige el walk/path de "${target}" (script[${mv.stepIdx}]) o quita el waitFor.`;
+        if (hasHooks) ctx.warn(`script[${i}].waitFor`, msg + ' (La escena tiene hooks: si un `do` reubica a la entidad o el destino en runtime, ignora esto.)');
+        else ctx.err(`script[${i}].waitFor`, msg);
+      }
+    }
+  });
+}
+
+// Ids duplicados: byId (y todos los steps que resuelven por id) devuelven el
+// PRIMERO, así que un segundo objeto con el mismo id queda indirigible sin
+// aviso: los walk/say/tween/focus dirigen siempre al primero. Chequea unicidad
+// dentro de cada colección, y avisa si un id de prop pisa uno de entidad.
+function checkDuplicateIds(ctx, config) {
+  const scan = (arr, label, hasId) => {
+    const seen = new Map();
+    (arr || []).forEach((o, i) => {
+      const id = o && o.id;
+      if (id == null) return;
+      if (seen.has(id)) {
+        ctx.err(`${label}[${i}].id`, `"${id}" ya está declarado en ${label}[${seen.get(id)}]: los steps (walk/say/tween/focus...) siempre dirigen al primero y este queda indirigible y quieto. Dale un id único.`);
+      } else seen.set(id, i);
+    });
+    return seen;
+  };
+  const entIds = scan(config.entities, 'entities');
+  const propIds = scan(config.props, 'props');
+  const chartIds = scan(config.charts, 'charts');
+  scan(config.labels, 'labels');
+  scan(config.meters, 'meters');
+  scan(config.formulas, 'formulas');
+  // series por chart
+  (config.charts || []).forEach((c, i) => {
+    if (c && Array.isArray(c.series)) scan(c.series, `charts[${i}].series`);
+  });
+  // Colisiones ENTRE colecciones que comparten el namespace de resolución de
+  // focus/camera/tween/path: la precedencia es entidad > prop > chart (byId
+  // busca entidades primero; focus/camera resuelven entidad, luego prop, luego
+  // chart). Un id que coincide entre dos deja al de menor precedencia
+  // indirigible (p. ej. el push-in sobre un chart homónimo de una entidad nunca
+  // ocurre). Aviso, no error: puede ser coincidencia inofensiva si nunca se
+  // referencia por id.
+  const order = [['entities', entIds], ['props', propIds], ['charts', chartIds]];
+  for (let a = 0; a < order.length; a++) {
+    for (let b = a + 1; b < order.length; b++) {
+      const [laA, mapA] = order[a], [laB, mapB] = order[b];
+      for (const [id, iB] of mapB) {
+        if (mapA.has(id)) {
+          ctx.warn(`${laB}[${iB}].id`, `"${id}" coincide con el id de ${laA}[${mapA.get(id)}]: focus/camera/tween/byId resuelven ${laA} antes que ${laB}, así que una referencia a "${id}" apuntará a ${laA.slice(0, -1)}, no a este ${laB.slice(0, -1)}. Usa ids distintos.`);
+        }
+      }
+    }
+  }
 }
 
 function checkTextStyle(ctx, path, value) {
@@ -477,6 +616,11 @@ export function createValidator(vocab) {
         ctx.err(`${p}.${k}`, `${k} es [min, max] numérico.`);
       }
     }
+    for (const k of ['xScale', 'yScale']) {
+      if (c[k] != null && c[k] !== 'log' && c[k] !== 'linear') ctx.err(`${p}.${k}`, `${k} es "log" (para fenómenos exponenciales) o "linear" (default).`);
+    }
+    if (c.xScale === 'log' && Array.isArray(c.xDomain) && typeof c.xDomain[0] === 'number' && c.xDomain[0] <= 0) ctx.err(`${p}.xDomain`, 'con xScale "log" el dominio debe ser > 0 (el log de 0 o negativo no existe). Usa un mínimo positivo, ej. [1, 1000].');
+    if (c.yScale === 'log' && Array.isArray(c.yDomain) && typeof c.yDomain[0] === 'number' && c.yDomain[0] <= 0) ctx.err(`${p}.yDomain`, 'con yScale "log" el dominio debe ser > 0. Usa un mínimo positivo, ej. [1, 1000000].');
     if (c.target != null) {
       if (typeof c.target !== 'object' || typeof c.target.y !== 'number') {
         ctx.err(`${p}.target`, 'target es { "y": <número>, "label": "..." } (línea de meta punteada).');
@@ -492,8 +636,14 @@ export function createValidator(vocab) {
         for (const k of Object.keys(sr)) {
           if (!SERIES_KEYS.includes(k)) ctx.warn(`${sp}.${k}`, `clave desconocida. Conocidas: ${list(SERIES_KEYS)}.`);
         }
-        if (!Array.isArray(sr.data) || !sr.data.length || sr.data.some(pt => !Array.isArray(pt) || pt.length !== 2 || pt.some(n => typeof n !== 'number'))) {
-          ctx.err(`${sp}.data`, 'data es un array de puntos [x, y] numéricos, ej. [[2006, 0], [2007, 5]].');
+        // Una serie se declara con `data` (puntos) O `fn` (expresión en x).
+        if (typeof sr.fn === 'string' && sr.fn.trim()) {
+          compiles(ctx, `${sp}.fn`, ['x'], 'return (' + sr.fn + ');');
+        } else if (!Array.isArray(sr.data) || !sr.data.length || sr.data.some(pt => !Array.isArray(pt) || pt.length !== 2 || pt.some(n => typeof n !== 'number'))) {
+          ctx.err(`${sp}.data`, 'data es un array de puntos [x, y] numéricos (ej. [[2006, 0], [2007, 5]]), o declara la serie como función con "fn": "exp(0.8*x)" (se muestrea sobre el xDomain).');
+        }
+        if (sr.head != null && sr.head !== true && (typeof sr.head !== 'object' || Array.isArray(sr.head))) {
+          ctx.err(`${sp}.head`, 'head es true (punto viajero por defecto) o un objeto { r, color, pulse, guides, label }.');
         }
       });
     } else if (type === 'bars') {
@@ -507,6 +657,88 @@ export function createValidator(vocab) {
     checkTextStyle(ctx, `${p}.title`, c.title);
     checkTextStyle(ctx, `${p}.xLabel`, c.xLabel);
     checkTextStyle(ctx, `${p}.yLabel`, c.yLabel);
+    // Cruce datos vs dominios: lo que el validador no atrapaba y CLAUDE.md marca
+    // en el checklist ("ajusta yDomain a los datos o la curva queda aplastada y
+    // la target inalcanzable"). El motor cae a [0,1] cuando falta el dominio
+    // (world.js), así que un dominio AUSENTE se trata como [0,1] efectivo para
+    // los chequeos de fuera-de-rango (datos fuera de [0,1] sin declararlo se
+    // dibujan fuera del marco). La "curva aplastada" solo se avisa con yDomain
+    // DECLARADO (con default [0,1] podría ser una escala intencional). Warnings.
+    const okDom = (d) => Array.isArray(d) && d.length === 2 && d.every(n => typeof n === 'number') && d[1] > d[0];
+    const yDdecl = okDom(c.yDomain) ? c.yDomain : null;   // declarado y válido
+    const xD = okDom(c.xDomain) ? c.xDomain : [0, 1];      // efectivo (default del motor)
+    const yD = yDdecl || [0, 1];
+    const dtxt = (dcl) => dcl ? '' : ' (no lo declaraste: el motor usa [0, 1] por defecto)';
+    if (type === 'line' && Array.isArray(c.series)) {
+      let ymin = Infinity, ymax = -Infinity, flaggedOut = false;
+      for (const sr of c.series) {
+        if (!sr || !Array.isArray(sr.data)) continue;
+        for (const pt of sr.data) {
+          if (!Array.isArray(pt) || pt.length !== 2 || typeof pt[1] !== 'number') continue;
+          const [x, y] = pt;
+          ymin = Math.min(ymin, y); ymax = Math.max(ymax, y);
+          if (!flaggedOut && typeof x === 'number' && (x < xD[0] || x > xD[1])) {
+            ctx.warn(`${p}.series`, `un punto [${x}, ${y}] cae fuera de xDomain [${xD[0]}, ${xD[1]}]${dtxt(okDom(c.xDomain))}: se dibuja fuera del marco. Declara/amplía xDomain para incluir todos los datos.`); flaggedOut = true;
+          }
+          if (!flaggedOut && (y < yD[0] || y > yD[1])) {
+            ctx.warn(`${p}.series`, `un punto [${x}, ${y}] cae fuera de yDomain [${yD[0]}, ${yD[1]}]${dtxt(yDdecl)}: se dibuja fuera del marco. Declara/amplía yDomain (~[${Math.floor(Math.min(0, ymin))}, ${Math.ceil(ymax)}]).`); flaggedOut = true;
+          }
+        }
+      }
+      // La "curva aplastada" no aplica con yScale log (comprimir es el punto).
+      if (!flaggedOut && yDdecl && c.yScale !== 'log' && isFinite(ymin) && isFinite(ymax)) {
+        const frac = (ymax - ymin) / (yDdecl[1] - yDdecl[0]);
+        if (frac < 0.15) {
+          ctx.warn(`${p}.yDomain`, `los datos ocupan solo ${Math.round(frac * 100)}% del yDomain [${yDdecl[0]}, ${yDdecl[1]}]: la curva queda aplastada contra el piso y no se lee. Ajusta yDomain al rango real de los datos (~[${Math.floor(ymin)}, ${Math.ceil(ymax)}]).`);
+        }
+      }
+    }
+    if (type === 'bars' && Array.isArray(c.values)) {
+      for (const v of c.values) {
+        const val = v && typeof v === 'object' ? v.value : v;
+        if (typeof val === 'number' && (val > yD[1] || val < Math.min(0, yD[0]))) {
+          ctx.warn(`${p}.values`, `una barra (value=${val}) excede yDomain [${yD[0]}, ${yD[1]}]${dtxt(yDdecl)}: se dibuja fuera del marco. Declara/amplía yDomain al máximo de los datos.`); break;
+        }
+      }
+    }
+    if (c.target && typeof c.target.y === 'number' && (c.target.y < yD[0] || c.target.y > yD[1])) {
+      ctx.warn(`${p}.target`, `la meta (target.y=${c.target.y}) cae fuera de yDomain [${yD[0]}, ${yD[1]}]${dtxt(yDdecl)}: la línea de meta queda fuera del marco (inalcanzable en pantalla). Incluye la meta dentro de yDomain.`);
+    }
+  }
+
+  function vFormula(ctx, f, i) {
+    const p = `formulas[${i}]`;
+    if (!f || typeof f !== 'object') return ctx.err(p, 'cada fórmula es un objeto { "id", "tex", ... }.');
+    if (!f.id || typeof f.id !== 'string') ctx.err(`${p}.id`, 'falta el id (el step "formula" lo usa para mostrarla/animarla).');
+    // tex: string, o array de strings / { tex, color } (segmentos en fila).
+    const segs = Array.isArray(f.tex) ? f.tex : [f.tex];
+    if (f.tex == null || !segs.some(s => (typeof s === 'string' && s.trim()) || (s && typeof s === 'object' && typeof s.tex === 'string' && s.tex.trim()))) {
+      ctx.err(`${p}.tex`, 'falta "tex": la ecuación LaTeX (un string, o un array de segmentos { "tex", "color" } para pintar partes en distinto color, ej. un resultado resaltado).');
+    }
+    segs.forEach((s, j) => {
+      if (s && typeof s === 'object' && !Array.isArray(s)) {
+        if (typeof s.tex !== 'string') ctx.err(`${p}.tex[${j}].tex`, 'cada segmento es { "tex": "...", "color"? }.');
+        if (s.color != null && !COLOR_RE.test(s.color)) ctx.warn(`${p}.tex[${j}].color`, `"${s.color}" no parece un color CSS.`);
+      }
+    });
+    for (const k of Object.keys(f)) {
+      if (!FORMULA_KEYS.includes(k)) ctx.warn(`${p}.${k}`, `clave desconocida. Conocidas: ${list(FORMULA_KEYS)}.`);
+    }
+    for (const k of ['x', 'y']) {
+      if (f[k] != null) { const r = isCoord(f[k]); if (r !== true) ctx.err(`${p}.${k}`, r); }
+    }
+    if (f.align != null && !['left', 'center', 'right'].includes(f.align)) ctx.err(`${p}.align`, 'align es "left", "center" o "right".');
+    if (f.valign != null && !['baseline', 'middle', 'top', 'bottom'].includes(f.valign)) ctx.err(`${p}.valign`, 'valign es "baseline", "middle", "top" o "bottom".');
+    if (f.color != null && !COLOR_RE.test(f.color)) ctx.warn(`${p}.color`, `"${f.color}" no parece un color CSS.`);
+    if (f.alpha != null && (typeof f.alpha !== 'number' || f.alpha < 0 || f.alpha > 1)) ctx.warn(`${p}.alpha`, 'alpha es la opacidad inicial 0..1 (usa 0 para revelarla luego con el step "formula").');
+    if (f.panel != null && f.panel !== true && (typeof f.panel !== 'object' || Array.isArray(f.panel))) {
+      ctx.err(`${p}.panel`, 'panel es true (tarjeta por defecto) o un objeto { title, bg, border, pad, radius }.');
+    } else if (f.panel && typeof f.panel === 'object') {
+      for (const k of Object.keys(f.panel)) {
+        if (!FORMULA_PANEL_KEYS.includes(k)) ctx.warn(`${p}.panel.${k}`, `clave desconocida del panel. Conocidas: ${list(FORMULA_PANEL_KEYS)}.`);
+      }
+      checkTextStyle(ctx, `${p}.panel.title`, f.panel.title);
+    }
   }
 
   function vSteps(ctx, steps, p, scope) {
@@ -565,6 +797,35 @@ export function createValidator(vocab) {
         else ctx.err(`${p}.path`, msg);
       }
     }
+    if (s.music != null) {
+      const m = s.music;
+      if (m === 'stinger') {
+        // ok: golpe musical cuantizado al siguiente tiempo fuerte de la grilla
+      } else if (m && typeof m === 'object' && !Array.isArray(m)) {
+        for (const k of Object.keys(m)) {
+          if (!['volume', 'duration', 'mood'].includes(k)) {
+            ctx.err(`${p}.music.${k}`, `clave desconocida en music. Válidas: volume (0..1.5, fracción del volumen base del mood), mood (cambio de mood con crossfade), duration (segundos del fade).`);
+          }
+        }
+        if (m.mood != null && m.volume != null) {
+          ctx.err(`${p}.music`, 'mood y volume no van en el mismo step: el cambio de mood arranca en el volumen base del nuevo mood; agacha o levanta con un step aparte.');
+        } else if (m.mood != null) {
+          if (typeof m.mood !== 'string' || !MUSIC_MOODS.includes(m.mood)) {
+            ctx.err(`${p}.music.mood`, `"${m.mood}" no es un mood de música. Usa uno de: ${list(MUSIC_MOODS)}.`);
+          }
+        } else if (typeof m.volume !== 'number' || m.volume < 0 || m.volume > 1.5) {
+          ctx.err(`${p}.music.volume`, 'volume es una FRACCIÓN del volumen base del mood: número entre 0 (silencio) y 1.5 (1 = volumen normal).');
+        }
+        if (m.duration != null && (typeof m.duration !== 'number' || m.duration <= 0)) {
+          ctx.err(`${p}.music.duration`, 'duration del fade en segundos: número positivo.');
+        }
+      } else {
+        ctx.err(`${p}.music`, 'music es { "volume": 0..1.5 } (fracción del volumen base), { "mood": "<mood>" } (cambio con crossfade) o el string "stinger" (golpe cuantizado a la grilla); duration opcional en los objetos.');
+      }
+      if (!scope.hasMusic) {
+        ctx.warn(`${p}.music`, 'la escena no declara meta.music, así que este step será un no-op. Declara el mood en meta.music para que tenga efecto.');
+      }
+    }
     for (const k of ['say', 'think']) {
       if (s[k] != null) {
         if (typeof s.text !== 'string' || !s.text.trim()) ctx.err(`${p}.text`, `${k} necesita "text" con el diálogo.`);
@@ -582,19 +843,37 @@ export function createValidator(vocab) {
       if (!scope.meterIds.has(s.meter)) ctx.err(`${p}.meter`, `"${s.meter}" no es el id de ningún meter declarado (${list(scope.meterIds) || 'ninguno'}).`);
       if (s.to == null) ctx.warn(`${p}.to`, 'meter sin "to" no cambia el valor.');
     }
-    const toConsumers = ['walk', 'meter', 'tween'].filter(k => s[k] != null);
+    const toConsumers = ['walk', 'meter', 'tween', 'lookAt'].filter(k => s[k] != null);
     if (toConsumers.length > 1) {
-      ctx.err(p, `un step no puede combinar ${toConsumers.join(' + ')}: los tres leen "to". Sepáralos en steps distintos.`);
+      ctx.err(p, `un step no puede combinar ${toConsumers.join(' + ')}: todos leen "to". Sepáralos en steps distintos.`);
+    }
+    if (s.lookAt != null) {
+      const t = s.to;
+      if (t != null && typeof t !== 'string' && !(Array.isArray(t) && t.length === 2) && !(t && typeof t === 'object' && t.x != null && t.y != null)) {
+        ctx.err(`${p}.to`, 'lookAt mira hacia "to": el id de otra entidad, un punto [x,y] o {x,y}. Sin "to" (o con null) suelta la mirada.');
+      }
+      if (typeof t === 'string' && !scope.entityIds.has(t) && !scope.hasHooks) {
+        ctx.err(`${p}.to`, `"${t}" no es el id de ninguna entidad declarada (${list(scope.entityIds) || 'ninguna'}).`);
+      }
     }
     if (s.tween != null) {
-      if (typeof s.tween !== 'string') ctx.err(`${p}.tween`, 'tween es la clave de state a animar ("deuda"), "idEntidad.propiedad" ("alma._alpha") o "ambient.darkness".');
+      if (typeof s.tween !== 'string') ctx.err(`${p}.tween`, 'tween es la clave de state a animar ("deuda"), "idEntidad.propiedad" ("alma._alpha"), "ambient.darkness", o un grupo de props ("type:tree.alpha", "tag:primavera.alpha").');
       else if (s.tween.includes('.')) {
         const id = s.tween.slice(0, s.tween.indexOf('.'));
+        // Selectores de grupo: type:<tipo> (todos los props de ese type) y
+        // tag:<tag> (props con esa etiqueta). No refieren un id puntual.
         if (id === 'ambient') {
           const key = s.tween.slice(s.tween.indexOf('.') + 1);
           if (key !== 'darkness' && key !== 'saturation') ctx.warn(`${p}.tween`, `"ambient.${key}" no es una clave animable documentada del ambiente; las conocidas son "ambient.darkness" y "ambient.saturation".`);
+        } else if (id.startsWith('type:')) {
+          const ty = id.slice(5);
+          if (!PROP_KINDS.has(ty)) ctx.warn(`${p}.tween`, `"type:${ty}" no es un tipo de prop conocido (${list(PROP_KINDS)}); no coincidirá con ningún prop.`);
+        } else if (id.startsWith('tag:')) {
+          const tag = id.slice(4);
+          const tagged = (config => (config.props || []).some(pr => pr && (pr.tag === tag || (Array.isArray(pr.tag) && pr.tag.includes(tag)))))(scope._config || {});
+          if (scope._config && !tagged && !scope.hasHooks) ctx.warn(`${p}.tween`, `"tag:${tag}" no coincide con ningún prop: ninguno declara tag "${tag}".`);
         } else if (!scope.entityIds.has(id) && !(scope.propIds && scope.propIds.has(id))) {
-          const msg = `"${id}" no es el id de ninguna entidad ni prop declarado (${list(scope.entityIds) || 'ninguna'}), ni el prefijo "ambient".`;
+          const msg = `"${id}" no es el id de ninguna entidad ni prop declarado (${list(scope.entityIds) || 'ninguna'}), ni "ambient", ni un selector "type:"/"tag:".`;
           if (scope.hasHooks) ctx.warn(`${p}.tween`, msg);
           else ctx.err(`${p}.tween`, msg);
         }
@@ -616,9 +895,19 @@ export function createValidator(vocab) {
       if (s.alpha != null && (typeof s.alpha !== 'number' || s.alpha < 0 || s.alpha > 1)) {
         ctx.err(`${p}.alpha`, 'alpha es la opacidad, un número entre 0 y 1.');
       }
+    } else if (s.formula != null) {
+      if (!scope.formulaIds || !scope.formulaIds.has(s.formula)) {
+        ctx.err(`${p}.formula`, `"${s.formula}" no es el id de ninguna fórmula declarada (${list(scope.formulaIds || []) || 'ninguna'}). Declárala en la lista top-level "formulas".`);
+      }
+      const acts = ['show', 'hide', 'alpha'].filter(k => s[k] != null);
+      if (!acts.length) ctx.err(p, 'el step formula necesita una acción: "show": true, "hide": true o "alpha": n (con "duration" opcional para el fade).');
+      if (s.alpha != null && (typeof s.alpha !== 'number' || s.alpha < 0 || s.alpha > 1)) {
+        ctx.err(`${p}.alpha`, 'alpha es la opacidad, un número entre 0 y 1.');
+      }
+      for (const k of ['series', 'reveal']) if (s[k] != null) ctx.err(`${p}.${k}`, `"${k}" es de "chart", no de "formula".`);
     } else {
       for (const k of ['show', 'hide', 'series', 'reveal']) {
-        if (s[k] != null) ctx.err(`${p}.${k}`, `"${k}" solo tiene sentido junto a "chart": "<id>".`);
+        if (s[k] != null) ctx.err(`${p}.${k}`, `"${k}" solo tiene sentido junto a "chart": "<id>" o "formula": "<id>".`);
       }
     }
     if (s.focus != null) {
@@ -842,7 +1131,10 @@ export function createValidator(vocab) {
         chartSeries: new Map((config.charts || []).filter(c => c?.id).map(c => [c.id, new Set((c.series || []).map(sr => sr?.id).filter(Boolean))])),
         setIds: new Set((Array.isArray(config.sets) ? config.sets : []).map(st => st?.id).filter(Boolean)),
         labelIds: new Set((config.labels || []).map(l => l?.id).filter(Boolean)),
+        formulaIds: new Set((config.formulas || []).map(f => f?.id).filter(Boolean)),
+        _config: config,
         hasHooks: Object.values(config.hooks || {}).some(v => typeof v === 'string' && v.trim()),
+        hasMusic: typeof config.meta?.music === 'string' && config.meta.music.trim() !== '',
       };
       vSteps(ctx, steps, 'form', scope);
     }
@@ -907,6 +1199,7 @@ export function createValidator(vocab) {
       }
     });
     (config.charts || []).forEach((c, i) => vChart(ctx, c, i));
+    (config.formulas || []).forEach((f, i) => vFormula(ctx, f, i));
     if (config.sets != null) {
       if (!Array.isArray(config.sets)) ctx.err('sets', 'debe ser un array de vistas { "id", "cx" }. La cámara arranca en la primera.');
       else {
@@ -935,15 +1228,64 @@ export function createValidator(vocab) {
         chartSeries: new Map((config.charts || []).filter(c => c?.id).map(c => [c.id, new Set((c.series || []).map(sr => sr?.id).filter(Boolean))])),
         setIds: new Set((Array.isArray(config.sets) ? config.sets : []).map(st => st?.id).filter(Boolean)),
         labelIds: new Set((config.labels || []).map(l => l?.id).filter(Boolean)),
+        formulaIds: new Set((config.formulas || []).map(f => f?.id).filter(Boolean)),
+        _config: config,
         hasHooks: Object.values(config.hooks || {}).some(v => typeof v === 'string' && v.trim()),
+        hasMusic: typeof config.meta?.music === 'string' && config.meta.music.trim() !== '',
       };
       vSteps(ctx, config.script, 'script', scope);
       if (Array.isArray(config.script) && config.script.some(s => s && s.loop === true && s.path == null)) {
         ctx.warn('script', 'el guion tiene "loop": true: la escena nunca termina, así que el motor nunca mostrará "Ver nuevamente". Quita el loop salvo que la escena sea deliberadamente ambiental.');
       }
+      // Lint de dramaturgia musical: recorre el guion acumulando `wait`.
+      // No valida vocabulario (eso ya pasó en vStep) sino calidad de uso:
+      // stingers en ráfaga pierden el peso, y una música agachada que
+      // nunca se restaura deja el cierre de la escena apagado.
+      if (scope.hasMusic && Array.isArray(config.script)) {
+        let t = 0;
+        let lastStingerT = null;
+        let lastVol = null;
+        let lastVolStep = -1;
+        config.script.forEach((s, i) => {
+          if (s && typeof s.wait === 'number') t += s.wait;
+          if (!s || s.music == null) return;
+          if (s.music === 'stinger') {
+            if (lastStingerT != null && t - lastStingerT < 3) {
+              ctx.warn(`script[${i}].music`, `dos stingers a ${(t - lastStingerT).toFixed(1)} s uno del otro: en ráfaga pierden todo el peso dramático. Sepáralos al menos 3 s o deja uno solo.`);
+            }
+            lastStingerT = t;
+          } else if (typeof s.music === 'object' && s.music.mood != null) {
+            lastVol = null; // el mood nuevo arranca en su volumen base
+          } else if (typeof s.music === 'object' && typeof s.music.volume === 'number') {
+            lastVol = s.music.volume;
+            lastVolStep = i;
+          }
+        });
+        if (lastVol != null && lastVol < 0.9) {
+          ctx.warn(`script[${lastVolStep}].music`, `el guion deja la música agachada (volume ${lastVol}) y no la restaura: el cierre de la escena queda apagado (el replay sí vuelve al volumen base). Termina cerca de volume 1 salvo intención deliberada.`);
+        }
+      }
     }
     if (config.form != null) vForm(ctx, config);
+    // Definir hooks.onDraw REEMPLAZA el pase automático de learners del motor
+    // (world.js): si el hook no los dibuja él mismo, el elenco entero desaparece
+    // sin aviso mientras el guion, los globos y los name-labels siguen.
+    const onDraw = config.hooks && typeof config.hooks.onDraw === 'string' ? config.hooks.onDraw : '';
+    if (onDraw.trim() && (config.entities || []).length > 0) {
+      // Cuenta como "dibuja el elenco" si: llama `.learner(` con cualquier
+      // receptor (draw.learner, d.learner, world['draw'].learner), o el interno
+      // _drawLearners, o pasa learners/entidades a drawSorted (drawSorted solo
+      // con props NO dibuja el elenco, así que exige mención de learner/entit).
+      const drawsLearners = /\.learner\s*\(/.test(onDraw)
+        || /_drawLearners\b/.test(onDraw)
+        || (/drawSorted/.test(onDraw) && /learner|entit/.test(onDraw));
+      if (!drawsLearners) {
+        ctx.warn('hooks.onDraw', `la escena declara ${(config.entities || []).length} entidad(es) pero onDraw no dibuja a los learners (no aparece draw.learner, drawSorted ni _drawLearners): definir onDraw APAGA el dibujo automático del elenco, así que los personajes quedarán invisibles. Dibújalos tú (p.ej. for (const e of world.entities) if (e.type==='learner') world.draw.learner(e)) o usa el hook onDrawOver para un overlay.`);
+      }
+    }
     checkMovement(ctx, config);
+    checkReachability(ctx, config);
+    checkDuplicateIds(ctx, config);
     return { errors, warnings };
   }
 

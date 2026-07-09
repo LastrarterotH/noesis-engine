@@ -7,6 +7,17 @@ ilustrativa).
 > Fuente de verdad operativa: `CLAUDE.md` (reglas de marca, voz, estándar de
 > calidad) y `.claude/commands/noesis-scene.md` (referencia de API en prosa).
 > Este documento las unifica como referencia técnica del motor.
+>
+> **Autoría.** Las escenas se construyen con la skill `/noesis` (un autor con
+> criterio, junto a Claude), no con un editor visual: noesis es un motor nativo
+> de Claude, no un producto self-serve (ver `docs/noesis-vision.md`). Donde este
+> spec decía "una UI", hoy se lee "el autor + el validador".
+>
+> **Catálogos vivos.** Los enums (props, cielos, moods, pasos) los **autoderiva
+> el validador del propio motor** (`engine/validate.js`), así no se
+> desincronizan. Las listas de abajo son un mapa legible, no la fuente: la lista
+> cerrada y curada vive en `.claude/commands/noesis-scene.md`, y
+> `node tools/validate.mjs` es la autoridad.
 
 ---
 
@@ -24,25 +35,26 @@ El JSON se renderiza con un **Web Component** `<noesis-scene>` (definido en
 scene.json  ──►  <noesis-scene src="scene.json">  ──►  World (simulación + dibujo)  ──►  <canvas>
 ```
 
-### Lo declarativo vs lo imperativo (clave para una UI)
+### Lo declarativo vs lo imperativo
 
-| Capa | Qué es | Serializable | Apto para UI directa |
+| Capa | Qué es | Serializable | Autorable como datos |
 |------|--------|--------------|----------------------|
-| `meta`, `text`, `hint`, `canvas`, `ambient`, `walls`, `zones`, `props`, `entities`, `labels` | Datos puros (JSON) | Sí | **Sí**: formularios, dropdowns, color pickers, drag en canvas |
-| `hooks.*` (`onInit`, `onStep`, `onDraw`, `onClick`, `onReset`) | Strings de **JavaScript** compilados con `new Function` | Sí (como texto) | **No directamente**: requiere editor de código o generador |
-| `runScript([...])` (dentro de `onInit`) | DSL de pasos narrativos (array de objetos) | Sí | **Parcialmente**: la mayoría de pasos son declarativos; ver §9.3 |
+| `meta`, `text`, `hint`, `canvas`, `ambient`, `walls`, `zones`, `props`, `entities`, `labels` | Datos puros (JSON) | Sí | **Sí**: layout, props, estilo y atmósfera son JSON puro |
+| `script` (top-level) | DSL de pasos narrativos (array de objetos) | Sí | **Sí**: pasos declarativos salvo `do:`/`call:` (§9.3) |
+| `hooks.*` (`onInit`, `onStep`, `onDraw`, `onClick`, `onReset`) | Strings de **JavaScript** compilados con `new Function` | Sí (como texto) | **No**: JS; escotilla para lo que el vocabulario no cubre |
 
-La consecuencia para la UI: **todo el "escenario" (layout, catálogo de elementos,
-estilo) se puede editar con formularios/canvas**. La **narrativa** vive en hooks JS;
-para no obligar a escribir código, conviene apoyarse en `runScript` (cuyos pasos son
-casi todos datos) y, idealmente, agregar al motor un campo declarativo `script` que
-el engine ejecute solo (ver §14, recomendación).
+La consecuencia práctica: **todo el "escenario" (layout, catálogo de elementos,
+estilo) es JSON puro**, y la **narrativa** también. El motor ejecuta un campo
+declarativo `script` de nivel superior (array de pasos, §9) sin escribir JS;
+`hooks.onDraw` queda para lo que el vocabulario declarativo aún no cubre. El
+repertorio actual es declarativo-primero: los `hooks` JS son la escotilla, no la
+regla.
 
 ---
 
 ## 2. Anatomía de una escena: dos archivos
 
-1. **`scenes/NN-slug.json`** — la escena (lo que edita la UI).
+1. **`scenes/NN-slug.json`** — la escena (el archivo que se autora).
 2. **`examples/scene-NN.html`** — un wrapper HTML mínimo que monta el componente:
 
 ```html
@@ -54,8 +66,8 @@ el engine ejecute solo (ver §14, recomendación).
 </body></html>
 ```
 
-- El engine hace `fetch(src, { cache: 'no-store' })`: nunca cachea el JSON (importante:
-  una UI puede reescribir el JSON y recargar para ver cambios al instante).
+- El engine hace `fetch(src, { cache: 'no-store' })`: nunca cachea el JSON, así al
+  editar el archivo y recargar se ven los cambios al instante (invariante del loader).
 - Atributos del componente: `src` (ruta al JSON), `lang` (`es`/`en`), `layout`
   (`full` por defecto, muestra el texto editorial; `bare` para teaser embebido),
   `autoplay` (arranca sin esperar viewport/foco; solo para captura headless).
@@ -69,17 +81,23 @@ Estructura de nivel superior:
 ```jsonc
 {
   "meta":   { ... },          // identidad + música
+  "seed":   1,                 // semilla del RNG (simulación determinista)
   "text":   { "es": {...} },  // texto editorial (artículo bajo el lienzo)
   "hint":   { "es": "..." },  // microcopy inicial sobre el lienzo
   "hintDuration": 4,           // segundos que dura el hint
   "canvas": { ... },          // lienzo, piso, cielo, calidad
-  "ambient":{ ... },          // tinte + partículas atmosféricas (opcional)
+  "ambient":{ ... },          // tinte, partículas, darkness, saturation (opcional)
   "walls":  [ ... ],          // colisiones AABB (opcional)
   "zones":  [ ... ],          // regiones con efecto (opcional)
-  "props":  [ ... ],          // objetos del mundo
+  "props":  [ ... ],          // objetos del mundo (aceptan `far` para profundidad)
   "entities":[ ... ],         // learners (personajes)
   "labels": [ ... ],          // overlays HTML (captions, botones)
-  "hooks":  { ... }           // JS: onInit/onStep/onDraw/onClick/onReset
+  "script": [ ... ],          // timeline declarativo (§9); el motor lo corre solo
+  "sets":   [ ... ],          // vistas de cámara nombradas (antes/después)
+  "meters": [ ... ],          // barras de umbral
+  "charts": [ ... ],          // gráficos declarativos (line/bars)
+  "formulas":[ ... ],         // ecuaciones LaTeX declarativas
+  "hooks":  { ... }           // JS: onInit/onStep/onDraw/onClick/onReset (escotilla)
 }
 ```
 
@@ -87,8 +105,8 @@ Estructura de nivel superior:
 
 | Campo | Tipo | Notas |
 |-------|------|-------|
-| `id` | string | slug único, ej. `10-deuda-cognitiva` |
-| `number` | number | número de escena |
+| `id` | string | slug único, ej. `12-bosque-oscuro` |
+| `number` | number? | número de escena (opcional; varias escenas lo omiten) |
 | `version` | string | versión libre, ej. `"0.6"` |
 | `lang` | string[] | idiomas presentes, ej. `["es"]` |
 | `music` | string? | mood musical (ver §10). Si está, aparece el botón ♪ |
@@ -211,9 +229,9 @@ Walls bloquean a los learners (colisión AABB). Zones afectan a quien entra.
 - `anchor`: `center`, `top`, `bottom`, `top-left`, `top-right`, etc.
 - Se controlan desde hooks con `world.showLabel(id)`, `world.hideLabel(id)`,
   `world.setLabel(id, html)`.
-- **Limitación importante para la UI**: el sistema de labels **no renderiza HTML
-  anidado como tarjeta** (lo aplana a texto). Para tarjetas/callouts ricos, dibujar en
-  `onDraw` con canvas (dibujar la tarjeta a mano en el hook).
+- **Limitación**: el sistema de labels **no renderiza HTML anidado como tarjeta**
+  (lo aplana a texto). Para tarjetas/callouts ricos, usar el bloque declarativo
+  `formulas` (con `panel`) o dibujar en `onDraw` con canvas.
 
 ### 3.9 `hooks` (JavaScript)
 
@@ -228,7 +246,7 @@ Cinco hooks, cada uno un **string de JS** que el engine compila con
 | `onClick` | `(world, x, y, meta)` | click; `(x,y)` en coords de mundo (post-cámara) |
 | `onReset` | `(world)` | antes de re-ejecutar `onInit`; limpiar timeouts propios |
 
-**Validación obligatoria** (la UI debe correr esto antes de guardar): cada hook no
+**Validación obligatoria** (`node tools/validate.mjs` la corre): cada hook no
 vacío debe compilar. Pre-flight:
 ```js
 new Function('world', onInitSource);  // etc., con las args correctas por hook
@@ -270,7 +288,7 @@ En `props`, `walls`, `zones`, `entities`:
 
 ---
 
-## 6. Catálogos (enumeraciones para dropdowns de la UI)
+## 6. Catálogos (enumeraciones; el validador las autoderiva del motor)
 
 ### 6.1 Pisos (`canvas.floor`)
 `solid` · `grass` · `tiles` · `wood` · `dots` · `earth` · `sand` · `water` · `snow` · `cobble` · `grid`
@@ -278,18 +296,33 @@ En `props`, `walls`, `zones`, `entities`:
 ### 6.2 Cielos (`canvas.sky`, preset o color CSS)
 `day` · `dawn` · `dusk` · `night` · `golden` · `cool` · `storm` · `sunset` · `overcast` · `space` · `underwater` · `mars` · `aurora`
 
-### 6.3 Props (catálogo `PROP_SPRITES`)
-**Estáticos pixel-art:** `table`, `chair`, `blackboard`, `lamp`, `candle`, `book`,
-`bookshelf`, `door`, `sign`, `rug`, `tree`, `plant`, `bush`, `flower`, `mushroom`,
-`rock`, `fountain`, `bench`, `boat`, `lighthouse`, `pedestal`, `cactus`, `palm`,
-`coral`, `seaweed`, `building`, `streetlamp`, `crate`, `barrel`, `sun`, `moon`,
-`star`, `planet`, `rocket`, `gem`, `coin`, `balloon`, `pokeball`.
-**Animados (drawer propio, se mueven solos):** `cloud`, `bird`, `fish`, `rabbit`,
-`butterfly`, `bee`, `frog`, `swing`, `clock`, `candle`, `bonfire`, `bell`, `lamp`,
-`streetlamp`.
-**Interactivos (click, requieren `interactive:true`):** `switch` (`state:'on'|'off'`),
-`chest` (`open: bool`).
-Varios aceptan `color` (y `building` también `color2`).
+### 6.3 Props (catálogo `PROP_SPRITES` + drawers bespoke)
+
+El catálogo es grande y crece por escena; la **lista cerrada y al día vive en
+`.claude/commands/noesis-scene.md`** y el validador la autoderiva del motor
+(`prop-sprites.js` + los drawers de `prop-draw.js`). Mapa por familias:
+- **Mobiliario / interior:** table, chair, blackboard, lamp, candle, book,
+  bookshelf, door, sign, rug, bench, pedestal, vault, notebook, laptop, screen.
+- **Naturaleza / exterior:** tree, tree-bare, plant, bush, flower, mushroom, rock,
+  cactus, palm, coral, seaweed, wheat, wonderflower, pond, pomegranate, chasm,
+  mountain, fountain.
+- **Ciudad / vehículos:** building, streetlamp, crate, barrel, boat, lighthouse,
+  rocket, plane, cafe-facade, cityscape, awning, umbrella, bistro-table,
+  bistro-chair, coffee.
+- **Cuerpos celestes (flotan solos):** sun, moon, star, planet, cloud.
+- **Símbolos didácticos:** gem, coin, balloon, pokeball, lightbulb, hourglass,
+  scale, magnifier, key, trophy, flag, flask, globe, scroll, gear, frame-oval,
+  mirror.
+- **Animados (drawer propio):** bird, fish, rabbit, butterfly, bee, frog, swing,
+  clock, bonfire, bell, virus, aiorb, genially, basilisk.
+- **Narrativos bespoke:** domino (`fall`), field (`disorder`, primitiva de morph),
+  cat, column, tower (`braid`), oven (`fire`), candy-house, shoe.
+- **Interactivos (`interactive:true`):** switch (`state:'on'|'off'`), chest (`open`).
+
+Claves comunes: `scale` (o el tamaño natural por tipo, `PROP_NATURAL_SCALE`), `z`,
+**`far`** (0..1: profundidad, deriva escala y z automáticos), `alpha`,
+`color`/`color2`, `glow`, `light`, `solid`/`solidBox`. Cada tipo acepta un
+subconjunto de claves que el validador verifica.
 
 ### 6.4 Accesorios de learner (`accessory`)
 `hat` · `scarf` · `glasses` · `headband` · `bow` · `pikachu`
@@ -371,11 +404,14 @@ De `engine/fx.js` (`createFxApi`):
 
 ---
 
-## 9. `runScript` — timeline narrativo
+## 9. `script` declarativo — timeline narrativo
 
-`world.runScript(steps, { id })`: ejecuta pasos en orden; los pasos bloqueantes
-(`wait`, `waitFor`, `waitUntil`) pausan la secuencia. Pasar `{ id }` reemplaza un
-script previo del mismo id. `world.stopScripts(id?)` cancela.
+**El campo top-level `script`** (array de pasos) es la forma canónica hoy: el
+motor lo corre solo (`world.runScript(config.script, {id:'main'})`), detecta su
+fin, espera 3 s y muestra "Ver nuevamente". Por debajo es el mismo runner:
+`world.runScript(steps, { id })` ejecuta pasos en orden; los bloqueantes (`wait`,
+`waitFor`, `waitUntil`) pausan la secuencia; `{ id }` reemplaza un script del mismo
+id y `world.stopScripts(id?)` cancela.
 
 ### 9.1 Ejemplo
 ```js
@@ -391,24 +427,35 @@ world.runScript([
 ], { id:'main' });
 ```
 
-### 9.2 Pasos disponibles (de `engine/scripts.js`)
+### 9.2 Pasos disponibles (`STEP_KEYS` de `engine/validate.js`, autoderivados)
 **Tiempo/flujo:** `wait:<s>` · `waitFor:'arrive'|'arrive:id'` · `waitUntil:'<expr>'` ·
 `label:'x'` + `goto:'x'` · `loop:true` · `end:true` · `if:'expr', then:[...], else:[...]`.
 **Movimiento:** `walk:<id>, to:[x,y]|<id>, speed?` · `stop:<id>` ·
 `path:<id>, points:[...], speed|duration, easing, curve, loop, fromCurrent`.
-**Expresión/burbujas:** `say` · `think` (con `text`, `duration?`) · `exclaim` ·
-`surprise` · `wonder` · `flash` · `reinforce` · `mood:<id>, value, duration?`.
-**Audio:** `tone:<freq>, dur?, opts?` · `sweep:[from,to], dur?, opts?`.
-**Efectos:** `particles:{...}` · `floatNumber:{...}`.
-**Estado:** `set:{k:v}` · `add:{k:delta}` · `clamp:{k:[min,max]}`.
+**Expresión/burbujas:** `say` · `think` (`text`, `duration?`) · `exclaim` ·
+`surprise` · `wonder` · `flash` · `reinforce` · `celebrate` · `cry` · `thinking` ·
+`mood:<id>, value, duration?` · `jump:<id>, duration?` ·
+`lookAt:<id>, to:<id>|[x,y]|null` · `appear:<id>` · `vanish:<id>, duration?`.
+**Texto en pantalla:** `caption:'...', style?:'title'` · `showLabel:'id'` · `hideLabel:'id'`.
+**Cámara y escena:** `camera:{ to, zoom, follow, shake, letterbox, reset }` ·
+`scene:'<setId>', move?:{id:[x,y]}` (corte entre `sets`) ·
+`focus:'<id>'|[x,y], off?, color?, radius?`.
+**Animar valores:** `tween:'<clave|id.prop|type:.prop|tag:.prop>', to, duration?, easing?` ·
+`meter:'<id>', to, duration?` · `chart:'<id>', show?|hide?|alpha?|reveal?, series?` ·
+`formula:'<id>', show?|hide?|alpha?`.
+**Atmósfera / audio:** `weather:'rain'|'none', intensity?` ·
+`music:{ volume|mood, duration? }|'stinger'` · `particles:{...}|preset` ·
+`floatNumber:{...}` · `tone` · `sweep`.
+**Estado:** `set:{k:v}` (o `{ "id.prop":v }`) · `add:{k:delta}` · `clamp:{k:[min,max]}`.
 **Escape a JS:** `do:'<js>'` (scope: `world`, `state`/`s`, `e`=última entidad) ·
 `call:'<expr>'` · `runScript:[...]` (anidado).
 
-### 9.3 Para la UI
-Casi todos los pasos son **datos puros serializables** (un timeline visual puede
-emitirlos sin escribir JS). Los únicos no-declarativos son `do:` y `call:` (escotilla
-a JS). Una UI puede: (a) ofrecer un timeline con los pasos declarativos, y (b) un
-editor de código solo para `do:`/`call:` y los hooks.
+### 9.3 Declarativo primero
+Casi todos los pasos son **datos puros**: una escena entera se escribe como `script`
+sin JS. Los únicos no-declarativos son `do:` y `call:` (escotilla a JS), reservados
+para lo que el vocabulario aún no cubre. La meta al autorar es no necesitarlos: el
+vocabulario declarativo (`camera`, `scene`, `tween`, `focus`, `chart`, `formula`,
+`music`, `lookAt`, `jump`...) cubre casi todo el repertorio.
 
 ---
 
@@ -417,8 +464,12 @@ editor de código solo para `do:`/`call:` y los hooks.
 Música procedural (Web Audio, sin archivos) en `engine/audio.js`. Se activa con
 `meta.music = <mood>` y el botón ♪.
 
-**Moods:** `cosmic` · `melancholic` · `pastoral` · `epic` · `ancient` · `pedagogical` ·
-`electronic` · `warm`.
+**Moods (20):** `cosmic` · `melancholic` · `pastoral` · `epic` · `ancient` ·
+`pedagogical` · `electronic` · `warm` · `joyful` · `tension` · `mystery` · `lullaby` ·
+`solemn` · `urgent` · `march` · `tribal` · `groove` · `rock` · `mischief` · `symphonic`.
+Cada uno es una miniatura con progresión de acordes y capas propias (no un drone
+plano). Reactividad desde el `script`: el step `music` agacha/levanta el volumen,
+cambia de `mood` con crossfade, o dispara un `stinger`.
 
 Un preset (`MUSIC_PRESETS`) puede declarar **capas de movimiento** (opt-in):
 - `chords` (acordes en Hz) + `chordDur`: progresión (el drone se re-afina).
@@ -436,8 +487,12 @@ De `engine/draw.js` (`class Draw`):
 - **Geometría:** `rrect(x,y,w,h,r)`.
 - **Diagramas:** `arrow(x1,y1,x2,y2,opts)` · `connector(from,to,opts)` ·
   `node(x,y,w,h,opts)`.
-- **Gráficos:** `axes(x,y,w,h,opts)` (devuelve `frame` con `map()`) · `plot(frame,data,opts)` ·
+- **Gráficos:** `axes(x,y,w,h,opts)` (devuelve `frame` con `map()`; `xScale`/`yScale:'log'`) ·
+  `plot(frame,data,opts)` (`data` array o función; `reveal` anima, `head` = punto viajero) ·
   `bars(frame,values,opts)` · `stackedBars` · `scatter` · `area` · `pie` · `gridlines`.
+- **Matemática (LaTeX sin dependencias):** `math(x,y,tex,opts)` — fracciones apiladas,
+  raíces, sumatorias/integrales con límites, matrices y delimitadores auto-escalables.
+  En escenas declarativas, el bloque `formulas` + step `formula` lo hacen sin `onDraw`.
 
 ---
 
@@ -460,48 +515,36 @@ De `engine/draw.js` (`class Draw`):
 
 ---
 
-## 14. Guía para construir la UI (editor de escenas)
+## 14. Autoría (nativa de Claude) e invariantes
 
-### 14.1 Estructura sugerida
-1. **Lienzo de edición (WYSIWYG):** monta un `<noesis-scene>` en vivo + una capa de
-   edición encima para arrastrar/seleccionar props, entities, zones, walls y labels.
-   Mapear arrastre a `x/y`; resize a `scale`/`w/h`.
-2. **Panel de propiedades** del elemento seleccionado: formularios tipados a partir del
-   esquema (§3), con **dropdowns** desde los catálogos (§6) y **color pickers**.
-3. **Panel de canvas/atmósfera:** `bg`, `floor`, `sky`, `horizon`, `ambient`, `ss`.
-4. **Timeline narrativo:** editor visual de `runScript` (§9.3) con los pasos
-   declarativos; bloques arrastrables (walk, say, wait, mood, tone, set...).
-5. **Editor de código (avanzado):** para `hooks` y pasos `do:`/`call:`, con un editor
-   tipo Monaco y autocompletado del API de §7–§12.
-6. **Texto editorial:** formulario para `title`, `body[]`, `references[]`.
-7. **Preview en vivo:** reescribir el JSON y re-montar/recargar el componente (el engine
-   usa `cache:'no-store'`, así que basta reasignar `src` o re-crear el elemento).
-8. **Export:** descargar `scenes/NN-slug.json` + generar el wrapper HTML (§2).
+**No hay editor visual.** Una versión previa de este spec proponía aquí una UI
+WYSIWYG (arrastrar props, timeline visual, export). Ese roadmap se descartó:
+noesis es un motor nativo de Claude, no un producto self-serve (ver
+`docs/noesis-vision.md`). Las escenas se autoran con la skill `/noesis`: un autor
+con criterio, junto a Claude, dialoga el concepto, elige la mecánica, escribe el
+JSON con este vocabulario, lo valida y lo previsualiza.
 
-### 14.2 Validación (la UI debe correrla antes de guardar)
-- **Hooks compilan:** `new Function(...args, src)` por hook (args de §3.9).
-- **Labels:** `x/y` en `0..1`.
-- **Coords coherentes**, ids únicos, `accessory`/`mood`/`floor`/`sky`/prop `type` dentro
-  de los catálogos.
-- **Smoke headless** (opcional pero recomendado): `node tools/smoke.mjs` stubea DOM y
-  corre el engine real (init + 120 ticks + click + reset). Caza errores que `node --check`
-  no ve.
+El campo declarativo `script` que una versión previa de este spec *recomendaba
+agregar* **ya existe** (top-level `script`, §9), junto con `sets`, `charts`,
+`formulas`, `meters` y el vocabulario de cámara/foco/tween declarativos. El
+repertorio es declarativo-primero; los `hooks` JS son la escotilla.
 
-### 14.3 Recomendación de motor para hacer la UI 100% visual
-Hoy la narrativa vive en `hooks.onInit` (JS) que llama a `world.runScript([...])`. Para
-que una UI pueda producir narrativa **sin escribir JS**, conviene agregar al engine un
-campo declarativo de nivel superior, por ejemplo `scene.script` (array de pasos de §9.2)
-que el motor ejecute automáticamente en `onInit`. Así:
-- La UI emite `script` como datos puros (timeline visual) y solo cae a `hooks`/`do:`
-  para casos avanzados.
-- Compatibilidad: si `scene.script` existe, el engine hace `world.runScript(scene.script,{id:'main'})`
-  tras `onInit`; las escenas actuales no se ven afectadas.
+### 14.1 Flujo de autoría
+1. `docs/guion-teatral.md`: toda escena parte de un guion teatral.
+2. Escribir `scenes/NN-slug.json` con el vocabulario del motor (paleta, voz y
+   reglas de `CLAUDE.md`; API en `.claude/commands/noesis-scene.md`).
+3. **Validar:** `node tools/validate.mjs scenes/NN-slug.json` (enums, coordenadas,
+   ids, hooks y reglas editoriales; autoderivado del motor).
+4. **Smoke:** `node tools/smoke.mjs` (corre el engine real headless: init + guion
+   completo + reset; caza roturas de ESM y guiones colgados que `node --check` no ve).
+5. Previsualizar en el navegador y comparar contra la vara de calidad (escena 01).
 
-### 14.4 Qué NO debe romper la UI (invariantes del engine)
+### 14.2 Invariantes del engine (no romper)
 - Fetch de escenas con `cache:'no-store'`.
 - Burbujas clampeadas dentro del canvas (`safeArea`).
 - Watermark "noesis." intacto (no taparlo).
 - Learners siempre con pupilas (nunca `look:'blank'`).
+- Banda de subtítulos inferior reservada: ningún learner la invade.
 - Reglas de marca/voz (paleta canónica, sin em-dashes, español neutro): ver `CLAUDE.md`.
 
 ---

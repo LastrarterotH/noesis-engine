@@ -1,5 +1,5 @@
 {
-  "meta": { "id": "03-gato-de-schrodinger", "number": 3, "version": "0.5", "lang": ["es"], "music": "cosmic" },
+  "meta": { "id": "03-gato-de-schrodinger", "number": 3, "version": "0.5", "lang": ["es"], "music": "mystery" },
   "text": {
     "es": {
       "title": "El gato de Schrödinger: lo real antes de mirar",
@@ -125,6 +125,7 @@
     { "camera": { "shake": 4 } },
     { "wait": 1.8 },
 
+    { "music": { "volume": 0.4, "duration": 2 } },
     { "caption": "Ahora nadie puede mirar dentro. Solo corre el tiempo." },
     { "tween": "ambient.darkness", "to": 0.6, "duration": 2.4, "easing": "easeInOut" },
     { "tone": 1320, "dur": 0.06 },
@@ -152,12 +153,14 @@
     { "particles": { "x": 440, "y": 290, "color": "#c44a3e", "count": 14, "speed": 64, "duration": 0.8, "spread": 6.28, "size": 2 } },
     { "tween": "gato_muerto.alpha", "to": 0.55, "duration": 1.2 },
     { "wait": 1.8 },
+    { "music": "stinger" },
     { "caption": "Un gato vivo. Un gato muerto. Al mismo tiempo." },
     { "wait": 3.8 },
     { "say": "asistente", "text": "Eso es imposible.", "duration": 2.2 },
     { "wait": 2.6 },
     { "say": "erwin", "text": "Precisamente. Ese es el punto.", "duration": 2.8 },
     { "wait": 3.2 },
+    { "music": { "volume": 0.9, "duration": 2.5 } },
     { "caption": "Schrödinger no defendía esto. Mostraba el absurdo de estirar la cuántica al mundo grande sin más." },
     { "wait": 4.6 },
 
@@ -175,6 +178,7 @@
     { "tween": "caja_frente.wheel", "to": 6.283, "duration": 2.0, "easing": "easeInOut" },
     { "sweep": [392, 176], "dur": 1.6 },
     { "wait": 1.2 },
+    { "music": { "volume": 0.2, "duration": 2 } },
     { "caption": "Las dos realidades se desvanecen. Como humo." },
     { "focus": [440, 312], "off": true },
     { "tween": "gato_vivo.alpha", "to": 0, "duration": 1.4 },
@@ -187,6 +191,7 @@
     { "tween": "ambient.darkness", "to": 1, "duration": 1.8, "easing": "easeInOutCubic" },
     { "tone": 130, "dur": 0.9 },
     { "wait": 2.0 },
+    { "music": { "volume": 0, "duration": 0.3 } },
     { "caption": "Justo antes de saber cuál queda, todo es oscuridad." },
     { "wait": 3.6 },
 
@@ -196,6 +201,7 @@
     { "wait": 3.6 },
     { "say": "erwin", "text": "La pregunta es otra: ¿qué es real antes de que alguien lo mire?", "duration": 4.0 },
     { "wait": 4.2 },
+    { "music": { "volume": 1, "duration": 3 } },
     { "caption": "Una lectura dice que la medición decide el resultado. Otra, que el mundo se divide y ocurren los dos." },
     { "wait": 4.6 },
     { "caption": "Las dos predicen lo mismo. Por eso, casi un siglo después, la pregunta sigue abierta." },

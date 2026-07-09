@@ -21,6 +21,18 @@ const OUT = './previews';
 // segundo del momento más fotogénico de su guion).
 const SCENES = [
   { slug: '01-netflix-prize', wait: 62 },
+  { slug: '02-cuarto-de-mary', wait: 44 },
+  { slug: '03-gato-de-schrodinger', wait: 30 },
+  { slug: '04-tpack', wait: 36 },
+  { slug: '05-persefone-demeter', wait: 30 },
+  { slug: '06-basilisco-roko', wait: 34 },
+  { slug: '07-tragedia-de-los-comunes', wait: 40 },
+  { slug: '08-contagio-r0', wait: 28 },
+  { slug: '09-la-caverna', wait: 14 },
+  { slug: '10-fuera-de-juego', wait: 20 },
+  { slug: '11-cuentos-grimm', wait: 114 },
+  { slug: '12-bosque-oscuro', wait: 3 },
+  { slug: '13-genially-coffee', wait: 19 },
 ];
 
 if (!existsSync(OUT)) mkdirSync(OUT, { recursive: true });

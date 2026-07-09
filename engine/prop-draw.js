@@ -2,8 +2,8 @@
 // Per-prop draw functions + dispatch (drawProp). Animated/bespoke props
 // have their own renderer; static props fall through to PROP_SPRITES.
 
-import { PROP_SPRITES } from './prop-sprites.js?v=80';
-import { mixColors } from './util.js?v=80';
+import { PROP_SPRITES } from './prop-sprites.js?v=145';
+import { mixColors } from './util.js?v=145';
 
 // Compute a default collision box for a solid prop: the bottom 60% of the
 // sprite, centered on prop.x. Authors can override with `solidBox: {x,y,w,h}`
@@ -42,6 +42,10 @@ export function drawButterfly(ctx, prop) {
   const color2 = prop.color2 || '#fbe9b8';
   const dark = '#1F2547';
   const t = prop._t || 0;
+  const a = prop.alpha == null ? 1 : Math.max(0, Math.min(1, prop.alpha));
+  if (a <= 0.01) return;
+  ctx.save();
+  ctx.globalAlpha *= a;
   // Smooth 3-phase flap.
   const phase = (Math.sin(t * 7) + 1) * 0.5;
   const px = (gx, gy, gw, gh, c) => {
@@ -90,6 +94,7 @@ export function drawButterfly(ctx, prop) {
     px(1, -5, 1, 2, color);
     px(1, -3, 1, 2, color);
   }
+  ctx.restore();
 }
 
 export function drawCloud(ctx, prop) {
@@ -133,6 +138,10 @@ export function drawBird(ctx, prop) {
   const t = prop._t || 0;
   const flapPhase = (Math.sin(t * 12) + 1) * 0.5;   // 0..1
   const dir = (prop._birdDir == null ? 1 : prop._birdDir);
+  const a = prop.alpha == null ? 1 : Math.max(0, Math.min(1, prop.alpha));
+  if (a <= 0.01) return;
+  ctx.save();
+  ctx.globalAlpha *= a;
   const px = (gx, gy, gw, gh, c) => {
     ctx.fillStyle = c;
     // Horizontal mirror if flying left.
@@ -163,6 +172,7 @@ export function drawBird(ctx, prop) {
     px(-2, -1, 2, 1, dark);
     px(-2, 0, 3, 1, dark);
   }
+  ctx.restore();
 }
 
 export function drawFish(ctx, prop) {
@@ -440,6 +450,9 @@ export function drawBonfire(ctx, prop) {
   const s = prop.scale || 4;
   const cx = Math.round(prop.x);
   const cy = Math.round(prop.y);
+  const a = prop.alpha == null ? 1 : Math.max(0, Math.min(1, prop.alpha));
+  if (a <= 0.01) return;
+  const _ga = ctx.globalAlpha; ctx.globalAlpha = _ga * a;
   const log = '#5a4022';
   const logRing = '#7a5530';
   const logHi = '#a17a44';
@@ -515,6 +528,7 @@ export function drawBonfire(ctx, prop) {
   if (flicker2 < 0.5) {
     px(2, -7, 1, 1, f1);
   }
+  ctx.globalAlpha = _ga;
 }
 
 export function drawBee(ctx, prop) {
@@ -575,6 +589,9 @@ export function drawFrog(ctx, prop) {
   const s = prop.scale || 3;
   const cx = Math.round(prop.x);
   const cy = Math.round(prop.y);
+  const a = prop.alpha == null ? 1 : Math.max(0, Math.min(1, prop.alpha));
+  if (a <= 0.01) return;
+  const _ga = ctx.globalAlpha; ctx.globalAlpha = _ga * a;
   const body = prop.color || '#5b9a66';
   const bodyHi = '#7eb78a';
   const dark = '#3e6e47';
@@ -637,6 +654,7 @@ export function drawFrog(ctx, prop) {
   px(-3, 0, 1, 1, dark);
   px(3, 0, 1, 1, dark);
   px(5, 0, 1, 1, dark);
+  ctx.globalAlpha = _ga;
 }
 
 export function drawSwing(ctx, prop) {
@@ -914,6 +932,9 @@ export function drawPond(ctx, prop) {
   const cx = Math.round(prop.x);
   const cy = Math.round(prop.y);
   const t = prop._t || 0;
+  const a = prop.alpha == null ? 1 : Math.max(0, Math.min(1, prop.alpha));
+  if (a <= 0.01) return;
+  const _ga = ctx.globalAlpha; ctx.globalAlpha = _ga * a;
   const deep = prop.color || '#2f6f93';
   const mid = '#4a93bd';
   const lite = '#7cc1de';
@@ -951,7 +972,7 @@ export function drawPond(ctx, prop) {
     const rr = 0.18 + prog * 0.8;
     const alpha = (1 - prog) * 0.45;
     if (alpha < 0.05) continue;
-    ctx.globalAlpha = alpha;
+    ctx.globalAlpha = _ga * a * alpha;
     for (let gy = -Math.ceil(RY * 2) - 1; gy <= 0; gy++) {
       for (let gx = -RX - 1; gx <= RX + 1; gx++) {
         const nx = gx / RX, ny = (gy - ecy) / RY;
@@ -961,6 +982,7 @@ export function drawPond(ctx, prop) {
     }
   }
   ctx.restore();
+  ctx.globalAlpha = _ga;
   // Publica el centro visual y el radio para que el foco (focus) caiga
   // centrado en el agua, no en la base del prop.
   prop._fcy = cy + ecy * u;
@@ -1760,8 +1782,1991 @@ export function drawNotebook(ctx, prop) {
   ctx.restore();
 }
 
+// Taza de café humeante. Punto de apoyo en (x, y) = base; el cuerpo sube desde
+// ahí y el vapor asciende sobre la boca. `color` tiñe la cerámica, `alpha` para
+// aparecer/desvanecer, `_t` (animated-props) mueve las volutas del vapor.
+// Sombrilla de terraza: poste + toldo de gajos bicolor con borde festoneado y
+// remate. (prop.x, prop.y) es la BASE del poste. `color`/`color2` alternan los
+// gajos. Da alegría de café al aire libre.
+export function drawUmbrella(ctx, prop) {
+  const s = prop.scale || 6;
+  const cx = Math.round(prop.x);
+  const cy = Math.round(prop.y);
+  const a = prop.alpha == null ? 1 : Math.max(0, Math.min(1, prop.alpha));
+  if (a <= 0.01) return;
+  const TAU = Math.PI * 2;
+  const c1 = prop.color || '#ef5f52';     // gajo cálido
+  const c2 = prop.color2 || '#fbf7ee';    // gajo crema
+  const c1d = mixColors(c1, '#000000', 0.16);
+  const c2d = mixColors(c2, '#000000', 0.12);
+  const pole = '#a68a6c', poleD = mixColors(pole, '#000000', 0.34), poleL = mixColors(pole, '#ffffff', 0.3);
+  const poleH = 20 * s;
+  const cR = 12.5 * s;
+  const domeH = 6 * s;
+  const hang = 2.6 * s;              // cuánto cuelga el borde en el centro
+  const canopyY = cy - poleH;
+  const apex = canopyY - domeH;
+  const N = 8;
+  const edge = (i) => {
+    const f = i / N;
+    const ex = cx - cR + f * 2 * cR;
+    const ey = canopyY + Math.sin(f * Math.PI) * hang;
+    return [ex, ey];
+  };
+  ctx.save();
+  ctx.globalAlpha *= a;
+  // Sombra en el suelo.
+  ctx.save(); ctx.globalAlpha *= 0.2; ctx.fillStyle = '#000000';
+  ctx.beginPath(); ctx.ellipse(cx, cy, 3 * s, 1.1 * s, 0, 0, TAU); ctx.fill(); ctx.restore();
+  // Poste.
+  ctx.fillStyle = pole;
+  ctx.fillRect(cx - 0.7 * s, apex, 1.5 * s, cy - apex);
+  ctx.fillStyle = poleL; ctx.fillRect(cx - 0.7 * s, apex, 0.5 * s, cy - apex);
+  ctx.fillStyle = poleD; ctx.fillRect(cx + 0.35 * s, apex, 0.4 * s, cy - apex);
+  // Gajos del toldo, alternando color, con borde festoneado.
+  for (let i = 0; i < N; i++) {
+    const [x1, y1] = edge(i);
+    const [x2, y2] = edge(i + 1);
+    const midX = (x1 + x2) / 2, midY = (y1 + y2) / 2 + 1.5 * s;   // festón que cuelga
+    const isA = i % 2 === 0;
+    const side = ((x1 + x2) / 2 < cx) ? 0.06 : 0;                 // leve luz al lado izquierdo
+    ctx.fillStyle = isA ? mixColors(c1, '#ffffff', side) : mixColors(c2, '#ffffff', side);
+    ctx.beginPath();
+    ctx.moveTo(cx, apex);
+    ctx.lineTo(x1, y1);
+    ctx.quadraticCurveTo(midX, midY, x2, y2);
+    ctx.closePath();
+    ctx.fill();
+    // Sombra sutil en la mitad derecha de cada gajo para dar volumen.
+    ctx.save(); ctx.globalAlpha *= 0.25; ctx.fillStyle = isA ? c1d : c2d;
+    ctx.beginPath();
+    ctx.moveTo(cx, apex); ctx.lineTo(midX, midY - 0.5 * s); ctx.lineTo(x2, y2); ctx.closePath();
+    ctx.fill(); ctx.restore();
+  }
+  // Costilla central marcada (línea del gajo frontal).
+  ctx.strokeStyle = 'rgba(0,0,0,0.12)'; ctx.lineWidth = Math.max(1, 0.2 * s);
+  for (let i = 1; i < N; i++) {
+    const [ex, ey] = edge(i);
+    ctx.beginPath(); ctx.moveTo(cx, apex); ctx.lineTo(ex, ey); ctx.stroke();
+  }
+  // Remate en el ápice.
+  ctx.fillStyle = poleD;
+  ctx.beginPath(); ctx.moveTo(cx, apex - 2.2 * s); ctx.lineTo(cx - 0.7 * s, apex); ctx.lineTo(cx + 0.7 * s, apex); ctx.closePath(); ctx.fill();
+  ctx.fillStyle = poleL;
+  ctx.beginPath(); ctx.arc(cx, apex - 2.4 * s, 0.7 * s, 0, TAU); ctx.fill();
+  ctx.restore();
+}
+
+// Avión de línea visto de lado, con estela de vapor. Cruza el cielo (movimiento
+// en animated-props). (x, y) = centro. `color` = fuselaje, `color2` = acento
+// (cola/franja). `_dir` (1/-1) lo espeja según hacia dónde vuela.
+export function drawPlane(ctx, prop) {
+  const s = prop.scale || 1.6;
+  const cx = Math.round(prop.x);
+  const cy = Math.round(prop.y);
+  const a = prop.alpha == null ? 1 : Math.max(0, Math.min(1, prop.alpha));
+  if (a <= 0.01) return;
+  const TAU = Math.PI * 2;
+  const dir = prop._dir || (prop.dir === 'left' ? -1 : 1);
+  const body = prop.color || '#eef1f4';
+  const bodyD = mixColors(body, '#000000', 0.16);
+  const accent = prop.color2 || '#5b8def';
+  ctx.save();
+  ctx.globalAlpha *= a;
+  ctx.translate(cx, cy);
+  ctx.scale(dir, 1);
+  // Estela de vapor (hacia atrás, -x).
+  for (let i = 0; i < 9; i++) {
+    ctx.globalAlpha = a * 0.22 * (1 - i / 9);
+    ctx.fillStyle = '#ffffff';
+    ctx.beginPath(); ctx.arc(-9 * s - i * 3.2 * s, -0.2 * s, (1.3 - i * 0.11) * s, 0, TAU); ctx.fill();
+  }
+  ctx.globalAlpha = a;
+  // Aleta de cola.
+  ctx.fillStyle = accent;
+  ctx.beginPath(); ctx.moveTo(-7.4 * s, 0.4 * s); ctx.lineTo(-9.2 * s, -3.6 * s); ctx.lineTo(-6 * s, 0.4 * s); ctx.closePath(); ctx.fill();
+  // Ala inferior (perspectiva).
+  ctx.fillStyle = mixColors(body, '#000000', 0.1);
+  ctx.beginPath(); ctx.moveTo(1.5 * s, 0.6 * s); ctx.lineTo(-3.5 * s, 4.2 * s); ctx.lineTo(2.5 * s, 1 * s); ctx.closePath(); ctx.fill();
+  // Fuselaje.
+  ctx.fillStyle = bodyD;
+  ctx.beginPath(); ctx.ellipse(0, 0.7 * s, 8 * s, 1.7 * s, 0, 0, TAU); ctx.fill();
+  ctx.fillStyle = body;
+  ctx.beginPath(); ctx.ellipse(0, 0, 8.4 * s, 2 * s, 0, 0, TAU); ctx.fill();
+  // Ala superior.
+  ctx.fillStyle = body;
+  ctx.beginPath(); ctx.moveTo(1.5 * s, -0.4 * s); ctx.lineTo(-2.5 * s, -2.8 * s); ctx.lineTo(2.5 * s, -0.4 * s); ctx.closePath(); ctx.fill();
+  // Franja de color.
+  ctx.fillStyle = accent; ctx.fillRect(-6.5 * s, -0.5 * s, 13 * s, 0.9 * s);
+  // Ventanillas.
+  ctx.fillStyle = '#33465a';
+  for (let i = 0; i < 7; i++) { ctx.beginPath(); ctx.arc(-4.5 * s + i * 1.5 * s, -0.4 * s, 0.34 * s, 0, TAU); ctx.fill(); }
+  // Cabina.
+  ctx.beginPath(); ctx.arc(6.4 * s, -0.5 * s, 0.8 * s, 0, TAU); ctx.fill();
+  ctx.restore();
+}
+
+// Skyline de ciudad europea como telón de fondo: fila de edificios de distintas
+// alturas con hileras de ventanas (algunas iluminadas), cornisas, tejados
+// mansarda y chimeneas, lavados con bruma para dar perspectiva atmosférica.
+// (x, y) = punto base central (nivel de calle). `w` fija el ancho total.
+// Determinista (sin random) para ser reproducible en cada corrida.
+export function drawCityscape(ctx, prop) {
+  const s = prop.scale || 6;
+  const cx = Math.round(prop.x);
+  const baseY = Math.round(prop.y);
+  const a = prop.alpha == null ? 1 : Math.max(0, Math.min(1, prop.alpha));
+  if (a <= 0.01) return;
+  const halfW = (prop.w || 68 * s) / 2;
+  const haze = prop.color2 || '#e7ddc8';
+  const mixHaze = (c) => mixColors(c, haze, 0.3);
+  const facades = ['#cc9a7a', '#e2d6bd', '#d3b072', '#bfb6a4', '#d2ac9c', '#adb9c0', '#c98f78'];
+  const widths = [17, 23, 14, 21, 16, 25, 18, 20];
+  const heights = [44, 58, 36, 50, 62, 40, 54, 46];
+  const roof = mixHaze('#5f5a54'), roofD = mixHaze('#443f3b');
+  ctx.save();
+  ctx.globalAlpha *= a;
+  let bx = cx - halfW, i = 0;
+  while (bx < cx + halfW - 1) {
+    const bw = widths[i % widths.length] * s;
+    const bh = heights[i % heights.length] * s;
+    const col = mixHaze(facades[i % facades.length]);
+    const colD = mixColors(col, '#000000', 0.13);
+    const colL = mixColors(col, '#ffffff', 0.16);
+    const topY = baseY - bh;
+    // Cuerpo con gradiente vertical.
+    const bg = ctx.createLinearGradient(0, topY, 0, baseY);
+    bg.addColorStop(0, colL); bg.addColorStop(1, colD);
+    ctx.fillStyle = bg; ctx.fillRect(bx, topY, bw, bh);
+    // Cornisa superior.
+    ctx.fillStyle = colD; ctx.fillRect(bx, topY, bw, 1.6 * s);
+    ctx.fillStyle = colL; ctx.fillRect(bx, topY + 1.6 * s, bw, 0.6 * s);
+    // Tejado mansarda con chimenea en edificios pares.
+    if (i % 2 === 0) {
+      ctx.fillStyle = roof;
+      ctx.beginPath();
+      ctx.moveTo(bx, topY); ctx.lineTo(bx + 1.6 * s, topY - 4 * s);
+      ctx.lineTo(bx + bw - 1.6 * s, topY - 4 * s); ctx.lineTo(bx + bw, topY);
+      ctx.closePath(); ctx.fill();
+      ctx.fillStyle = roofD; ctx.fillRect(bx + bw * 0.28, topY - 5.4 * s, 1.6 * s, 5.4 * s);
+      ctx.fillStyle = roof; ctx.fillRect(bx + bw * 0.28 - 0.3 * s, topY - 5.6 * s, 2.2 * s, 0.8 * s);
+    }
+    // Ventanas (grilla) con algunas iluminadas.
+    const cols = Math.max(2, Math.floor(bw / (4.4 * s)));
+    const winW = 2.3 * s, winH = 3.3 * s;
+    const gapX = (bw - cols * winW) / (cols + 1);
+    let wy = topY + 4.4 * s, r = 0;
+    while (wy + winH < baseY - 2 * s) {
+      for (let c = 0; c < cols; c++) {
+        const wx = bx + gapX * (c + 1) + winW * c;
+        const lit = ((i * 7 + r * 3 + c * 5) % 6) === 0;
+        ctx.fillStyle = colD; ctx.fillRect(wx - 0.4 * s, wy - 0.4 * s, winW + 0.8 * s, winH + 0.8 * s);
+        ctx.fillStyle = lit ? '#f4cb7c' : '#59687a';
+        ctx.fillRect(wx, wy, winW, winH);
+        ctx.fillStyle = lit ? 'rgba(255,232,175,0.5)' : 'rgba(255,255,255,0.12)';
+        ctx.fillRect(wx, wy, winW * 0.42, winH);
+        ctx.fillStyle = colD; ctx.fillRect(wx + winW / 2 - 0.15 * s, wy, 0.3 * s, winH);
+      }
+      wy += winH + 2.6 * s; r++;
+    }
+    bx += bw + 0.6 * s; i++;
+  }
+  ctx.restore();
+}
+
+// Fachada de café victoriano vista de frente: pared crema con molduras y
+// pilastras, cornisa con dentículos, puerta central con arco de medio punto y
+// cristal, dos ventanas arqueadas con cortina, toldo rayado, cartela dorada con
+// el nombre (prop.label) y apliques encendidos. (x, y) = CENTRO. `color` = pared,
+// `color2` = acento (toldo/cortinas). Es la pieza de ambiente de la escena.
+export function drawCafeFacade(ctx, prop) {
+  const s = prop.scale || 8;
+  const cx = Math.round(prop.x);
+  const cy = Math.round(prop.y);
+  const a = prop.alpha == null ? 1 : Math.max(0, Math.min(1, prop.alpha));
+  if (a <= 0.01) return;
+  const TAU = Math.PI * 2;
+  const wall = prop.color || '#ece3d0';
+  const wallD = mixColors(wall, '#000000', 0.13);
+  const wallL = mixColors(wall, '#ffffff', 0.5);
+  const trim = mixColors(wall, '#ffffff', 0.35), trimSh = mixColors(wall, '#000000', 0.22);
+  const gold = '#c9a24a', goldL = '#ead08a', goldD = '#977832';
+  const wood = '#5a3d28', woodD = '#33210f', woodL = '#7c5636';
+  const accent = prop.color2 || '#8f2f30';   // toldo / cortina (rojo vino)
+  const accentL = mixColors(accent, '#ffffff', 0.2);
+  const cream = '#f4ece0';
+  const glassA = '#a8c2ce', glassB = '#7592a1';
+  const W = 42 * s, H = 30 * s;
+  const x = cx - W / 2, y = cy - H / 2;
+  const rr = (rx, ry, rw, rh, r) => { ctx.beginPath(); ctx.roundRect(rx, ry, rw, rh, r); };
+  ctx.save();
+  ctx.globalAlpha *= a;
+  // Sombra ancha al pie.
+  ctx.save(); ctx.globalAlpha *= 0.16; ctx.fillStyle = '#000000';
+  ctx.beginPath(); ctx.ellipse(cx, y + H, W * 0.5, 2 * s, 0, 0, TAU); ctx.fill(); ctx.restore();
+  // Pared con gradiente.
+  const wg = ctx.createLinearGradient(0, y, 0, y + H);
+  wg.addColorStop(0, wallL); wg.addColorStop(0.5, wall); wg.addColorStop(1, wallD);
+  ctx.fillStyle = wg; ctx.fillRect(x, y, W, H);
+  // Sillares sutiles (líneas horizontales).
+  ctx.strokeStyle = 'rgba(120,100,70,0.10)'; ctx.lineWidth = 1;
+  for (let i = 1; i < 6; i++) { const ly = y + (H * 0.16) * i; ctx.beginPath(); ctx.moveTo(x, ly); ctx.lineTo(x + W, ly); ctx.stroke(); }
+  // Zócalo inferior.
+  ctx.fillStyle = trimSh; ctx.fillRect(x, y + H - 2.4 * s, W, 2.4 * s);
+  ctx.fillStyle = mixColors(wall, '#000000', 0.3); ctx.fillRect(x, y + H - 2.4 * s, W, 0.6 * s);
+  // Pilastras laterales con capitel y base.
+  for (const px0 of [x + 1.2 * s, x + W - 3.6 * s]) {
+    ctx.fillStyle = trim; ctx.fillRect(px0, y + 3.4 * s, 2.4 * s, H - 5.8 * s);
+    ctx.fillStyle = wallL; ctx.fillRect(px0, y + 3.4 * s, 0.7 * s, H - 5.8 * s);
+    ctx.fillStyle = trimSh; ctx.fillRect(px0 + 1.7 * s, y + 3.4 * s, 0.7 * s, H - 5.8 * s);
+    // capitel
+    ctx.fillStyle = trim; ctx.fillRect(px0 - 0.7 * s, y + 3.4 * s, 3.8 * s, 1.4 * s);
+    ctx.fillStyle = gold; ctx.fillRect(px0 - 0.7 * s, y + 4.5 * s, 3.8 * s, 0.4 * s);
+    // base
+    ctx.fillStyle = trim; ctx.fillRect(px0 - 0.7 * s, y + H - 4 * s, 3.8 * s, 1.6 * s);
+  }
+  // Cornisa / entablamento superior.
+  ctx.fillStyle = trim; ctx.fillRect(x, y, W, 3.4 * s);
+  ctx.fillStyle = wallL; ctx.fillRect(x, y, W, 0.8 * s);
+  ctx.fillStyle = gold; ctx.fillRect(x, y + 3.0 * s, W, 0.5 * s);
+  ctx.fillStyle = goldD; ctx.fillRect(x, y + 3.5 * s, W, 0.25 * s);
+  // Dentículos bajo la cornisa.
+  ctx.fillStyle = trimSh;
+  for (let dx = x + 1 * s; dx < x + W - 1 * s; dx += 2.2 * s) ctx.fillRect(dx, y + 2.3 * s, 1.1 * s, 0.9 * s);
+  // Cartela central con el nombre (letrero dorado).
+  const cw = 26 * s, ch = 4.6 * s, cyr = y + 4.4 * s;
+  ctx.fillStyle = woodD; rr(cx - cw / 2, cyr, cw, ch, 1 * s); ctx.fill();
+  const cgr = ctx.createLinearGradient(0, cyr, 0, cyr + ch);
+  cgr.addColorStop(0, '#3a2a1a'); cgr.addColorStop(1, '#23160b');
+  ctx.fillStyle = cgr; rr(cx - cw / 2 + 0.5 * s, cyr + 0.5 * s, cw - 1 * s, ch - 1 * s, 0.8 * s); ctx.fill();
+  ctx.strokeStyle = gold; ctx.lineWidth = Math.max(1, 0.35 * s);
+  rr(cx - cw / 2 + 0.5 * s, cyr + 0.5 * s, cw - 1 * s, ch - 1 * s, 0.8 * s); ctx.stroke();
+  // Volutas doradas en los extremos de la cartela.
+  for (const sgn of [-1, 1]) {
+    ctx.strokeStyle = goldL; ctx.lineWidth = Math.max(1, 0.4 * s);
+    ctx.beginPath();
+    ctx.arc(cx + sgn * (cw / 2 + 1.4 * s), cyr + ch / 2, 1.3 * s, sgn > 0 ? -Math.PI * 0.5 : Math.PI * 0.5, sgn > 0 ? Math.PI * 0.5 : Math.PI * 1.5);
+    ctx.stroke();
+  }
+  const label = prop.label || 'Coffee with Genially';
+  ctx.fillStyle = goldL;
+  ctx.font = `italic 600 ${(2.6 * s).toFixed(1)}px Fraunces, Georgia, serif`;
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.shadowColor = 'rgba(0,0,0,0.6)'; ctx.shadowOffsetY = 1;
+  ctx.fillText(label, cx, cyr + ch / 2 + 0.2 * s);
+  ctx.shadowColor = 'transparent';
+  // --- Puerta central con arco rebajado (no invade la cartela) ---
+  const dW = 11 * s, dH = 15 * s;
+  const dx = cx - dW / 2, dyB = y + H - 2.4 * s, dyT = dyB - dH;
+  const archH = 2.4 * s, archRx = dW / 2;
+  // marco de madera
+  ctx.fillStyle = wood;
+  ctx.beginPath();
+  ctx.moveTo(dx - 1 * s, dyB); ctx.lineTo(dx - 1 * s, dyT);
+  ctx.ellipse(cx, dyT, archRx + 1 * s, archH + 0.8 * s, 0, Math.PI, 0); ctx.lineTo(dx + dW + 1 * s, dyB); ctx.closePath(); ctx.fill();
+  // hoja / cristal
+  const dgr = ctx.createLinearGradient(0, dyT - archH, 0, dyB);
+  dgr.addColorStop(0, glassA); dgr.addColorStop(1, glassB);
+  ctx.fillStyle = dgr;
+  ctx.beginPath();
+  ctx.moveTo(dx, dyB); ctx.lineTo(dx, dyT); ctx.ellipse(cx, dyT, archRx, archH, 0, Math.PI, 0); ctx.lineTo(dx + dW, dyB); ctx.closePath(); ctx.fill();
+  // reflejo diagonal
+  ctx.save(); ctx.globalAlpha *= 0.5; ctx.fillStyle = '#ffffff';
+  ctx.beginPath(); ctx.moveTo(dx + 1.5 * s, dyB); ctx.lineTo(dx + 4 * s, dyB); ctx.lineTo(dx + 1.5 * s, dyT + 2 * s); ctx.closePath(); ctx.fill(); ctx.restore();
+  // panel inferior de madera y montante central
+  ctx.fillStyle = woodL; ctx.fillRect(dx, dyB - 4 * s, dW, 4 * s);
+  ctx.fillStyle = woodD; ctx.fillRect(cx - 0.4 * s, dyT - archH, 0.8 * s, dH + archH);
+  // manijas
+  ctx.fillStyle = gold;
+  ctx.beginPath(); ctx.arc(cx - 1.4 * s, dyB - 6 * s, 0.6 * s, 0, TAU); ctx.fill();
+  ctx.beginPath(); ctx.arc(cx + 1.4 * s, dyB - 6 * s, 0.6 * s, 0, TAU); ctx.fill();
+  // --- Dos ventanas arqueadas ---
+  const vW = 8 * s, vH = 9 * s;
+  for (const vcx of [x + 8 * s, x + W - 8 * s]) {
+    const vx = vcx - vW / 2, vyB = dyB - 1.5 * s, vyT = vyB - vH, vArch = vW / 2;
+    ctx.fillStyle = trimSh;
+    ctx.beginPath(); ctx.moveTo(vx - 0.8 * s, vyB); ctx.lineTo(vx - 0.8 * s, vyT); ctx.arc(vcx, vyT, vArch + 0.8 * s, Math.PI, 0); ctx.lineTo(vx + vW + 0.8 * s, vyB); ctx.closePath(); ctx.fill();
+    const vgr = ctx.createLinearGradient(0, vyT - vArch, 0, vyB);
+    vgr.addColorStop(0, glassA); vgr.addColorStop(1, glassB);
+    ctx.fillStyle = vgr;
+    ctx.beginPath(); ctx.moveTo(vx, vyB); ctx.lineTo(vx, vyT); ctx.arc(vcx, vyT, vArch, Math.PI, 0); ctx.lineTo(vx + vW, vyB); ctx.closePath(); ctx.fill();
+    // cortina de encaje (mitad inferior)
+    ctx.save(); ctx.globalAlpha *= 0.85; ctx.fillStyle = cream;
+    ctx.fillRect(vx, vyB - vH * 0.42, vW, vH * 0.42); ctx.restore();
+    ctx.strokeStyle = 'rgba(120,100,70,0.25)'; ctx.lineWidth = 1;
+    for (let k = 1; k < 4; k++) { ctx.beginPath(); ctx.moveTo(vx + (vW / 4) * k, vyB - vH * 0.42); ctx.lineTo(vx + (vW / 4) * k, vyB); ctx.stroke(); }
+    // parteluz
+    ctx.strokeStyle = trim; ctx.lineWidth = 0.5 * s;
+    ctx.beginPath(); ctx.moveTo(vcx, vyT - vArch); ctx.lineTo(vcx, vyB); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(vx, vyT); ctx.lineTo(vx + vW, vyT); ctx.stroke();
+    // apliques a un lado de cada ventana
+    ctx.fillStyle = goldD; ctx.fillRect(vcx + vW / 2 + 1 * s, vyT + 1 * s, 0.5 * s, 2.5 * s);
+    const glow = ctx.createRadialGradient(vcx + vW / 2 + 1.6 * s, vyT + 0.6 * s, 0, vcx + vW / 2 + 1.6 * s, vyT + 0.6 * s, 2 * s);
+    glow.addColorStop(0, 'rgba(255,210,120,0.75)'); glow.addColorStop(1, 'rgba(255,210,120,0)');
+    ctx.fillStyle = glow; ctx.beginPath(); ctx.arc(vcx + vW / 2 + 1.6 * s, vyT + 0.6 * s, 2 * s, 0, TAU); ctx.fill();
+  }
+  // --- Toldo rayado sobre la puerta ---
+  const aHalf = dW * 0.92, aTop = cyr + ch + 0.7 * s, aFront = aTop + 4.6 * s, aVal = 2.4 * s;
+  const N = 7, sw = (2 * aHalf) / N;
+  for (let i = 0; i < N; i++) {
+    const ax0 = cx - aHalf + i * sw;
+    ctx.fillStyle = (i % 2 === 0) ? accent : cream;
+    ctx.fillRect(ax0, aTop, sw, aFront - aTop);
+    ctx.fillStyle = (i % 2 === 0) ? accent : cream;
+    ctx.beginPath(); ctx.moveTo(ax0, aFront); ctx.lineTo(ax0 + sw, aFront); ctx.lineTo(ax0 + sw, aFront + aVal * 0.4); ctx.arc(ax0 + sw / 2, aFront + aVal * 0.4, sw / 2, 0, Math.PI); ctx.closePath(); ctx.fill();
+  }
+  ctx.save(); ctx.globalAlpha *= 0.18; ctx.fillStyle = '#000000'; ctx.fillRect(cx - aHalf, aTop, 2 * aHalf, 1.1 * s); ctx.restore();
+  ctx.restore();
+}
+
+// Toldo de café rayado con faldón festoneado. (x, y) = centro superior (pegado
+// a la pared); se proyecta hacia abajo. `color`/`color2` alternan las rayas.
+export function drawAwning(ctx, prop) {
+  const s = prop.scale || 7;
+  const cx = Math.round(prop.x);
+  const cy = Math.round(prop.y);
+  const a = prop.alpha == null ? 1 : Math.max(0, Math.min(1, prop.alpha));
+  if (a <= 0.01) return;
+  const c1 = prop.color || '#c0473e';
+  const c2 = prop.color2 || '#f4ece0';
+  const halfW = 12 * s;
+  const topY = cy;
+  const frontY = cy + 6.2 * s;
+  const valH = 3.4 * s;
+  const N = 8;
+  const sw = (2 * halfW) / N;
+  ctx.save();
+  ctx.globalAlpha *= a;
+  // Sombra que el toldo proyecta sobre la pared.
+  ctx.save(); ctx.globalAlpha *= 0.16; ctx.fillStyle = '#000000';
+  ctx.fillRect(cx - halfW - 1 * s, frontY + valH, 2 * halfW + 2 * s, 4 * s); ctx.restore();
+  // Superficie principal (rayas verticales).
+  for (let i = 0; i < N; i++) {
+    const x0 = cx - halfW + i * sw;
+    ctx.fillStyle = (i % 2 === 0) ? c1 : c2;
+    ctx.beginPath();
+    ctx.moveTo(x0, topY); ctx.lineTo(x0 + sw, topY);
+    ctx.lineTo(x0 + sw, frontY); ctx.lineTo(x0, frontY);
+    ctx.closePath(); ctx.fill();
+  }
+  // Sombra curva en el pliegue superior.
+  ctx.save(); ctx.globalAlpha *= 0.18; ctx.fillStyle = '#000000';
+  ctx.fillRect(cx - halfW, topY, 2 * halfW, 1.4 * s); ctx.restore();
+  // Borde frontal (varilla).
+  ctx.fillStyle = 'rgba(0,0,0,0.16)';
+  ctx.fillRect(cx - halfW, frontY - 0.6 * s, 2 * halfW, 0.9 * s);
+  // Faldón festoneado (semicírculos colgando, alternando color).
+  for (let i = 0; i < N; i++) {
+    const x0 = cx - halfW + i * sw;
+    ctx.fillStyle = (i % 2 === 0) ? c1 : c2;
+    ctx.beginPath();
+    ctx.moveTo(x0, frontY);
+    ctx.lineTo(x0 + sw, frontY);
+    ctx.lineTo(x0 + sw, frontY + valH * 0.35);
+    ctx.arc(x0 + sw / 2, frontY + valH * 0.35, sw / 2, 0, Math.PI);
+    ctx.closePath(); ctx.fill();
+  }
+  ctx.restore();
+}
+
+// Mesa de bistró de hierro forjado: pedestal de tres patas curvas + poste con
+// aro + tapa de mármol elíptica. (x, y) = base. `color` tiñe el hierro (crema),
+// `color2` la tapa.
+export function drawBistroTable(ctx, prop) {
+  const s = prop.scale || 2.4;
+  const cx = Math.round(prop.x);
+  const cy = Math.round(prop.y);
+  const a = prop.alpha == null ? 1 : Math.max(0, Math.min(1, prop.alpha));
+  if (a <= 0.01) return;
+  const TAU = Math.PI * 2;
+  const iron = prop.color || '#f3ede2';
+  const ironSh = mixColors(iron, '#000000', 0.26);
+  const ironHi = mixColors(iron, '#ffffff', 0.55);
+  const top = prop.color2 || '#e9e1d0';
+  const topEdge = mixColors(top, '#000000', 0.2);
+  const topHi = mixColors(top, '#ffffff', 0.45);
+  const H = 16 * s;
+  const topY = cy - H;
+  const topRx = 8.8 * s, topRy = 2.5 * s;
+  const midY = cy - H * 0.44;
+  ctx.save();
+  ctx.globalAlpha *= a;
+  // Sombra.
+  ctx.save(); ctx.globalAlpha *= 0.2; ctx.fillStyle = '#000000';
+  ctx.beginPath(); ctx.ellipse(cx, cy, 7 * s, 1.8 * s, 0, 0, TAU); ctx.fill(); ctx.restore();
+  // Tres patas curvas de hierro forjado.
+  ctx.strokeStyle = ironSh; ctx.lineWidth = 1.7 * s; ctx.lineCap = 'round';
+  const feet = [-6.2 * s, 0, 6.2 * s];
+  for (const fx of feet) {
+    ctx.beginPath();
+    ctx.moveTo(cx, midY);
+    ctx.quadraticCurveTo(cx + fx * 0.5, cy - 1.5 * s, cx + fx, cy);
+    ctx.stroke();
+  }
+  ctx.strokeStyle = iron; ctx.lineWidth = 0.9 * s;
+  for (const fx of feet) {
+    ctx.beginPath();
+    ctx.moveTo(cx - 0.3 * s, midY);
+    ctx.quadraticCurveTo(cx + fx * 0.5 - 0.3 * s, cy - 1.5 * s, cx + fx - 0.3 * s, cy - 0.2 * s);
+    ctx.stroke();
+  }
+  // Poste central.
+  ctx.fillStyle = iron; ctx.fillRect(cx - 0.9 * s, topY, 1.8 * s, midY - topY + 0.5 * s);
+  ctx.fillStyle = ironHi; ctx.fillRect(cx - 0.9 * s, topY, 0.6 * s, midY - topY);
+  ctx.fillStyle = ironSh; ctx.fillRect(cx + 0.4 * s, topY, 0.5 * s, midY - topY);
+  // Aro decorativo a media altura.
+  ctx.strokeStyle = iron; ctx.lineWidth = 0.8 * s;
+  ctx.beginPath(); ctx.ellipse(cx, cy - H * 0.6, 2.4 * s, 0.9 * s, 0, 0, TAU); ctx.stroke();
+  // Tapa de mármol.
+  ctx.fillStyle = topEdge;
+  ctx.beginPath(); ctx.ellipse(cx, topY + 0.7 * s, topRx, topRy, 0, 0, TAU); ctx.fill();
+  ctx.fillStyle = top;
+  ctx.beginPath(); ctx.ellipse(cx, topY, topRx, topRy, 0, 0, TAU); ctx.fill();
+  ctx.save(); ctx.globalAlpha *= 0.6; ctx.fillStyle = topHi;
+  ctx.beginPath(); ctx.ellipse(cx - 2 * s, topY - 0.5 * s, topRx * 0.5, topRy * 0.42, -0.2, 0, TAU); ctx.fill(); ctx.restore();
+  ctx.restore();
+}
+
+// Silla de bistró de hierro forjado con asiento redondo rosa capitoné y respaldo
+// de volutas. (x, y) = base. `color` = asiento (rosa), `color2` = hierro (crema).
+export function drawBistroChair(ctx, prop) {
+  const s = prop.scale || 1.8;
+  const cx = Math.round(prop.x);
+  const cy = Math.round(prop.y);
+  const a = prop.alpha == null ? 1 : Math.max(0, Math.min(1, prop.alpha));
+  if (a <= 0.01) return;
+  const TAU = Math.PI * 2;
+  const dir = prop.dir === 'left' ? -1 : 1;
+  const seat = prop.color || '#e3a9b7';
+  const seatSh = mixColors(seat, '#000000', 0.2);
+  const seatHi = mixColors(seat, '#ffffff', 0.4);
+  const iron = prop.color2 || '#f3ede2';
+  const ironSh = mixColors(iron, '#000000', 0.26);
+  const seatY = cy - 9 * s;
+  const seatRx = 5.2 * s, seatRy = 1.9 * s;
+  const backY = seatY - 8 * s;
+  ctx.save();
+  ctx.globalAlpha *= a;
+  // Sombra.
+  ctx.save(); ctx.globalAlpha *= 0.18; ctx.fillStyle = '#000000';
+  ctx.beginPath(); ctx.ellipse(cx, cy, 5 * s, 1.4 * s, 0, 0, TAU); ctx.fill(); ctx.restore();
+  // Respaldo de volutas (detrás del asiento).
+  ctx.strokeStyle = ironSh; ctx.lineWidth = 1.4 * s; ctx.lineCap = 'round';
+  ctx.beginPath();
+  ctx.moveTo(cx - 3 * s, seatY - 0.5 * s);
+  ctx.quadraticCurveTo(cx - 3.4 * s, backY, cx, backY - 0.5 * s);
+  ctx.quadraticCurveTo(cx + 3.4 * s, backY, cx + 3 * s, seatY - 0.5 * s);
+  ctx.stroke();
+  // Voluta central (corazón/scroll).
+  ctx.strokeStyle = iron; ctx.lineWidth = 1.1 * s;
+  ctx.beginPath();
+  ctx.moveTo(cx, seatY - 1 * s);
+  ctx.quadraticCurveTo(cx - 1.8 * s, backY + 2 * s, cx, backY + 1 * s);
+  ctx.quadraticCurveTo(cx + 1.8 * s, backY + 2 * s, cx, seatY - 1 * s);
+  ctx.stroke();
+  // Patas curvas.
+  ctx.strokeStyle = ironSh; ctx.lineWidth = 1.4 * s;
+  for (const fx of [-3.6 * s, 3.6 * s]) {
+    ctx.beginPath();
+    ctx.moveTo(cx + fx * 0.5, seatY + 0.5 * s);
+    ctx.quadraticCurveTo(cx + fx, cy - 3 * s, cx + fx, cy);
+    ctx.stroke();
+  }
+  // Asiento redondo rosa con capitoné.
+  ctx.fillStyle = seatSh;
+  ctx.beginPath(); ctx.ellipse(cx, seatY + 0.8 * s, seatRx, seatRy, 0, 0, TAU); ctx.fill();
+  ctx.fillStyle = seat;
+  ctx.beginPath(); ctx.ellipse(cx, seatY, seatRx, seatRy, 0, 0, TAU); ctx.fill();
+  ctx.save(); ctx.globalAlpha *= 0.5; ctx.fillStyle = seatHi;
+  ctx.beginPath(); ctx.ellipse(cx - 1.4 * s, seatY - 0.4 * s, seatRx * 0.5, seatRy * 0.45, 0, 0, TAU); ctx.fill(); ctx.restore();
+  // Botones de capitoné.
+  ctx.fillStyle = seatSh;
+  for (const bx of [-2.2 * s, 0, 2.2 * s]) {
+    ctx.beginPath(); ctx.arc(cx + bx, seatY, 0.4 * s, 0, TAU); ctx.fill();
+  }
+  ctx.restore();
+}
+
+// Marco ovalado dorado ornamentado montado en la pared. Con `live: true` el
+// interior es una pantalla de videollamada con chip "EN VIVO" pulsante (el
+// ponente remoto se dibuja como learner encima); sin él, un lienzo de retrato.
+// (x, y) = centro. `color` = oro del marco, `color2` = fondo interior.
+export function drawFrameOval(ctx, prop) {
+  const s = prop.scale || 6;
+  const cx = Math.round(prop.x);
+  const cy = Math.round(prop.y);
+  const a = prop.alpha == null ? 1 : Math.max(0, Math.min(1, prop.alpha));
+  if (a <= 0.01) return;
+  const TAU = Math.PI * 2;
+  const t = prop._t || 0;
+  const FONT = '"Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif';
+  const gold = prop.color || '#c9a24a';
+  const goldHi = mixColors(gold, '#fff6d8', 0.6);
+  const goldSh = mixColors(gold, '#000000', 0.4);
+  const rx = 11 * s, ry = 14 * s;
+  const fw = 1.9 * s;   // grosor del marco
+  ctx.save();
+  ctx.globalAlpha *= a;
+  // Sombra en la pared.
+  ctx.save(); ctx.globalAlpha *= 0.22; ctx.fillStyle = '#000000';
+  ctx.beginPath(); ctx.ellipse(cx + 1.5 * s, cy + 2 * s, rx, ry, 0, 0, TAU); ctx.fill(); ctx.restore();
+  // Marco dorado (anillo exterior con relieve).
+  ctx.fillStyle = goldSh;
+  ctx.beginPath(); ctx.ellipse(cx, cy, rx + fw, ry + fw, 0, 0, TAU); ctx.fill();
+  const gg = ctx.createLinearGradient(cx - rx, cy - ry, cx + rx, cy + ry);
+  gg.addColorStop(0, goldHi); gg.addColorStop(0.5, gold); gg.addColorStop(1, goldSh);
+  ctx.fillStyle = gg;
+  ctx.beginPath(); ctx.ellipse(cx, cy, rx + fw * 0.55, ry + fw * 0.55, 0, 0, TAU); ctx.fill();
+  // Interior (lienzo / pantalla).
+  const inner = prop.live ? '#12243d' : (prop.color2 || '#efe6d4');
+  ctx.save();
+  ctx.beginPath(); ctx.ellipse(cx, cy, rx, ry, 0, 0, TAU); ctx.clip();
+  if (prop.live) {
+    const sg = ctx.createLinearGradient(0, cy - ry, 0, cy + ry);
+    sg.addColorStop(0, '#2c456a'); sg.addColorStop(1, '#0d1a2e');
+    ctx.fillStyle = sg;
+  } else {
+    ctx.fillStyle = inner;
+  }
+  ctx.fillRect(cx - rx, cy - ry, rx * 2, ry * 2);
+  ctx.restore();
+  // Filo interior dorado.
+  ctx.strokeStyle = goldHi; ctx.lineWidth = Math.max(1, 0.4 * s);
+  ctx.beginPath(); ctx.ellipse(cx, cy, rx, ry, 0, 0, TAU); ctx.stroke();
+  // Cartelas ornamentales arriba y abajo.
+  for (const sy of [-1, 1]) {
+    ctx.fillStyle = gold;
+    ctx.beginPath();
+    ctx.moveTo(cx, cy + sy * (ry + fw + 2.4 * s));
+    ctx.quadraticCurveTo(cx - 2.6 * s, cy + sy * (ry + fw + 0.4 * s), cx - 1 * s, cy + sy * (ry + fw - 0.3 * s));
+    ctx.quadraticCurveTo(cx, cy + sy * (ry + fw + 1.2 * s), cx + 1 * s, cy + sy * (ry + fw - 0.3 * s));
+    ctx.quadraticCurveTo(cx + 2.6 * s, cy + sy * (ry + fw + 0.4 * s), cx, cy + sy * (ry + fw + 2.4 * s));
+    ctx.fill();
+    ctx.fillStyle = goldHi;
+    ctx.beginPath(); ctx.arc(cx, cy + sy * (ry + fw + 1.3 * s), 0.7 * s, 0, TAU); ctx.fill();
+  }
+  // Chip "EN VIVO" si es una transmisión.
+  if (prop.live) {
+    const pulse = 0.5 + 0.5 * Math.sin(t * 4);
+    const chy = cy + ry - 2.6 * s;
+    ctx.fillStyle = 'rgba(6,10,18,0.55)';
+    ctx.beginPath(); ctx.roundRect(cx - 5 * s, chy - 1.5 * s, 10 * s, 3 * s, 0.8 * s); ctx.fill();
+    ctx.fillStyle = `rgba(255,77,77,${(0.55 + 0.45 * pulse).toFixed(2)})`;
+    ctx.beginPath(); ctx.arc(cx - 3.4 * s, chy, 0.85 * s, 0, TAU); ctx.fill();
+    ctx.fillStyle = '#FBFAF6';
+    ctx.font = `700 ${(1.9 * s).toFixed(1)}px ${FONT}`;
+    ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+    ctx.fillText('EN VIVO', cx - 2 * s, chy + 0.1 * s);
+  }
+  ctx.restore();
+}
+
+// Computador portátil abierto, de frente: pantalla vertical (con contenido de
+// colores cuando `glow` la enciende) y teclado en escorzo. (x, y) = base frontal.
+// `color` = chasis, `glow` 0..1 = pantalla encendida (creando). No confundir con
+// `notebook`, que es una libreta de espiral.
+export function drawLaptop(ctx, prop) {
+  const s = prop.scale || 2;
+  const cx = Math.round(prop.x);
+  const cy = Math.round(prop.y);
+  const a = prop.alpha == null ? 1 : Math.max(0, Math.min(1, prop.alpha));
+  if (a <= 0.01) return;
+  const TAU = Math.PI * 2;
+  const body = prop.color || '#cbd0d8';
+  const bodyD = mixColors(body, '#000000', 0.34);
+  const bodyL = mixColors(body, '#ffffff', 0.5);
+  const bezel = '#2a2f38';
+  const glow = prop.glow == null ? 0 : Math.max(0, Math.min(1, prop.glow));
+  const t = prop._t || 0;
+  const scW = 11 * s, scH = 7.6 * s;
+  const kbDepth = 3.2 * s;
+  // Coordenadas RELATIVAS al origen: tras translate(cx, cy) el borde frontal del
+  // teclado queda en y=0, la bisagra arriba y la pantalla más arriba aún.
+  const hingeY = -kbDepth;
+  const scTop = hingeY - scH;
+  ctx.save();
+  ctx.globalAlpha *= a;
+  ctx.translate(cx, cy);
+  // Sombra de contacto.
+  ctx.save(); ctx.globalAlpha *= 0.24; ctx.fillStyle = '#000000';
+  ctx.beginPath(); ctx.ellipse(0, 0, 8.6 * s, 1.5 * s, 0, 0, TAU); ctx.fill(); ctx.restore();
+  // Resplandor de la pantalla al crear.
+  if (glow > 0.01) {
+    const pulse = 0.8 + 0.2 * Math.sin(t * 3);
+    const g = ctx.createRadialGradient(0, scTop + scH * 0.4, scW * 0.3, 0, scTop + scH * 0.4, scW * 1.5);
+    g.addColorStop(0, `rgba(124,180,255,${(0.32 * glow * pulse).toFixed(3)})`);
+    g.addColorStop(1, 'rgba(124,180,255,0)');
+    ctx.save(); ctx.fillStyle = g; ctx.beginPath(); ctx.arc(0, scTop + scH * 0.4, scW * 1.5, 0, TAU); ctx.fill(); ctx.restore();
+  }
+  // Tapa/pantalla (marco vertical).
+  ctx.fillStyle = bodyD;
+  ctx.beginPath(); ctx.roundRect(-scW / 2 - 0.7 * s, scTop - 0.7 * s, scW + 1.4 * s, scH + 1.4 * s, 0.9 * s); ctx.fill();
+  ctx.fillStyle = bezel;
+  ctx.beginPath(); ctx.roundRect(-scW / 2, scTop, scW, scH, 0.5 * s); ctx.fill();
+  // Interior de la pantalla.
+  if (glow > 0.05) {
+    const sg = ctx.createLinearGradient(0, scTop, 0, scTop + scH);
+    sg.addColorStop(0, '#3a6ea5'); sg.addColorStop(1, '#6a4fd0');
+    ctx.fillStyle = sg; ctx.fillRect(-scW / 2 + 0.7 * s, scTop + 0.7 * s, scW - 1.4 * s, scH - 1.4 * s);
+    const cols = ['#ff5e7e', '#f4c430', '#4fd0e0', '#c850c0'];
+    for (let i = 0; i < 4; i++) { ctx.fillStyle = cols[i]; ctx.fillRect(-scW / 2 + 1.3 * s, scTop + 1.5 * s + i * 1.35 * s, (2 + i * 0.9) * s, 0.85 * s); }
+  } else {
+    ctx.fillStyle = '#161f2c'; ctx.fillRect(-scW / 2 + 0.7 * s, scTop + 0.7 * s, scW - 1.4 * s, scH - 1.4 * s);
+    ctx.save(); ctx.globalAlpha *= 0.28; ctx.fillStyle = '#ffffff';
+    ctx.beginPath(); ctx.moveTo(-scW / 2 + 1.2 * s, scTop + scH - 1.2 * s); ctx.lineTo(-scW / 2 + 3.4 * s, scTop + scH - 1.2 * s); ctx.lineTo(-scW / 2 + 1.2 * s, scTop + 1.2 * s); ctx.closePath(); ctx.fill(); ctx.restore();
+  }
+  // Base/teclado en escorzo (trapecio, más ancho al frente).
+  ctx.fillStyle = body;
+  ctx.beginPath();
+  ctx.moveTo(-scW / 2, hingeY); ctx.lineTo(scW / 2, hingeY);
+  ctx.lineTo(scW / 2 + 1.6 * s, 0); ctx.lineTo(-scW / 2 - 1.6 * s, 0);
+  ctx.closePath(); ctx.fill();
+  ctx.fillStyle = bodyL; ctx.fillRect(-scW / 2, hingeY - 0.2 * s, scW, 0.35 * s);
+  ctx.fillStyle = bodyD; ctx.fillRect(-scW / 2 - 1.6 * s, -0.35 * s, scW + 3.2 * s, 0.9 * s);
+  // Teclas (filas) y touchpad.
+  ctx.strokeStyle = bodyD; ctx.lineWidth = Math.max(1, 0.16 * s);
+  for (let r = 0; r < 3; r++) {
+    const ky = hingeY + kbDepth * (0.3 + r * 0.2);
+    const kx = (scW / 2) * (0.82 + r * 0.07);
+    ctx.beginPath(); ctx.moveTo(-kx, ky); ctx.lineTo(kx, ky); ctx.stroke();
+  }
+  ctx.fillStyle = bodyD; ctx.fillRect(-1.6 * s, -1 * s, 3.2 * s, 0.6 * s);
+  ctx.restore();
+}
+
+export function drawCoffee(ctx, prop) {
+  const s = prop.scale || 1.4;
+  const cx = Math.round(prop.x);
+  const cy = Math.round(prop.y);
+  const a = prop.alpha == null ? 1 : Math.max(0, Math.min(1, prop.alpha));
+  if (a <= 0.01) return;
+  const TAU = Math.PI * 2;
+  const t = prop._t || 0;
+  const mug = prop.color || '#f3ede0';            // cerámica cálida
+  const mugSh = mixColors(mug, '#000000', 0.24);
+  const mugHi = mixColors(mug, '#ffffff', 0.55);
+  const rim = mixColors(mug, '#000000', 0.12);
+  const brew = '#3a2318';                          // café
+  const brewHi = mixColors(brew, '#9a6438', 0.7);
+  const bw = 5.6 * s;      // media anchura en la boca
+  const bwB = 4.7 * s;     // media anchura en la base (cónica)
+  const bh = 6.8 * s;      // alto del cuerpo
+  const topY = -bh;        // boca
+  const botY = -0.5 * s;   // base, un pelo sobre cy para asentar
+  ctx.save();
+  ctx.globalAlpha *= a;
+  ctx.translate(cx, cy);
+  // Sombra de contacto.
+  ctx.save(); ctx.globalAlpha *= 0.28; ctx.fillStyle = '#000000';
+  ctx.beginPath(); ctx.ellipse(0, 0, 7.4 * s, 1.7 * s, 0, 0, TAU); ctx.fill(); ctx.restore();
+  // Vapor: dos volutas sinusoidales que suben y se desvanecen.
+  ctx.save();
+  ctx.lineCap = 'round';
+  ctx.strokeStyle = '#ffffff';
+  for (let i = 0; i < 2; i++) {
+    const ph = t * 1.6 + i * 2.1;
+    const baseX = (i === 0 ? -2.0 : 2.2) * s;
+    const segs = 5;
+    for (let k = 0; k < segs; k++) {
+      const y0 = topY - 0.6 * s - k * 2.4 * s;
+      const y1 = y0 - 2.4 * s;
+      const x0 = baseX + Math.sin(ph + k * 0.8) * 1.7 * s;
+      const x1 = baseX + Math.sin(ph + (k + 1) * 0.8) * 1.7 * s;
+      ctx.globalAlpha = a * 0.5 * (1 - k / segs);
+      ctx.lineWidth = (1.7 - k * 0.2) * s;
+      ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(x1, y1); ctx.stroke();
+    }
+  }
+  ctx.restore();
+  // Asa a la derecha, detrás del cuerpo.
+  ctx.save();
+  ctx.strokeStyle = mugSh; ctx.lineWidth = 2.0 * s;
+  ctx.beginPath(); ctx.arc(bw - 0.6 * s, topY + bh * 0.48, 2.9 * s, -Math.PI * 0.5, Math.PI * 0.5); ctx.stroke();
+  ctx.strokeStyle = mug; ctx.lineWidth = 1.0 * s;
+  ctx.beginPath(); ctx.arc(bw - 0.9 * s, topY + bh * 0.48, 2.9 * s, -Math.PI * 0.45, Math.PI * 0.45); ctx.stroke();
+  ctx.restore();
+  // Cuerpo de la taza (trapecio con esquinas suaves).
+  ctx.fillStyle = mug;
+  ctx.beginPath();
+  ctx.moveTo(-bw, topY + 0.7 * s);
+  ctx.quadraticCurveTo(-bw, topY, -bw + 0.7 * s, topY);
+  ctx.lineTo(bw - 0.7 * s, topY);
+  ctx.quadraticCurveTo(bw, topY, bw, topY + 0.7 * s);
+  ctx.lineTo(bwB, botY - 0.9 * s);
+  ctx.quadraticCurveTo(bwB, botY, bwB - 0.9 * s, botY);
+  ctx.lineTo(-bwB + 0.9 * s, botY);
+  ctx.quadraticCurveTo(-bwB, botY, -bwB, botY - 0.9 * s);
+  ctx.closePath();
+  ctx.fill();
+  // Sombra de volumen (flanco izquierdo).
+  ctx.save(); ctx.globalAlpha *= 0.4; ctx.fillStyle = mugSh;
+  ctx.beginPath();
+  ctx.moveTo(-bw, topY + 0.7 * s);
+  ctx.lineTo(-bw + 1.7 * s, topY + 0.5 * s);
+  ctx.lineTo(-bwB + 1.5 * s, botY);
+  ctx.lineTo(-bwB, botY - 0.9 * s);
+  ctx.closePath(); ctx.fill(); ctx.restore();
+  // Highlight vertical (flanco derecho).
+  ctx.save(); ctx.globalAlpha *= 0.55; ctx.fillStyle = mugHi;
+  ctx.beginPath(); ctx.roundRect(bw - 2.1 * s, topY + 1.6 * s, 0.9 * s, bh - 3.0 * s, 0.4 * s); ctx.fill(); ctx.restore();
+  // Boca de la taza + café.
+  ctx.fillStyle = rim;
+  ctx.beginPath(); ctx.ellipse(0, topY, bw, 1.6 * s, 0, 0, TAU); ctx.fill();
+  ctx.fillStyle = brew;
+  ctx.beginPath(); ctx.ellipse(0, topY, bw - 1.0 * s, 1.15 * s, 0, 0, TAU); ctx.fill();
+  ctx.save(); ctx.globalAlpha *= 0.5; ctx.fillStyle = brewHi;
+  ctx.beginPath(); ctx.ellipse(-1.5 * s, topY - 0.2 * s, 1.9 * s, 0.5 * s, -0.3, 0, TAU); ctx.fill(); ctx.restore();
+  ctx.restore();
+}
+
+// Pantalla de videollamada montada en la pared: marco de monitor, pantalla con
+// gradiente frío, chip "EN VIVO" con punto rojo pulsante y una barra de
+// controles. (prop.x, prop.y) es el CENTRO; el ponente remoto se dibuja como un
+// learner por separado, encima del área de la pantalla. `_t` late el indicador.
+export function drawScreen(ctx, prop) {
+  const s = prop.scale || 7;
+  const cx = Math.round(prop.x);
+  const cy = Math.round(prop.y);
+  const a = prop.alpha == null ? 1 : Math.max(0, Math.min(1, prop.alpha));
+  if (a <= 0.01) return;
+  const TAU = Math.PI * 2;
+  const t = prop._t || 0;
+  const FONT = '"Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif';
+  const w = 23 * s, h = 14.5 * s;
+  const x = cx - w / 2, y = cy - h / 2;
+  const bez = 1.4 * s;
+  ctx.save();
+  ctx.globalAlpha *= a;
+  // Sombra proyectada bajo el marco.
+  ctx.save(); ctx.globalAlpha *= 0.22; ctx.fillStyle = '#000000';
+  ctx.beginPath(); ctx.ellipse(cx, y + h + bez + 1.6 * s, w * 0.44, 1.7 * s, 0, 0, TAU); ctx.fill(); ctx.restore();
+  // Marco del monitor (con barra inferior para los controles).
+  ctx.fillStyle = '#191c24';
+  ctx.beginPath(); ctx.roundRect(x - bez, y - bez, w + bez * 2, h + bez * 2 + 3 * s, 1.6 * s); ctx.fill();
+  ctx.fillStyle = '#2b303c';
+  ctx.beginPath(); ctx.roundRect(x - bez, y - bez, w + bez * 2, h + bez * 2, 1.3 * s); ctx.fill();
+  ctx.strokeStyle = '#3d4553'; ctx.lineWidth = Math.max(1, 0.3 * s);
+  ctx.beginPath(); ctx.roundRect(x - bez + 0.4 * s, y - bez + 0.4 * s, w + bez * 2 - 0.8 * s, h + bez * 2 - 0.8 * s, 1.1 * s); ctx.stroke();
+  // Pantalla: gradiente frío de videollamada.
+  const g = ctx.createLinearGradient(0, y, 0, y + h);
+  g.addColorStop(0, '#2c456a'); g.addColorStop(1, '#0d1a2e');
+  ctx.save();
+  ctx.beginPath(); ctx.roundRect(x, y, w, h, 0.7 * s); ctx.clip();
+  ctx.fillStyle = g; ctx.fillRect(x, y, w, h);
+  // Viñeta suave hacia las esquinas.
+  const vg = ctx.createRadialGradient(cx, cy - 1 * s, w * 0.2, cx, cy, w * 0.62);
+  vg.addColorStop(0, 'rgba(0,0,0,0)'); vg.addColorStop(1, 'rgba(4,8,16,0.5)');
+  ctx.fillStyle = vg; ctx.fillRect(x, y, w, h);
+  ctx.restore();
+  // Chip "EN VIVO" con punto rojo pulsante (arriba izquierda).
+  const pulse = 0.5 + 0.5 * Math.sin(t * 4);
+  ctx.fillStyle = 'rgba(6,10,18,0.5)';
+  ctx.beginPath(); ctx.roundRect(x + 1.2 * s, y + 1.2 * s, 10 * s, 3.4 * s, 0.8 * s); ctx.fill();
+  ctx.fillStyle = `rgba(255,77,77,${(0.55 + 0.45 * pulse).toFixed(2)})`;
+  ctx.beginPath(); ctx.arc(x + 3.1 * s, y + 2.9 * s, 0.95 * s, 0, TAU); ctx.fill();
+  ctx.fillStyle = '#FBFAF6';
+  ctx.font = `700 ${(2.0 * s).toFixed(1)}px ${FONT}`;
+  ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+  ctx.fillText('EN VIVO', x + 4.9 * s, y + 3.0 * s);
+  // Barra de controles bajo la pantalla (dentro del marco).
+  const by = y + h + bez * 0.5 + 1.2 * s;
+  const icons = ['#4f9dff', 'rgba(255,255,255,0.22)', '#ff5e6c'];
+  for (let i = 0; i < icons.length; i++) {
+    ctx.fillStyle = icons[i];
+    ctx.beginPath(); ctx.arc(cx + (i - 1) * 3.4 * s, by, 1.3 * s, 0, TAU); ctx.fill();
+  }
+  ctx.restore();
+}
+
+export function drawGenially(ctx, prop) {
+  const s = prop.scale || 3;
+  const cx = Math.round(prop.x);
+  const cy = Math.round(prop.y);
+  const a = prop.alpha == null ? 1 : Math.max(0, Math.min(1, prop.alpha));
+  if (a <= 0.01) return;
+  const TAU = Math.PI * 2;
+  const D2R = Math.PI / 180;
+  const R = 9 * s;
+  const navy = prop.color || '#0d1b2e';
+  const ringStart = -Math.PI / 2 + (prop.spin || 0);
+  // Rampa arcoíris (sentido del logo: cálidos arriba, fríos abajo).
+  const stops = ['#f6b53a', '#ff7eb3', '#ff5e7e', '#c850c0', '#7b6cff', '#4f9dff', '#3ddc97', '#bfe06a'];
+  ctx.save();
+  ctx.globalAlpha *= a;
+  ctx.translate(cx, cy);
+  // Halo opcional cuando glow > 0.
+  const glow = prop.glow == null ? 0 : Math.max(0, Math.min(1, prop.glow));
+  if (glow > 0.01) {
+    const g = ctx.createRadialGradient(0, 0, R * 0.6, 0, 0, R * 1.5);
+    g.addColorStop(0, `rgba(255,126,179,${0.35 * glow})`);
+    g.addColorStop(1, 'rgba(255,126,179,0)');
+    ctx.save(); ctx.fillStyle = g; ctx.beginPath(); ctx.arc(0, 0, R * 1.5, 0, TAU); ctx.fill(); ctx.restore();
+  }
+  // Sombra suave para despegar de cualquier fondo.
+  const sh = ctx.createRadialGradient(0, R * 0.12, R * 0.6, 0, R * 0.12, R * 1.28);
+  sh.addColorStop(0, 'rgba(10,15,30,0.26)');
+  sh.addColorStop(1, 'rgba(10,15,30,0)');
+  ctx.save(); ctx.fillStyle = sh; ctx.beginPath(); ctx.arc(0, R * 0.12, R * 1.28, 0, TAU); ctx.fill(); ctx.restore();
+  // Aro arcoíris. Con conic-gradient queda perfecto y sin costuras; si el
+  // navegador no lo soporta, se cae al método por segmentos de arco.
+  ctx.save();
+  if (typeof ctx.createConicGradient === 'function') {
+    const cg = ctx.createConicGradient(ringStart, 0, 0);
+    for (let i = 0; i < stops.length; i++) cg.addColorStop(i / stops.length, stops[i]);
+    cg.addColorStop(1, stops[0]);
+    ctx.fillStyle = cg;
+    ctx.beginPath();
+    ctx.arc(0, 0, R, 0, TAU, false);
+    ctx.arc(0, 0, R * 0.80, 0, TAU, true);
+    ctx.fill();
+  } else {
+    const N = 180, rRing = R * 0.90;
+    ctx.lineCap = 'butt'; ctx.lineWidth = R * 0.21;
+    for (let k = 0; k < N; k++) {
+      const f = k / N, seg = f * stops.length, i = Math.floor(seg) % stops.length, t = seg - Math.floor(seg);
+      ctx.strokeStyle = mixColors(stops[i], stops[(i + 1) % stops.length], t);
+      ctx.beginPath(); ctx.arc(0, 0, rRing, ringStart + f * TAU, ringStart + (k + 1.45) / N * TAU); ctx.stroke();
+    }
+  }
+  ctx.restore();
+  // Disco navy con leve volumen.
+  const gd = ctx.createRadialGradient(-R * 0.22, -R * 0.22, R * 0.08, 0, 0, R * 0.82);
+  gd.addColorStop(0, mixColors(navy, '#ffffff', 0.10));
+  gd.addColorStop(1, navy);
+  ctx.fillStyle = gd;
+  ctx.beginPath(); ctx.arc(0, 0, R * 0.80, 0, TAU); ctx.fill();
+  // Espiral blanca (la "C"/e de Genially): anillo grueso CIRCULAR con la boca a la
+  // derecha, INCLINADO (la punta superior sube hacia la 1 en punto y la inferior
+  // baja hacia las 3-4). Es una rotación rígida: la curva de arriba sigue siendo
+  // el espejo de la de abajo, solo que ladeada como en el logo.
+  const rR = R * 0.48, wR = R * 0.21;
+  ctx.strokeStyle = '#ffffff'; ctx.lineWidth = wR; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+  ctx.beginPath();
+  ctx.arc(0, 0, rR, 17 * D2R, 307 * D2R, false); // C ladeada ~18° en antihorario
+  ctx.stroke();
+  // Punto (el ojo), abajo a la derecha del centro.
+  ctx.fillStyle = '#ffffff';
+  ctx.beginPath(); ctx.arc(rR * 0.31, rR * 0.11, wR * 0.60, 0, TAU); ctx.fill();
+  ctx.restore();
+}
+
+// Pasture: el prado común, protagonista de la tragedia de los comunes. Un manto
+// de hierba con tréboles, ranúnculos y dientes de león sobre una banda de suelo.
+// `wear` (0..1) lo agota: los claros de tierra nacen en el centro (donde más
+// pisa el rebaño) y crecen hacia los bordes hasta fusionarse; las flores se
+// cierran y desaparecen conforme su mata muere. Animable con tween "id.wear".
+// El verde que falta deja ver el piso `earth` de la escena. `w` ancho, `depth`
+// fondo (px), `color` el verde base, `_swayT` el vaivén. (x, y) = borde frontal.
+export function drawPasture(ctx, prop) {
+  const s = prop.scale || 3;
+  const cx = Math.round(prop.x);
+  const baseY = Math.round(prop.y);
+  const w = prop.w || 600;
+  const depth = prop.depth || 78;
+  const wear = Math.max(0, Math.min(1, prop.wear == null ? 0 : prop.wear));
+  const t = prop._swayT || 0;
+  const a = prop.alpha == null ? 1 : Math.max(0, Math.min(1, prop.alpha));
+  if (a <= 0.01) return;
+  // Verdes y flores.
+  const gDark = mixColors(prop.color || '#5f9e57', '#1f3a23', 0.45);
+  const gMid = prop.color || '#5f9e57';
+  const gLite = mixColors(prop.color || '#5f9e57', '#d8e89a', 0.5);
+  const dry = '#9c8a4e';                 // hierba reseca al borde de morir
+  const dirt = '#6b4a2e';                // mota de tierra en el claro
+  const ranunc = '#F4AC1D';              // ranúnculo (amarillo)
+  const dande = '#f6e27a';               // diente de león
+  const trebol = '#e9efd6';              // trébol (blanco verdoso)
+  // Hash determinista por celda (mismo patrón siempre, sin Math.random).
+  const hash = (i, j) => {
+    const v = Math.sin(i * 12.9898 + j * 78.233) * 43758.5453;
+    return v - Math.floor(v);
+  };
+  const left = cx - w / 2;
+  const stepX = 15;                      // separación de matas (px)
+  const stepY = 13;
+  const cols = Math.floor(w / stepX);
+  const rows = Math.max(2, Math.floor(depth / stepY));
+  ctx.save();
+  ctx.globalAlpha *= a;
+  for (let j = 0; j < rows; j++) {
+    // Perspectiva suave: las filas del fondo (j chico) van más arriba y un
+    // pelín más pequeñas y juntas que las del frente.
+    const rowFrac = j / (rows - 1 || 1);            // 0 fondo .. 1 frente
+    const py = baseY - depth + rowFrac * depth;
+    const persp = 0.74 + 0.26 * rowFrac;            // tamaño por profundidad
+    for (let i = 0; i < cols; i++) {
+      const h0 = hash(i, j);
+      const h1 = hash(i + 31, j + 17);
+      const jitterX = (h0 - 0.5) * stepX * 0.9;
+      const jitterY = (h1 - 0.5) * stepY * 0.7;
+      const gx = left + (i + 0.5) * stepX + jitterX;
+      const gy = py + jitterY;
+      // Distancia normalizada al centro del prado: el desgaste avanza desde
+      // el centro (más pisoteado) hacia los bordes. Mezclo el radio con ruido
+      // para que el borde del claro sea orgánico y los parches se fusionen.
+      const nx = (gx - cx) / (w / 2);                 // -1..1
+      const ny = (rowFrac - 0.62) / 0.62;             // frente pisa más
+      const radial = Math.min(1, Math.sqrt(nx * nx * 0.85 + ny * ny * 0.5));
+      const death = radial * 0.62 + h0 * 0.38;        // umbral de muerte 0..1
+      const blade = persp * s;
+      if (wear >= death) {
+        // Mata muerta: claro de tierra. Casi siempre transparente (se ve el
+        // piso earth); de vez en cuando una brizna reseca o una mota de tierra
+        // para que el erial no quede liso.
+        if (h1 < 0.16) {
+          ctx.fillStyle = dry;
+          ctx.fillRect(Math.round(gx), Math.round(gy - blade), Math.max(1, Math.round(blade * 0.7)), Math.max(1, Math.round(blade)));
+        } else if (h1 > 0.9) {
+          ctx.fillStyle = dirt;
+          ctx.fillRect(Math.round(gx - blade * 0.4), Math.round(gy - blade * 0.4), Math.max(1, Math.round(blade * 0.9)), Math.max(1, Math.round(blade * 0.5)));
+        }
+        continue;
+      }
+      // Mata viva: penacho en tres tonos (base, cuerpo, punta) con la punta
+      // inclinada por el viento. Tres rects para que el prado entero no pese.
+      const sway = Math.sin(t + (i + j) * 0.6) * blade * 0.55;
+      const tall = (1.5 + h1 * 1.3) * blade;          // altura del penacho
+      ctx.fillStyle = gDark;
+      ctx.fillRect(Math.round(gx - blade * 0.75), Math.round(gy - blade * 0.5), Math.max(1, Math.round(blade * 1.5)), Math.max(1, Math.round(blade * 0.6)));
+      ctx.fillStyle = gMid;
+      ctx.fillRect(Math.round(gx - blade * 0.5), Math.round(gy - tall), Math.max(1, Math.round(blade)), Math.max(1, Math.round(tall)));
+      ctx.fillStyle = gLite;
+      ctx.fillRect(Math.round(gx - blade * 0.4 + sway), Math.round(gy - tall), Math.max(1, Math.round(blade * 0.8)), Math.max(1, Math.round(blade * 0.7)));
+      // Flor: una fracción de las matas. Se cierra (capullo) cuando su muerte
+      // se acerca al desgaste actual, y desaparece al morir (arriba, continue).
+      if (h0 > 0.72) {
+        const fx = Math.round(gx + sway * 0.5);
+        const fy = Math.round(gy - tall - blade * 0.4);
+        const closing = (death - wear) < 0.12;       // a punto de morir: capullo
+        const kind = h1 < 0.4 ? ranunc : (h1 < 0.72 ? dande : trebol);
+        if (closing) {
+          // Capullo cerrado (verde con punta del color).
+          ctx.fillStyle = gDark;
+          ctx.fillRect(fx, fy, Math.max(1, Math.round(blade * 0.8)), Math.max(1, Math.round(blade * 1.1)));
+          ctx.fillStyle = kind;
+          ctx.fillRect(fx, fy, Math.max(1, Math.round(blade * 0.8)), Math.max(1, Math.round(blade * 0.4)));
+        } else {
+          // Flor abierta: corola + corazón.
+          const r = blade * 0.62;
+          ctx.fillStyle = kind;
+          ctx.fillRect(fx - Math.round(r), fy - Math.round(r), Math.max(1, Math.round(r * 2)), Math.max(1, Math.round(r * 2)));
+          ctx.fillStyle = kind === trebol ? '#c7d6a0' : '#b9791a';
+          ctx.fillRect(fx - Math.round(r * 0.3), fy - Math.round(r * 0.3), Math.max(1, Math.round(r * 0.7)), Math.max(1, Math.round(r * 0.7)));
+        }
+      }
+    }
+  }
+  ctx.restore();
+}
+
+// Sheep: oveja del rebaño común. Cuerpo de lana en tres tonos con textura de
+// vellón, cabeza oscura, orejas y cuatro patas. `color` tiñe la lana, `dir`
+// espeja, y `_t` da una respiración suave. (x, y) = los pies.
+export function drawSheep(ctx, prop) {
+  const s = prop.scale || 3;
+  const cx = Math.round(prop.x);
+  const cy = Math.round(prop.y);
+  const wool = prop.color || '#ece4d3';
+  const woolHi = mixColors(wool, '#ffffff', 0.4);
+  const woolSh = mixColors(wool, '#6e5f44', 0.4);
+  const face = '#3b3328';
+  const faceHi = '#52483a';
+  const hoof = '#241e16';
+  const eye = '#0e0a06';
+  const dir = prop._dir == null ? (prop.dir || 1) : prop._dir;
+  const t = prop._t || 0;
+  const breath = Math.sin(t * 1.6) * 0.5;          // sube/baja del lomo, sutil
+  const a = prop.alpha == null ? 1 : Math.max(0, Math.min(1, prop.alpha));
+  if (a <= 0.01) return;
+  ctx.save();
+  ctx.globalAlpha *= a;
+  const px = (gx, gy, gw, gh, c) => {
+    ctx.fillStyle = c;
+    const sx = cx + (gx * dir) * s - (dir < 0 ? gw * s : 0);
+    ctx.fillRect(sx, cy + (gy + breath * (gy < -1 ? 1 : 0)) * s, gw * s, gh * s);
+  };
+  // Sombra de contacto.
+  ctx.fillStyle = 'rgba(0,0,0,0.18)';
+  ctx.fillRect(cx - 5 * s, cy - s * 0.2, 10 * s, s * 0.7);
+  // Patas (cuatro, oscuras con pezuña).
+  px(-3, -2, 1, 2, face); px(-3, 0, 1, 1, hoof);
+  px(-1, -2, 1, 2, face); px(-1, 0, 1, 1, hoof);
+  px(2, -2, 1, 2, face);  px(2, 0, 1, 1, hoof);
+  px(4, -2, 1, 2, face);  px(4, 0, 1, 1, hoof);
+  // Cuerpo de lana (volumen redondeado).
+  px(-4, -5, 8, 1, wool);
+  px(-5, -6, 9, 1, wool);
+  px(-5, -7, 8, 1, wool);
+  px(-4, -8, 6, 1, wool);
+  px(-4, -4, 8, 2, woolSh);          // panza en sombra
+  // Textura de vellón: rizos de luz y sombra salpicados.
+  px(-4, -7, 1, 1, woolHi); px(-1, -8, 1, 1, woolHi); px(2, -7, 1, 1, woolHi);
+  px(-3, -6, 1, 1, woolHi); px(0, -6, 1, 1, woolHi); px(3, -6, 1, 1, woolHi);
+  px(-2, -5, 1, 1, woolSh); px(1, -5, 1, 1, woolSh); px(-4, -6, 1, 1, woolSh);
+  // Cola corta (lana).
+  px(-6, -6, 1, 2, wool); px(-6, -6, 1, 1, woolHi);
+  // Cabeza oscura inclinada al pasto (al frente, lado +dir).
+  px(4, -7, 3, 1, face);
+  px(4, -6, 4, 2, face);
+  px(5, -7, 2, 1, faceHi);            // frente con luz
+  px(7, -5, 1, 1, face);              // hocico
+  // Oreja.
+  px(4, -8, 1, 1, face); px(3, -7, 1, 1, faceHi);
+  // Ojo.
+  px(6, -6, 1, 1, eye);
+  ctx.restore();
+}
+
+// Fence: la primera cerca, símbolo del cierre (la regla que los pastores se
+// dan). Postes de madera y dos travesaños con veta, sombra y luz. `panels`
+// (gaps entre postes), `color` la madera. (x, y) = base, centrada en x.
+export function drawFence(ctx, prop) {
+  const s = prop.scale || 3.5;
+  const cx = Math.round(prop.x);
+  const cy = Math.round(prop.y);
+  const panels = Math.max(1, Math.round(prop.panels || 3));
+  const wood = prop.color || '#9a6f3e';
+  const woodHi = mixColors(wood, '#e7c98f', 0.5);
+  const woodSh = mixColors(wood, '#3a2814', 0.55);
+  const grain = mixColors(wood, '#3a2814', 0.3);
+  const a = prop.alpha == null ? 1 : Math.max(0, Math.min(1, prop.alpha));
+  if (a <= 0.01) return;
+  const panelW = 7;                       // ancho de cada vano en celdas
+  const totalCells = panels * panelW;
+  const left = cx - (totalCells / 2) * s;
+  const postH = 9;                        // alto del poste en celdas
+  const rect = (gx, gy, gw, gh, c) => {
+    ctx.fillStyle = c;
+    ctx.fillRect(Math.round(left + gx * s), Math.round(cy + gy * s), Math.round(gw * s), Math.round(gh * s));
+  };
+  ctx.save();
+  ctx.globalAlpha *= a;
+  // Sombra al pie.
+  ctx.fillStyle = 'rgba(0,0,0,0.16)';
+  ctx.fillRect(Math.round(left - s), Math.round(cy - s * 0.3), Math.round((totalCells + 2) * s), Math.round(s * 0.8));
+  // Travesaños (dos), detrás de los postes.
+  for (const ry of [-6, -3]) {
+    rect(0, ry, totalCells, 1, wood);
+    rect(0, ry, totalCells, 0.35, woodHi);          // luz arriba
+    rect(0, ry + 0.7, totalCells, 0.3, woodSh);      // sombra abajo
+    // Vetas cada par de celdas.
+    for (let g = 2; g < totalCells; g += 3) rect(g, ry + 0.2, 0.25, 0.6, grain);
+  }
+  // Postes (en cada extremo de vano).
+  for (let p = 0; p <= panels; p++) {
+    const gx = p * panelW;
+    rect(gx, -postH, 1, postH, wood);
+    rect(gx, -postH, 0.4, postH, woodHi);            // canto iluminado
+    rect(gx + 0.7, -postH, 0.3, postH, woodSh);       // canto en sombra
+    rect(gx, -postH, 1, 0.5, woodHi);                 // tope
+    rect(gx - 0.15, -postH - 0.4, 1.3, 0.5, woodSh);  // capuchón
+  }
+  ctx.restore();
+}
+
+// Turtle: la tortuga de la paradoja de Zenón. Caparazón en domo con escudos,
+// piel verde-amarilla, cuatro patas y una cabeza que asoma y se mece con `_t`.
+// `color` tiñe el caparazón, `dir` espeja (1 mira a la derecha), `alpha`. La
+// lentitud es del guion (se mueve por tween de x), no del drawer. (x, y) = pies.
+export function drawTurtle(ctx, prop) {
+  const s = prop.scale || 2.8;
+  const cx = Math.round(prop.x);
+  const cy = Math.round(prop.y);
+  const shell = prop.color || '#6f8f4a';
+  const shellHi = mixColors(shell, '#e6e89a', 0.5);
+  const shellMid = mixColors(shell, '#dfe08e', 0.22);
+  const shellDk = mixColors(shell, '#2c3a1c', 0.5);
+  const scute = mixColors(shell, '#222c14', 0.7);     // líneas entre escudos
+  const skin = mixColors(shell, '#d6c06a', 0.6);       // piel amarillo-verdosa
+  const skinHi = mixColors(skin, '#ffffff', 0.3);
+  const skinDk = mixColors(skin, '#3a3018', 0.45);
+  const eye = '#15100a';
+  const dir = prop._dir == null ? (prop.dir || 1) : prop._dir;
+  const t = prop._t || 0;
+  const headOut = (Math.sin(t * 1.2) * 0.5 + 0.5);     // 0..1 cabeza asomando
+  const legPhase = Math.sin(t * 2.0);                   // balanceo de patas
+  const a = prop.alpha == null ? 1 : Math.max(0, Math.min(1, prop.alpha));
+  if (a <= 0.01) return;
+  ctx.save();
+  ctx.globalAlpha *= a;
+  const px = (gx, gy, gw, gh, c) => {
+    ctx.fillStyle = c;
+    const sx = cx + (gx * dir) * s - (dir < 0 ? gw * s : 0);
+    ctx.fillRect(sx, cy + gy * s, gw * s, gh * s);
+  };
+  // Sombra de contacto.
+  ctx.fillStyle = 'rgba(0,0,0,0.18)';
+  ctx.fillRect(cx - 6 * s, cy - s * 0.2, 12 * s, s * 0.7);
+  // Patas traseras y delanteras (oscuras, con leve balanceo).
+  const lp = Math.round(legPhase * 0.5);
+  px(-5, -2, 1.4, 2, skin);  px(-5, 0 + 0, 1.4, 0.6, skinDk);            // trasera lejana
+  px(-3.4 + lp * 0.2, -2, 1.4, 2, skin); px(-3.4 + lp * 0.2, 0, 1.4, 0.6, skinDk);
+  px(2, -2, 1.4, 2, skin);   px(2, 0, 1.4, 0.6, skinDk);
+  px(3.7 - lp * 0.2, -2, 1.5, 2, skinHi); px(3.7 - lp * 0.2, 0, 1.5, 0.6, skinDk); // delantera
+  // Cola corta atrás (lado -dir).
+  px(-6.4, -3.2, 1.2, 1, skin);
+  px(-6.8, -3.0, 0.6, 0.8, skinDk);
+  // Cabeza al frente (lado +dir), asomando segun headOut, con cuello.
+  const hx = 4.6 + headOut * 1.4;
+  px(hx - 0.4, -4.4, 1.6, 1.8, skin);                  // cuello/cabeza
+  px(hx + 0.5, -4.4, 1.4, 1.6, skin);                  // morro
+  px(hx + 0.4, -4.5, 1.3, 0.7, skinHi);                // luz sobre la cabeza
+  px(hx + 1.7, -3.7, 0.5, 0.5, skinDk);                // punta del hocico
+  px(hx + 0.9, -3.9, 0.7, 0.7, eye);                   // ojo
+  px(hx + 1.0, -4.0, 0.3, 0.3, '#fdfdf5');             // brillo del ojo
+  // Caparazón: domo en cuatro tonos con borde, cúpula y escudos.
+  px(-5.2, -4.2, 10.4, 1.2, shellDk);                  // reborde inferior (marginales)
+  px(-5.0, -5.2, 10.0, 1.1, shell);
+  px(-4.4, -6.2, 8.8, 1.1, shellMid);
+  px(-3.4, -7.1, 6.8, 1.0, shell);
+  px(-2.2, -7.9, 4.4, 1.0, shellHi);                   // cúpula con luz
+  px(-1.0, -8.4, 2.0, 0.7, shellHi);
+  // Escudos del caparazón (líneas oscuras radiales + costuras).
+  px(-0.2, -8.3, 0.45, 4.0, scute);                    // costura central
+  px(-3.0, -6.6, 0.4, 2.3, scute);
+  px(2.6, -6.6, 0.4, 2.3, scute);
+  px(-4.2, -5.1, 0.4, 1.0, scute);
+  px(3.8, -5.1, 0.4, 1.0, scute);
+  px(-2.0, -7.6, 2.0, 0.4, scute);                     // arco superior
+  px(0.2, -7.6, 1.9, 0.4, scute);
+  // Pequeño highlight especular en la cúpula.
+  px(-1.6, -7.7, 0.8, 0.5, mixColors(shellHi, '#ffffff', 0.45));
+  ctx.restore();
+}
+
+// Grinder: la moledora. Caja pesada de hierro con embudo en la boca de arriba,
+// manivela al costado, dos engranajes que muerden al frente y una ranura de
+// salida abajo. (x, y) es la base (apoya en el suelo). `color` tiñe el hierro
+// (las luces y sombras se derivan de él con mixColors); `crank` (radianes) gira
+// la manivela y los engranajes; `glow` (0..1) enciende la luz interna que se
+// filtra por la boca, las junturas y la ranura; `alpha` la desvanece. Nace para
+// la escena del trueque: una respuesta sale por la ranura, y la luz de quien
+// preguntó entra por ella. La luz proyectada al mundo la pone un `focus` o un
+// `light` de la escena (en oscuridad el glow propio solo se ve dentro del haz).
+export function drawGrinder(ctx, prop) {
+  const s = prop.scale || 4;
+  const cx = Math.round(prop.x);
+  const cy = Math.round(prop.y);            // piso (donde apoyan las patas)
+  const a = prop.alpha == null ? 1 : Math.max(0, Math.min(1, prop.alpha));
+  if (a <= 0.01) return;
+  const TAU = Math.PI * 2;
+  const metal = prop.color || '#41506e';
+  const mTop  = mixColors(metal, '#ffffff', 0.30);
+  const mMid  = mixColors(metal, '#ffffff', 0.12);
+  const mDark = mixColors(metal, '#000000', 0.34);
+  const mDeep = mixColors(metal, '#000000', 0.56);
+  const mouth = '#0a0d18';
+  const amber = '#F4AC1D';
+  const crank = prop.crank || 0;
+  const glow = prop.glow == null ? 0 : Math.max(0, Math.min(1, prop.glow));
+  const t = prop._t || 0;
+  const pulse = 0.80 + 0.20 * Math.sin(t * 5);
+  const gA = glow * pulse;                   // intensidad efectiva del encendido
+  const lit = glow > 0.30;
+  const px = (gx, gy, gw, gh, c) => { ctx.fillStyle = c; ctx.fillRect(cx + gx * s, cy + gy * s, Math.ceil(gw * s) + 1, Math.ceil(gh * s) + 1); };
+
+  ctx.save();
+  ctx.globalAlpha *= a;
+
+  // Sombra de contacto en el piso.
+  ctx.save();
+  ctx.globalAlpha *= 0.32;
+  ctx.fillStyle = '#04050c';
+  ctx.beginPath(); ctx.ellipse(cx, cy, 9.4 * s, 1.7 * s, 0, 0, TAU); ctx.fill();
+  ctx.restore();
+
+  // Halo cálido cuando se enciende (la luz de las tripas).
+  if (glow > 0.01) {
+    const g = ctx.createRadialGradient(cx, cy - 7 * s, 1 * s, cx, cy - 7 * s, 17 * s);
+    g.addColorStop(0, `rgba(244,172,29,${(0.42 * gA).toFixed(3)})`);
+    g.addColorStop(0.5, `rgba(244,172,29,${(0.16 * gA).toFixed(3)})`);
+    g.addColorStop(1, 'rgba(244,172,29,0)');
+    ctx.save(); ctx.fillStyle = g;
+    ctx.beginPath(); ctx.arc(cx, cy - 7 * s, 17 * s, 0, TAU); ctx.fill(); ctx.restore();
+  }
+
+  // --- Patas ---
+  px(-7, -1.7, 2.6, 1.9, mDeep);
+  px(4.4, -1.7, 2.6, 1.9, mDeep);
+  px(-7, -1.7, 2.6, 0.5, mDark);
+  px(4.4, -1.7, 2.6, 0.5, mDark);
+
+  // --- Cuerpo: caja de hierro con biseles ---
+  px(-8, -13.5, 16, 12, mDark);              // silueta/base
+  px(-7.4, -13, 14.8, 11, metal);            // cara
+  px(-7.4, -13, 14.8, 0.8, mTop);            // luz superior
+  px(-7.4, -3.2, 14.8, 0.9, mDeep);          // sombra inferior
+  px(-7.4, -13, 0.9, 11, mTop);              // bisel izquierdo (luz)
+  px(6.5, -13, 0.9, 11, mDeep);              // bisel derecho (sombra)
+  // Vetas del metal cepillado (en las franjas laterales, fuera de la cavidad).
+  for (let gy = -11; gy <= -5; gy += 2) { px(-6.6, gy, 1.6, 0.26, mDark); px(5.0, gy, 1.6, 0.26, mDark); }
+  // Junturas que filtran luz cuando se enciende.
+  if (glow > 0.01) {
+    ctx.save(); ctx.globalAlpha *= Math.min(1, gA);
+    px(-7.4, -7.0, 14.8, 0.2, amber);
+    px(-7.4, -10.4, 14.8, 0.16, amber);
+    ctx.restore();
+  }
+
+  // --- Embudo en la boca de arriba (trapecio que se ensancha hacia arriba) ---
+  for (let i = 0; i < 6; i++) {
+    const yy = -13.4 - i;                     // de la boca del cuerpo hacia arriba
+    const f = i / 5;
+    const hw = 3.4 + f * 3.4;                  // medio ancho: 3.4 abajo .. 6.8 arriba
+    px(-hw, yy, hw * 2, 1.06, i === 5 ? mTop : (i % 2 ? mMid : metal));
+    const mw = hw - 0.95;                      // boca oscura interior
+    px(-mw, yy, mw * 2, 1.06, mouth);
+  }
+  px(-6.9, -19.4, 13.8, 0.7, mTop);           // labio superior con luz
+  px(-6.9, -19.4, 0.7, 0.9, mTop);
+  px(6.2, -19.4, 0.7, 0.9, mDeep);
+  if (glow > 0.01) {                           // la boca brilla al moler
+    ctx.save(); ctx.globalAlpha *= Math.min(1, gA);
+    const gm = ctx.createLinearGradient(0, cy - 19 * s, 0, cy - 13 * s);
+    gm.addColorStop(0, 'rgba(244,172,29,0)');
+    gm.addColorStop(1, 'rgba(255,243,201,0.85)');
+    ctx.fillStyle = gm;
+    ctx.fillRect(cx - 3.0 * s, cy - 16.5 * s, 6.0 * s, 3.5 * s);
+    ctx.restore();
+  }
+
+  // --- Cavidad de engranajes (ventana al interior) ---
+  ctx.fillStyle = mouth;
+  ctx.beginPath(); ctx.roundRect(cx - 5.2 * s, cy - 11.6 * s, 10.4 * s, 6.4 * s, 1.1 * s); ctx.fill();
+  if (glow > 0.01) {
+    ctx.save(); ctx.globalAlpha *= Math.min(1, gA);
+    const gc = ctx.createRadialGradient(cx, cy - 8.4 * s, 0.5 * s, cx, cy - 8.4 * s, 6 * s);
+    gc.addColorStop(0, 'rgba(255,243,201,0.92)');
+    gc.addColorStop(0.6, 'rgba(244,172,29,0.45)');
+    gc.addColorStop(1, 'rgba(244,172,29,0)');
+    ctx.fillStyle = gc;
+    ctx.beginPath(); ctx.roundRect(cx - 5.2 * s, cy - 11.6 * s, 10.4 * s, 6.4 * s, 1.1 * s); ctx.fill();
+    ctx.restore();
+  }
+  ctx.strokeStyle = mDeep; ctx.lineWidth = Math.max(1, s * 0.3);
+  ctx.beginPath(); ctx.roundRect(cx - 5.2 * s, cy - 11.6 * s, 10.4 * s, 6.4 * s, 1.1 * s); ctx.stroke();
+
+  // Dos engranajes que muerden (giran con la manivela, en sentidos opuestos).
+  const gear = (gx, gy, rCells, teeth, ang) => {
+    const ox = cx + gx * s, oy = cy + gy * s, r = rCells * s;
+    ctx.save(); ctx.translate(ox, oy); ctx.rotate(ang);
+    ctx.fillStyle = mDeep;
+    const tw = r * 0.40, tl = r * 0.34;
+    for (let k = 0; k < teeth; k++) { ctx.save(); ctx.rotate(k * TAU / teeth); ctx.fillRect(-tw / 2, -r - tl * 0.55, tw, tl); ctx.restore(); }
+    ctx.fillStyle = mMid; ctx.beginPath(); ctx.arc(0, 0, r, 0, TAU); ctx.fill();
+    ctx.fillStyle = mDark; ctx.beginPath(); ctx.arc(0, 0, r * 0.60, 0, TAU); ctx.fill();
+    ctx.strokeStyle = mTop; ctx.lineWidth = Math.max(1, s * 0.22);
+    for (let k = 0; k < 4; k++) { const aa = k * Math.PI / 2; ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(Math.cos(aa) * r * 0.52, Math.sin(aa) * r * 0.52); ctx.stroke(); }
+    ctx.fillStyle = lit ? amber : mTop; ctx.beginPath(); ctx.arc(0, 0, r * 0.22, 0, TAU); ctx.fill();
+    ctx.restore();
+  };
+  gear(-2.2, -8.4, 2.7, 9, crank);
+  gear(2.1, -7.2, 1.9, 8, -crank * 1.42);
+
+  // --- Ranura de salida + bandeja al frente ---
+  px(-4.2, -3.6, 8.4, 1.0, mouth);
+  px(-4.2, -3.6, 8.4, 0.28, mDeep);
+  px(-4.8, -2.7, 9.6, 0.8, mDark);            // labio/bandeja que sobresale
+  px(-4.8, -2.7, 9.6, 0.3, mMid);
+  if (glow > 0.01) {
+    ctx.save(); ctx.globalAlpha *= Math.min(1, gA);
+    px(-3.8, -3.5, 7.6, 0.7, amber);
+    ctx.restore();
+  }
+
+  // Remaches en las esquinas del cuerpo.
+  for (const [rx, ry] of [[-7.0, -12.6], [6.3, -12.6], [-7.0, -3.4], [6.3, -3.4]]) px(rx, ry, 0.7, 0.7, mDeep);
+
+  // --- Manivela girable al costado derecho ---
+  px(6.4, -9.2, 1.8, 2.6, mDark);             // placa de montaje
+  px(6.4, -9.2, 1.8, 0.5, mMid);
+  ctx.save();
+  ctx.translate(cx + 8.4 * s, cy - 8.0 * s);  // pivote del eje
+  ctx.rotate(crank);
+  ctx.lineCap = 'round';
+  ctx.strokeStyle = mDeep; ctx.lineWidth = Math.max(2, s * 0.6);
+  ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(0, -3.6 * s); ctx.stroke();   // brazo radial
+  ctx.strokeStyle = mMid; ctx.lineWidth = Math.max(1, s * 0.28);
+  ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(0, -3.6 * s); ctx.stroke();
+  ctx.strokeStyle = mDeep; ctx.lineWidth = Math.max(2, s * 0.72);
+  ctx.beginPath(); ctx.moveTo(0, -3.6 * s); ctx.lineTo(2.4 * s, -3.6 * s); ctx.stroke();   // empuñadura
+  ctx.fillStyle = lit ? amber : mTop; ctx.beginPath(); ctx.arc(2.4 * s, -3.6 * s, 0.72 * s, 0, TAU); ctx.fill();
+  ctx.fillStyle = mDark; ctx.beginPath(); ctx.arc(0, 0, 1.05 * s, 0, TAU); ctx.fill();      // cubo del eje
+  ctx.fillStyle = mTop; ctx.beginPath(); ctx.arc(0, 0, 0.4 * s, 0, TAU); ctx.fill();
+  ctx.restore();
+
+  ctx.restore();
+}
+
+// Tower: la torre de cuento (Rapunzel). Sillería en tres tonos con almenas y una
+// ventana arcada en lo alto; `braid` (0..1) es la trenza dorada que cae del
+// alféizar (1 hasta el pie, 0 cortada), ondeando con `_t`; `glow` enciende la
+// ventana. `color` tiñe la piedra, `alpha` la desvanece. (x, y) es la base.
+export function drawTower(ctx, prop) {
+  const s = prop.scale || 3.5;
+  const cx = Math.round(prop.x);
+  const cy = Math.round(prop.y);
+  const a = prop.alpha == null ? 1 : Math.max(0, Math.min(1, prop.alpha));
+  if (a <= 0.01) return;
+  const t = prop._t || 0;
+  const braid = prop.braid == null ? 1 : Math.max(0, Math.min(1, prop.braid));
+  const glow = prop.glow == null ? 0 : Math.max(0, Math.min(1, prop.glow));
+  const stone = prop.color || '#9aa3b0';
+  const stoneD = mixColors(stone, '#1b2030', 0.42);
+  const stoneL = mixColors(stone, '#ffffff', 0.30);
+  const mortar = mixColors(stone, '#1b2030', 0.6);
+  const roof = '#9a3a44';
+  const roofD = mixColors(roof, '#000000', 0.32);
+  const gold = '#e8c34a';
+  const goldD = mixColors(gold, '#7a4a10', 0.5);
+  const goldL = mixColors(gold, '#ffffff', 0.4);
+  const TAU = Math.PI * 2;
+  const HW = 3.2 * s;
+  const shaftTop = cy - 19 * s;
+  ctx.save();
+  ctx.globalAlpha *= a;
+  ctx.fillStyle = 'rgba(8,10,22,0.24)';
+  ctx.beginPath(); ctx.ellipse(cx, cy, HW * 1.5, 1.4 * s, 0, 0, TAU); ctx.fill();
+  // Shaft (stone) with light/shadow sides.
+  ctx.fillStyle = stoneD; ctx.fillRect(cx - HW, shaftTop, HW * 2, cy - shaftTop);
+  ctx.fillStyle = stone;  ctx.fillRect(cx - HW, shaftTop, HW * 1.45, cy - shaftTop);
+  ctx.fillStyle = stoneL; ctx.fillRect(cx - HW, shaftTop, HW * 0.5, cy - shaftTop);
+  // Masonry courses (staggered).
+  ctx.strokeStyle = mortar; ctx.lineWidth = Math.max(1, s * 0.16);
+  for (let i = 1; i * 2.4 * s < (cy - shaftTop); i++) {
+    const yy = shaftTop + i * 2.4 * s;
+    ctx.beginPath(); ctx.moveTo(cx - HW, yy); ctx.lineTo(cx + HW, yy); ctx.stroke();
+    const off = (i % 2) ? HW * 0.5 : -HW * 0.5;
+    ctx.beginPath(); ctx.moveTo(cx + off, yy); ctx.lineTo(cx + off, yy + 2.4 * s); ctx.stroke();
+  }
+  // Battlements (crenellations) at the top.
+  ctx.fillStyle = stoneD; ctx.fillRect(cx - HW - 0.4 * s, shaftTop - 0.4 * s, HW * 2 + 0.8 * s, 0.8 * s);
+  ctx.fillStyle = stone;
+  for (let k = -2; k <= 2; k++) ctx.fillRect(cx + k * 1.4 * s - 0.55 * s, shaftTop - 2 * s, 1.1 * s, 1.8 * s);
+  // Pointed roof above the battlements.
+  ctx.fillStyle = roof;
+  ctx.beginPath();
+  ctx.moveTo(cx - HW - 0.8 * s, shaftTop - 1.9 * s);
+  ctx.lineTo(cx, shaftTop - 7.5 * s);
+  ctx.lineTo(cx + HW + 0.8 * s, shaftTop - 1.9 * s);
+  ctx.closePath(); ctx.fill();
+  ctx.fillStyle = roofD;
+  ctx.beginPath();
+  ctx.moveTo(cx + 0.4 * s, shaftTop - 1.9 * s);
+  ctx.lineTo(cx, shaftTop - 7.5 * s);
+  ctx.lineTo(cx + HW + 0.8 * s, shaftTop - 1.9 * s);
+  ctx.closePath(); ctx.fill();
+  ctx.fillStyle = gold; ctx.beginPath(); ctx.arc(cx, shaftTop - 7.7 * s, 0.6 * s, 0, TAU); ctx.fill();
+  // Arched window high on the shaft.
+  const winY = shaftTop + 3 * s, winW = 1.7 * s, winH = 2.6 * s;
+  ctx.fillStyle = mortar;
+  ctx.beginPath();
+  ctx.moveTo(cx - winW, winY + winH); ctx.lineTo(cx - winW, winY);
+  ctx.arc(cx, winY, winW, Math.PI, 0); ctx.lineTo(cx + winW, winY + winH);
+  ctx.closePath(); ctx.fill();
+  ctx.fillStyle = glow > 0.02 ? mixColors('#3a2a44', '#ffd98a', glow) : '#241c2e';
+  ctx.beginPath();
+  ctx.moveTo(cx - winW * 0.66, winY + winH * 0.9); ctx.lineTo(cx - winW * 0.66, winY);
+  ctx.arc(cx, winY, winW * 0.66, Math.PI, 0); ctx.lineTo(cx + winW * 0.66, winY + winH * 0.9);
+  ctx.closePath(); ctx.fill();
+  if (glow > 0.02) {
+    ctx.save();
+    ctx.globalAlpha = ctx.globalAlpha * glow;
+    const g = ctx.createRadialGradient(cx, winY + winH * 0.3, 0, cx, winY + winH * 0.3, 6 * s);
+    g.addColorStop(0, 'rgba(255,210,130,0.5)'); g.addColorStop(1, 'rgba(255,210,130,0)');
+    ctx.fillStyle = g; ctx.beginPath(); ctx.arc(cx, winY + winH * 0.3, 6 * s, 0, TAU); ctx.fill();
+    ctx.restore();
+  }
+  // Braid: golden hair spilling from the sill, gently waving.
+  if (braid > 0.02) {
+    const sillY = winY + winH;
+    const len = braid * (cy - sillY - 0.5 * s);
+    const segs = 14;
+    ctx.lineCap = 'round';
+    for (let strand = 0; strand < 3; strand++) {
+      ctx.strokeStyle = strand === 1 ? goldL : (strand === 0 ? gold : goldD);
+      ctx.lineWidth = 1.2 * s;
+      ctx.beginPath();
+      for (let i = 0; i <= segs; i++) {
+        const fr = i / segs;
+        const yy = sillY + fr * len;
+        const wob = Math.sin(t * 1.2 + fr * 6 + strand * 2) * 0.7 * s * fr;
+        const xx = cx + wob + (strand - 1) * 0.7 * s * (1 - fr * 0.3);
+        if (i === 0) ctx.moveTo(xx, yy); else ctx.lineTo(xx, yy);
+      }
+      ctx.stroke();
+    }
+    ctx.fillStyle = goldL;
+    for (let i = 2; i < segs; i += 3) {
+      const fr = i / segs, yy = sillY + fr * len;
+      const wob = Math.sin(t * 1.2 + fr * 6 + 2) * 0.7 * s * fr;
+      ctx.beginPath(); ctx.arc(cx + wob, yy, 0.85 * s, 0, TAU); ctx.fill();
+    }
+  }
+  ctx.restore();
+}
+
+// Oven: el horno de la bruja (Hansel y Gretel). Bóveda de ladrillo en tres tonos
+// con boca de arco; `fire` (o `glow`, 0..1) enciende lenguas de fuego y el
+// resplandor que sale por la boca, animadas con `_t`. (x, y) es la base.
+export function drawOven(ctx, prop) {
+  const s = prop.scale || 3.2;
+  const cx = Math.round(prop.x);
+  const cy = Math.round(prop.y);
+  const a = prop.alpha == null ? 1 : Math.max(0, Math.min(1, prop.alpha));
+  if (a <= 0.01) return;
+  const t = prop._t || 0;
+  const fireRaw = prop.fire == null ? (prop.glow == null ? 0 : prop.glow) : prop.fire;
+  const f = Math.max(0, Math.min(1, fireRaw));
+  const brick = prop.color || '#7a4a36';
+  const brickD = mixColors(brick, '#000000', 0.4);
+  const brickL = mixColors(brick, '#ffb070', 0.28);
+  const mortar = mixColors(brick, '#000000', 0.6);
+  const TAU = Math.PI * 2;
+  const HW = 6 * s, H = 9 * s;
+  ctx.save();
+  ctx.globalAlpha *= a;
+  ctx.fillStyle = 'rgba(8,10,22,0.26)';
+  ctx.beginPath(); ctx.ellipse(cx, cy, HW * 1.15, 1.6 * s, 0, 0, TAU); ctx.fill();
+  // Body (arched dome).
+  ctx.fillStyle = brick;
+  ctx.beginPath();
+  ctx.moveTo(cx - HW, cy);
+  ctx.lineTo(cx - HW, cy - 6 * s);
+  ctx.quadraticCurveTo(cx - HW, cy - H, cx, cy - H);
+  ctx.quadraticCurveTo(cx + HW, cy - H, cx + HW, cy - 6 * s);
+  ctx.lineTo(cx + HW, cy);
+  ctx.closePath(); ctx.fill();
+  // Left light band.
+  ctx.fillStyle = brickL;
+  ctx.beginPath();
+  ctx.moveTo(cx - HW, cy);
+  ctx.lineTo(cx - HW, cy - 6 * s);
+  ctx.quadraticCurveTo(cx - HW, cy - H, cx - 1.5 * s, cy - H + 0.4 * s);
+  ctx.lineTo(cx - 2.8 * s, cy);
+  ctx.closePath(); ctx.fill();
+  // Brick courses.
+  ctx.strokeStyle = mortar; ctx.lineWidth = Math.max(1, s * 0.16);
+  for (let i = 1; i <= 4; i++) {
+    const yy = cy - i * 1.7 * s;
+    ctx.beginPath(); ctx.moveTo(cx - HW + 0.4 * s, yy); ctx.lineTo(cx + HW - 0.4 * s, yy); ctx.stroke();
+  }
+  ctx.fillStyle = brickD; ctx.fillRect(cx - HW, cy - 0.7 * s, HW * 2, 0.7 * s);
+  // Mouth (arched opening).
+  const mw = 3.4 * s, my = cy - 0.6 * s, mTop = my - 4.6 * s;
+  ctx.fillStyle = '#150a08';
+  ctx.beginPath();
+  ctx.moveTo(cx - mw, my); ctx.lineTo(cx - mw, mTop + mw);
+  ctx.arc(cx, mTop + mw, mw, Math.PI, 0); ctx.lineTo(cx + mw, my);
+  ctx.closePath(); ctx.fill();
+  // Flames inside the mouth.
+  if (f > 0.02) {
+    ctx.save();
+    ctx.beginPath();
+    ctx.moveTo(cx - mw, my); ctx.lineTo(cx - mw, mTop + mw);
+    ctx.arc(cx, mTop + mw, mw, Math.PI, 0); ctx.lineTo(cx + mw, my);
+    ctx.closePath(); ctx.clip();
+    const cols = ['#a61f1f', '#e0561c', '#f4a01d', '#ffe08a'];
+    for (let i = 0; i < 6; i++) {
+      const bx = cx - mw * 0.78 + (i / 5) * mw * 1.56;
+      const flick = Math.sin(t * 8 + i * 1.9) * 0.5 + 0.5;
+      const hgt = (2.4 * s + 3.2 * s * f) * (0.55 + 0.45 * flick);
+      for (let l = 0; l < cols.length; l++) {
+        const sc = 1 - l * 0.2;
+        const wfl = mw * 0.42 * sc;
+        ctx.fillStyle = cols[l];
+        ctx.beginPath();
+        ctx.moveTo(bx - wfl, my);
+        ctx.quadraticCurveTo(bx - wfl * 0.4, my - hgt * sc * 0.5, bx, my - hgt * sc);
+        ctx.quadraticCurveTo(bx + wfl * 0.4, my - hgt * sc * 0.5, bx + wfl, my);
+        ctx.closePath(); ctx.fill();
+      }
+    }
+    ctx.restore();
+    ctx.save();
+    ctx.globalAlpha = ctx.globalAlpha * f;
+    const g = ctx.createRadialGradient(cx, my - 1.8 * s, 0, cx, my - 1.8 * s, mw * 2.4);
+    g.addColorStop(0, 'rgba(255,150,40,0.5)'); g.addColorStop(1, 'rgba(255,150,40,0)');
+    ctx.fillStyle = g; ctx.beginPath(); ctx.arc(cx, my - 1.8 * s, mw * 2.4, 0, TAU); ctx.fill();
+    ctx.restore();
+  }
+  // Chimney.
+  ctx.fillStyle = brickD; ctx.fillRect(cx + 2.6 * s, cy - H - 1.8 * s, 1.8 * s, 2.4 * s);
+  ctx.fillStyle = brick;  ctx.fillRect(cx + 2.6 * s, cy - H - 1.8 * s, 0.8 * s, 2.4 * s);
+  ctx.restore();
+}
+
+// Candy house: la casa de pan de jengibre (Hansel y Gretel). Paredes de jengibre
+// con glaseado, techo a dos aguas con escamas y caramelos, puerta de chocolate,
+// piruletas y ventanas. `_t` da humo a la chimenea. (x, y) es la base.
+export function drawCandyHouse(ctx, prop) {
+  const s = prop.scale || 3;
+  const cx = Math.round(prop.x);
+  const cy = Math.round(prop.y);
+  const a = prop.alpha == null ? 1 : Math.max(0, Math.min(1, prop.alpha));
+  if (a <= 0.01) return;
+  const t = prop._t || 0;
+  const ginger = prop.color || '#a86a36';
+  const gingerD = mixColors(ginger, '#000000', 0.35);
+  const gingerL = mixColors(ginger, '#ffd9a0', 0.32);
+  const icing = '#fbf3e4';
+  const choco = '#5a3420';
+  const TAU = Math.PI * 2;
+  const HW = 7 * s, WH = 7 * s, wallTop = cy - WH;
+  ctx.save();
+  ctx.globalAlpha *= a;
+  ctx.fillStyle = 'rgba(8,10,22,0.24)';
+  ctx.beginPath(); ctx.ellipse(cx, cy, HW * 1.2, 1.5 * s, 0, 0, TAU); ctx.fill();
+  // Walls.
+  ctx.fillStyle = gingerD; ctx.fillRect(cx - HW, wallTop, HW * 2, WH);
+  ctx.fillStyle = ginger;  ctx.fillRect(cx - HW, wallTop, HW * 1.5, WH);
+  ctx.fillStyle = gingerL; ctx.fillRect(cx - HW, wallTop, HW * 0.5, WH);
+  // Icing drips along the wall top.
+  ctx.fillStyle = icing;
+  for (let i = -3; i <= 3; i++) {
+    const dx = cx + i * (HW * 2 / 7);
+    const drp = 0.8 * s + ((i + 3) % 3) * 0.5 * s, w7 = HW / 7;
+    ctx.beginPath();
+    ctx.moveTo(dx - w7, wallTop); ctx.lineTo(dx + w7, wallTop);
+    ctx.lineTo(dx + w7, wallTop + drp); ctx.arc(dx, wallTop + drp, w7, 0, Math.PI);
+    ctx.closePath(); ctx.fill();
+  }
+  // Gable roof (chocolate).
+  const peak = wallTop - 5.5 * s, eaveX = HW + 1.2 * s;
+  ctx.fillStyle = choco;
+  ctx.beginPath();
+  ctx.moveTo(cx - eaveX, wallTop + 0.4 * s); ctx.lineTo(cx, peak); ctx.lineTo(cx + eaveX, wallTop + 0.4 * s);
+  ctx.closePath(); ctx.fill();
+  // Icing scallops on the roof (rows of arcs that narrow toward the peak).
+  ctx.fillStyle = icing;
+  for (let row = 0; row < 4; row++) {
+    const ry = wallTop - row * 1.25 * s;
+    const half = eaveX * (1 - row / 4.3);
+    for (let xx = cx - half; xx < cx + half - 0.2 * s; xx += 1.5 * s) {
+      ctx.beginPath(); ctx.arc(xx + 0.75 * s, ry, 0.75 * s, Math.PI, 0); ctx.fill();
+    }
+  }
+  // Gumdrops along the eaves.
+  const candyCols = ['#e0445f', '#4f8fe0', '#5fae5f', '#F4AC1D', '#9a5bd0'];
+  for (let i = 0; i < 5; i++) {
+    const fr = i / 4, gx = cx - eaveX + fr * eaveX * 2;
+    const gy = (wallTop + 0.4 * s) + (peak - wallTop - 0.4 * s) * (1 - Math.abs(gx - cx) / eaveX) - 0.6 * s;
+    ctx.fillStyle = candyCols[i];
+    ctx.beginPath(); ctx.arc(gx, gy, 0.9 * s, 0, TAU); ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,0.5)';
+    ctx.beginPath(); ctx.arc(gx - 0.3 * s, gy - 0.3 * s, 0.32 * s, 0, TAU); ctx.fill();
+  }
+  // Windows with icing frames.
+  for (const sx of [-1, 1]) {
+    const wx = cx + sx * 4 * s, wy = wallTop + 2.6 * s;
+    ctx.fillStyle = '#f4d98a'; ctx.fillRect(wx - 1.2 * s, wy - 1.2 * s, 2.4 * s, 2.4 * s);
+    ctx.strokeStyle = icing; ctx.lineWidth = Math.max(1, 0.3 * s);
+    ctx.strokeRect(wx - 1.2 * s, wy - 1.2 * s, 2.4 * s, 2.4 * s);
+    ctx.beginPath(); ctx.moveTo(wx, wy - 1.2 * s); ctx.lineTo(wx, wy + 1.2 * s);
+    ctx.moveTo(wx - 1.2 * s, wy); ctx.lineTo(wx + 1.2 * s, wy); ctx.stroke();
+  }
+  // Door (chocolate, arched) with icing trim.
+  const dw = 1.9 * s, dTop = cy - 3.6 * s;
+  ctx.fillStyle = choco;
+  ctx.beginPath();
+  ctx.moveTo(cx - dw, cy); ctx.lineTo(cx - dw, dTop + dw);
+  ctx.arc(cx, dTop + dw, dw, Math.PI, 0); ctx.lineTo(cx + dw, cy);
+  ctx.closePath(); ctx.fill();
+  ctx.strokeStyle = icing; ctx.lineWidth = Math.max(1, 0.32 * s);
+  ctx.beginPath();
+  ctx.moveTo(cx - dw, cy); ctx.lineTo(cx - dw, dTop + dw);
+  ctx.arc(cx, dTop + dw, dw, Math.PI, 0); ctx.lineTo(cx + dw, cy);
+  ctx.stroke();
+  ctx.fillStyle = '#F4AC1D'; ctx.beginPath(); ctx.arc(cx + dw * 0.5, cy - 1.8 * s, 0.3 * s, 0, TAU); ctx.fill();
+  // Lollipops flanking the door.
+  for (const sx of [-1, 1]) {
+    const lx = cx + sx * (dw + 1.7 * s);
+    ctx.strokeStyle = '#f3ead8'; ctx.lineWidth = 0.5 * s; ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo(lx, cy); ctx.lineTo(lx, cy - 3 * s); ctx.stroke();
+    ctx.fillStyle = sx < 0 ? '#e0445f' : '#4f8fe0';
+    ctx.beginPath(); ctx.arc(lx, cy - 3.6 * s, 1.1 * s, 0, TAU); ctx.fill();
+    ctx.strokeStyle = '#fbf3e4'; ctx.lineWidth = 0.3 * s;
+    ctx.beginPath(); ctx.arc(lx, cy - 3.6 * s, 0.6 * s, t + sx, t + sx + 4.2); ctx.stroke();
+  }
+  // Chimney + drifting smoke.
+  const chx = cx + 3 * s, chy = peak + 2.2 * s;
+  ctx.fillStyle = choco; ctx.fillRect(chx - 0.8 * s, chy - 2.4 * s, 1.6 * s, 2.4 * s);
+  ctx.fillStyle = icing; ctx.fillRect(chx - 0.95 * s, chy - 2.6 * s, 1.9 * s, 0.5 * s);
+  ctx.fillStyle = '#d8d2c4';
+  for (let i = 0; i < 3; i++) {
+    const pf = (t * 0.4 + i / 3) % 1;
+    ctx.save();
+    ctx.globalAlpha = ctx.globalAlpha * 0.4 * (1 - pf);
+    ctx.beginPath(); ctx.arc(chx + Math.sin(pf * 6) * s, chy - 2.6 * s - pf * 5 * s, (0.5 + pf * 1.2) * s, 0, TAU); ctx.fill();
+    ctx.restore();
+  }
+  ctx.restore();
+}
+
+// Shoe: el zapato del baile (Cenicienta). Zapatilla de tacón estilizada; `color`
+// la tiñe (oro, o rojo cuando la sangre la llena), `glass` (0..1) la vuelve
+// translúcida (la de cristal), `alpha`. (x, y) es la base.
+export function drawShoe(ctx, prop) {
+  const s = prop.scale || 2.2;
+  const cx = Math.round(prop.x);
+  const cy = Math.round(prop.y);
+  const a = prop.alpha == null ? 1 : Math.max(0, Math.min(1, prop.alpha));
+  if (a <= 0.01) return;
+  const glass = prop.glass == null ? 0 : Math.max(0, Math.min(1, prop.glass));
+  const base = prop.color || '#e8c34a';
+  const baseD = mixColors(base, '#000000', 0.35);
+  const baseL = mixColors(base, '#ffffff', 0.45);
+  const TAU = Math.PI * 2;
+  ctx.save();
+  ctx.globalAlpha *= a * (glass > 0.5 ? 0.72 : 1);
+  ctx.fillStyle = 'rgba(8,10,22,0.22)';
+  ctx.beginPath(); ctx.ellipse(cx, cy, 4.2 * s, 1.0 * s, 0, 0, TAU); ctx.fill();
+  // Heel.
+  ctx.fillStyle = baseD;
+  ctx.beginPath();
+  ctx.moveTo(cx + 2.0 * s, cy - 0.4 * s); ctx.lineTo(cx + 3.0 * s, cy);
+  ctx.lineTo(cx + 2.5 * s, cy); ctx.lineTo(cx + 1.7 * s, cy - 0.4 * s);
+  ctx.closePath(); ctx.fill();
+  // Body (a curved pump).
+  ctx.fillStyle = base;
+  ctx.beginPath();
+  ctx.moveTo(cx - 3.4 * s, cy - 0.5 * s);
+  ctx.quadraticCurveTo(cx - 3.9 * s, cy - 1.7 * s, cx - 2.6 * s, cy - 2.0 * s);
+  ctx.quadraticCurveTo(cx - 0.6 * s, cy - 2.3 * s, cx + 0.6 * s, cy - 3.4 * s);
+  ctx.quadraticCurveTo(cx + 1.2 * s, cy - 4.0 * s, cx + 2.0 * s, cy - 3.3 * s);
+  ctx.quadraticCurveTo(cx + 2.5 * s, cy - 1.9 * s, cx + 2.2 * s, cy - 0.5 * s);
+  ctx.closePath(); ctx.fill();
+  // Inner topline shadow.
+  ctx.fillStyle = baseD;
+  ctx.beginPath();
+  ctx.moveTo(cx + 0.7 * s, cy - 3.2 * s);
+  ctx.quadraticCurveTo(cx + 1.2 * s, cy - 3.7 * s, cx + 1.9 * s, cy - 3.2 * s);
+  ctx.quadraticCurveTo(cx + 1.2 * s, cy - 2.7 * s, cx + 0.7 * s, cy - 3.2 * s);
+  ctx.closePath(); ctx.fill();
+  // Specular highlight.
+  ctx.fillStyle = baseL;
+  ctx.beginPath(); ctx.ellipse(cx - 1.5 * s, cy - 1.4 * s, 0.9 * s, 0.42 * s, -0.4, 0, TAU); ctx.fill();
+  if (glass > 0.3) {
+    ctx.fillStyle = 'rgba(255,255,255,0.5)';
+    ctx.beginPath(); ctx.ellipse(cx - 0.3 * s, cy - 2.1 * s, 0.45 * s, 1.0 * s, -0.5, 0, TAU); ctx.fill();
+  }
+  ctx.restore();
+}
+
+// Mirror: el espejo mágico (Blancanieves). Óvalo reflectante con marco dorado
+// sobre un pie; `glow` (0..1) enciende el aura mágica y un destello que recorre
+// el cristal con `_t`. `color` tiñe el marco, `alpha` lo desvanece. (x, y) base.
+export function drawMirror(ctx, prop) {
+  const s = prop.scale || 3;
+  const cx = Math.round(prop.x);
+  const cy = Math.round(prop.y);
+  const a = prop.alpha == null ? 1 : Math.max(0, Math.min(1, prop.alpha));
+  if (a <= 0.01) return;
+  const t = prop._t || 0;
+  const glow = prop.glow == null ? 0 : Math.max(0, Math.min(1, prop.glow));
+  const gold = prop.color || '#d8a850';
+  const goldD = mixColors(gold, '#5a3a10', 0.5);
+  const goldL = mixColors(gold, '#ffffff', 0.45);
+  const TAU = Math.PI * 2;
+  const ovY = cy - 9 * s, rx = 4.2 * s, ry = 5.6 * s;
+  ctx.save();
+  ctx.globalAlpha *= a;
+  ctx.fillStyle = 'rgba(8,10,22,0.22)';
+  ctx.beginPath(); ctx.ellipse(cx, cy, 3.4 * s, 1.0 * s, 0, 0, TAU); ctx.fill();
+  // Stand.
+  ctx.fillStyle = goldD;
+  ctx.beginPath();
+  ctx.moveTo(cx - 0.7 * s, ovY + ry * 0.7); ctx.lineTo(cx - 2.4 * s, cy);
+  ctx.lineTo(cx + 2.4 * s, cy); ctx.lineTo(cx + 0.7 * s, ovY + ry * 0.7);
+  ctx.closePath(); ctx.fill();
+  ctx.fillStyle = gold; ctx.fillRect(cx - 2.7 * s, cy - 0.6 * s, 5.4 * s, 0.6 * s);
+  // Magic aura.
+  if (glow > 0.02) {
+    ctx.save();
+    ctx.globalAlpha = ctx.globalAlpha * glow;
+    const g = ctx.createRadialGradient(cx, ovY, rx * 0.3, cx, ovY, rx * 2.2);
+    g.addColorStop(0, 'rgba(150,210,255,0.45)'); g.addColorStop(1, 'rgba(150,210,255,0)');
+    ctx.fillStyle = g; ctx.beginPath(); ctx.ellipse(cx, ovY, rx * 2.2, ry * 1.8, 0, 0, TAU); ctx.fill();
+    ctx.restore();
+  }
+  // Frame.
+  ctx.fillStyle = goldD; ctx.beginPath(); ctx.ellipse(cx, ovY, rx + 0.9 * s, ry + 0.9 * s, 0, 0, TAU); ctx.fill();
+  ctx.fillStyle = gold;  ctx.beginPath(); ctx.ellipse(cx, ovY, rx + 0.5 * s, ry + 0.5 * s, 0, 0, TAU); ctx.fill();
+  ctx.fillStyle = goldL;
+  ctx.beginPath(); ctx.ellipse(cx, ovY, rx + 0.5 * s, ry + 0.5 * s, 0, Math.PI * 0.95, Math.PI * 1.5); ctx.lineTo(cx, ovY); ctx.closePath(); ctx.fill();
+  // Glass.
+  const dark = glow > 0.02 ? mixColors('#2a3a52', '#bfe0ff', glow * 0.6) : '#33405a';
+  const gl = ctx.createLinearGradient(cx - rx, ovY - ry, cx + rx, ovY + ry);
+  gl.addColorStop(0, mixColors(dark, '#ffffff', 0.25));
+  gl.addColorStop(0.5, dark);
+  gl.addColorStop(1, mixColors(dark, '#000000', 0.2));
+  ctx.fillStyle = gl;
+  ctx.beginPath(); ctx.ellipse(cx, ovY, rx, ry, 0, 0, TAU); ctx.fill();
+  // Moving sheen.
+  ctx.save();
+  ctx.beginPath(); ctx.ellipse(cx, ovY, rx, ry, 0, 0, TAU); ctx.clip();
+  ctx.globalAlpha = ctx.globalAlpha * 0.5;
+  ctx.strokeStyle = 'rgba(255,255,255,0.6)'; ctx.lineWidth = 1.1 * s;
+  const sh = Math.sin(t * 0.8) * rx;
+  ctx.beginPath(); ctx.moveTo(cx + sh - 1.4 * s, ovY - ry); ctx.lineTo(cx + sh + 1.4 * s, ovY + ry); ctx.stroke();
+  ctx.restore();
+  ctx.restore();
+}
+
+// Dove: paloma blanca de alas que baten (`_t`). No se traslada sola: se mueve con
+// `tween` de x/y o `path` (como la tortuga), para coreografiar un descenso. `dir`
+// la espeja, `color` tiñe el plumaje, `alpha` la desvanece. (x, y) es el centro.
+export function drawDove(ctx, prop) {
+  const s = prop.scale || 2.5;
+  const cx = Math.round(prop.x);
+  const cy = Math.round(prop.y);
+  const a = prop.alpha == null ? 1 : Math.max(0, Math.min(1, prop.alpha));
+  if (a <= 0.01) return;
+  const t = prop._t || 0;
+  const dir = prop.dir || 1;
+  const body = prop.color || '#f4f6fb';
+  const shade = mixColors(body, '#9aa6c0', 0.5);
+  const beak = '#e8a838';
+  const eyeC = '#26304a';
+  const TAU = Math.PI * 2;
+  const flap = Math.sin(t * 10);
+  ctx.save();
+  ctx.globalAlpha *= a;
+  ctx.translate(cx, cy);
+  ctx.scale(dir, 1);
+  // Body.
+  ctx.fillStyle = body;
+  ctx.beginPath(); ctx.ellipse(0, 0, 3.2 * s, 2.2 * s, -0.15, 0, TAU); ctx.fill();
+  ctx.fillStyle = shade;
+  ctx.beginPath(); ctx.ellipse(0.3 * s, 0.9 * s, 2.5 * s, 1.3 * s, -0.1, 0, TAU); ctx.fill();
+  ctx.fillStyle = body;
+  ctx.beginPath(); ctx.ellipse(-0.2 * s, -0.4 * s, 3.0 * s, 1.8 * s, -0.15, 0, TAU); ctx.fill();
+  // Tail.
+  ctx.beginPath();
+  ctx.moveTo(-2.6 * s, -0.2 * s);
+  ctx.lineTo(-5.2 * s, -1.2 * s + flap * 0.4 * s);
+  ctx.lineTo(-5.0 * s, 0.7 * s + flap * 0.4 * s);
+  ctx.closePath(); ctx.fill();
+  // Head.
+  ctx.beginPath(); ctx.arc(2.6 * s, -1.5 * s, 1.5 * s, 0, TAU); ctx.fill();
+  // Beak.
+  ctx.fillStyle = beak;
+  ctx.beginPath();
+  ctx.moveTo(3.9 * s, -1.7 * s); ctx.lineTo(5.3 * s, -1.3 * s); ctx.lineTo(3.9 * s, -1.0 * s);
+  ctx.closePath(); ctx.fill();
+  // Eye.
+  ctx.fillStyle = eyeC;
+  ctx.beginPath(); ctx.arc(3.0 * s, -1.8 * s, 0.42 * s, 0, TAU); ctx.fill();
+  // Wing (flapping around the shoulder).
+  ctx.save();
+  ctx.translate(0.2 * s, -0.7 * s);
+  ctx.rotate(flap * 0.6 - 0.2);
+  ctx.fillStyle = mixColors(body, '#ffffff', 0.3);
+  ctx.beginPath();
+  ctx.moveTo(0, 0);
+  ctx.quadraticCurveTo(-1.5 * s, -3.4 * s, 1.4 * s, -4.0 * s);
+  ctx.quadraticCurveTo(2.6 * s, -2.0 * s, 1.2 * s, 0);
+  ctx.closePath(); ctx.fill();
+  ctx.strokeStyle = shade; ctx.lineWidth = 0.3 * s;
+  ctx.beginPath(); ctx.moveTo(0.6 * s, -0.4 * s); ctx.lineTo(1.3 * s, -3.0 * s); ctx.stroke();
+  ctx.restore();
+  ctx.restore();
+}
+
+// Wall: muro de piedra del castillo (la pared contra la que se estrella la rana
+// en El Rey Rana). Sillería en tres tonos con cornisa y una saetera. `color`
+// tiñe la piedra, `alpha` la desvanece. (x, y) es la base.
+export function drawWall(ctx, prop) {
+  const s = prop.scale || 4;
+  const cx = Math.round(prop.x);
+  const cy = Math.round(prop.y);
+  const a = prop.alpha == null ? 1 : Math.max(0, Math.min(1, prop.alpha));
+  if (a <= 0.01) return;
+  const stone = prop.color || '#9aa3b0';
+  const stoneD = mixColors(stone, '#1b2030', 0.42);
+  const stoneL = mixColors(stone, '#ffffff', 0.26);
+  const mortar = mixColors(stone, '#1b2030', 0.6);
+  const TAU = Math.PI * 2;
+  const HW = 4.5 * s, H = 13 * s, top = cy - H;
+  ctx.save();
+  ctx.globalAlpha *= a;
+  // Contact shadow.
+  ctx.fillStyle = 'rgba(8,10,22,0.24)';
+  ctx.beginPath(); ctx.ellipse(cx, cy, HW * 1.2, 1.3 * s, 0, 0, TAU); ctx.fill();
+  // Body with light/shadow sides.
+  ctx.fillStyle = stoneD; ctx.fillRect(cx - HW, top, HW * 2, H);
+  ctx.fillStyle = stone;  ctx.fillRect(cx - HW, top, HW * 1.58, H);
+  ctx.fillStyle = stoneL; ctx.fillRect(cx - HW, top, HW * 0.42, H);
+  // Masonry: horizontal courses + staggered vertical joints.
+  ctx.strokeStyle = mortar; ctx.lineWidth = Math.max(1, s * 0.16);
+  const courseH = 2.2 * s;
+  let row = 0;
+  for (let yy = top + courseH; yy < cy - 1; yy += courseH, row++) {
+    ctx.beginPath(); ctx.moveTo(cx - HW, yy); ctx.lineTo(cx + HW, yy); ctx.stroke();
+    const off = (row % 2) ? HW * 0.5 : -HW * 0.5;
+    ctx.beginPath(); ctx.moveTo(cx + off, yy - courseH); ctx.lineTo(cx + off, yy); ctx.stroke();
+    const off2 = (row % 2) ? -HW * 0.5 : HW * 0.5;
+    ctx.beginPath(); ctx.moveTo(cx + off2, yy - courseH); ctx.lineTo(cx + off2, yy); ctx.stroke();
+  }
+  // Coping stone (top course, slightly wider).
+  ctx.fillStyle = stoneD; ctx.fillRect(cx - HW - 0.7 * s, top - 1.5 * s, HW * 2 + 1.4 * s, 1.7 * s);
+  ctx.fillStyle = mixColors(stone, '#ffffff', 0.14); ctx.fillRect(cx - HW - 0.7 * s, top - 1.5 * s, HW * 2 + 1.4 * s, 0.5 * s);
+  // Arrow-slit (saetera).
+  ctx.fillStyle = '#16121f';
+  ctx.fillRect(cx - 0.55 * s, top + 3 * s, 1.1 * s, 4.2 * s);
+  ctx.fillStyle = mortar;
+  ctx.fillRect(cx - 0.95 * s, top + 2.6 * s, 1.9 * s, 0.5 * s);
+  ctx.restore();
+}
+
+// Tome: libro de cuentos abierto y grande (el cierre de la escena 11). Dos
+// páginas crema con renglones y una tapa de `color`; un marcapáginas que se mece
+// (`_t`) y un acento que muta con `glow` (0..1): de una mancha de sangre (lo
+// crudo) a un corazón dorado con destellos y resplandor cálido (lo dulce).
+// `label` rotula la edición (año) bajo el libro. `alpha`. (x, y) es la base.
+export function drawTome(ctx, prop) {
+  const s = prop.scale || 4;
+  const cx = Math.round(prop.x);
+  const cy = Math.round(prop.y);
+  const a = prop.alpha == null ? 1 : Math.max(0, Math.min(1, prop.alpha));
+  if (a <= 0.01) return;
+  const t = prop._t || 0;
+  const glow = prop.glow == null ? 0 : Math.max(0, Math.min(1, prop.glow));
+  const cover = prop.color || '#7a2e34';
+  const coverD = mixColors(cover, '#000000', 0.4);
+  const page = '#f2ead6';
+  const pageHi = '#fbf6e8';
+  const pageSh = '#d6c9ac';
+  const ink = '#8a7c5e';
+  const TAU = Math.PI * 2;
+  const HW = 9 * s, H = 10 * s;
+  const topOut = cy - H, topMid = cy - H + 2.4 * s;
+  const botOut = cy - 1.6 * s, botMid = cy;
+  ctx.save();
+  ctx.globalAlpha *= a;
+  // Sweet warm glow aura behind the book.
+  if (glow > 0.02) {
+    ctx.save();
+    ctx.globalAlpha = ctx.globalAlpha * glow * 0.85;
+    const g = ctx.createRadialGradient(cx, cy - H * 0.45, 2 * s, cx, cy - H * 0.45, HW * 1.8);
+    g.addColorStop(0, 'rgba(255,208,120,0.55)'); g.addColorStop(1, 'rgba(255,208,120,0)');
+    ctx.fillStyle = g;
+    ctx.beginPath(); ctx.ellipse(cx, cy - H * 0.45, HW * 1.8, H * 1.05, 0, 0, TAU); ctx.fill();
+    ctx.restore();
+  }
+  const leaf = (sign, fill, ext) => {
+    const hw = HW + ext;
+    ctx.beginPath();
+    ctx.moveTo(cx, topMid - ext * 0.4);
+    ctx.quadraticCurveTo(cx + sign * hw * 0.5, topOut - ext * 0.7 - 0.4 * s, cx + sign * hw, topOut - ext * 0.3);
+    ctx.lineTo(cx + sign * hw, botOut + ext * 0.4);
+    ctx.quadraticCurveTo(cx + sign * hw * 0.5, botMid + 0.8 * s + ext * 0.4, cx, botMid + ext * 0.4);
+    ctx.closePath();
+    ctx.fillStyle = fill; ctx.fill();
+  };
+  // Soft floating shadow.
+  ctx.save();
+  ctx.globalAlpha = ctx.globalAlpha * 0.18;
+  ctx.fillStyle = '#0a0c18';
+  ctx.beginPath(); ctx.ellipse(cx, cy + 1.4 * s, HW * 0.95, 1.4 * s, 0, 0, TAU); ctx.fill();
+  ctx.restore();
+  // Cover (binding peeks around the pages).
+  leaf(-1, coverD, 1.5 * s); leaf(1, coverD, 1.5 * s);
+  leaf(-1, cover, 0.9 * s);  leaf(1, cover, 0.9 * s);
+  // Pages.
+  leaf(-1, page, 0); leaf(1, page, 0);
+  ctx.save(); ctx.globalAlpha = ctx.globalAlpha * 0.4; leaf(-1, pageHi, -1.4 * s); ctx.restore();
+  // Gutter shadow.
+  ctx.strokeStyle = pageSh; ctx.lineWidth = Math.max(1, s * 0.55);
+  ctx.beginPath(); ctx.moveTo(cx, topMid); ctx.lineTo(cx, botMid - 0.3 * s); ctx.stroke();
+  // Text lines on both pages.
+  ctx.strokeStyle = ink; ctx.lineWidth = Math.max(1, s * 0.16);
+  for (let i = 0; i < 5; i++) {
+    const fy = topMid + (1.6 + i * 1.4) * s;
+    ctx.beginPath(); ctx.moveTo(cx - HW * 0.74, fy + 0.5 * s); ctx.lineTo(cx - HW * 0.16, fy); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(cx + HW * 0.16, fy); ctx.lineTo(cx + HW * 0.74, fy + 0.5 * s); ctx.stroke();
+  }
+  // Blood stain (crude), fades out as glow rises.
+  const stainA = 1 - glow;
+  if (stainA > 0.02) {
+    ctx.save();
+    ctx.globalAlpha = ctx.globalAlpha * stainA;
+    ctx.fillStyle = '#8c1f24';
+    const sx = cx + HW * 0.4, sy = topMid + 4.4 * s;
+    ctx.beginPath(); ctx.ellipse(sx, sy, 1.9 * s, 1.4 * s, 0.3, 0, TAU); ctx.fill();
+    ctx.beginPath(); ctx.arc(sx - 1.5 * s, sy + 0.7 * s, 0.6 * s, 0, TAU); ctx.fill();
+    ctx.beginPath(); ctx.arc(sx + 1.3 * s, sy - 0.8 * s, 0.45 * s, 0, TAU); ctx.fill();
+    ctx.fillRect(sx - 0.2 * s, sy + 0.5 * s, 0.45 * s, 2.0 * s);
+    ctx.restore();
+  }
+  // Sweet golden heart + sparkles, fades in with glow.
+  if (glow > 0.02) {
+    ctx.save();
+    ctx.globalAlpha = ctx.globalAlpha * glow;
+    const hx = cx + HW * 0.38, hy = topMid + 4.2 * s, hs = 1.4 * s;
+    ctx.fillStyle = '#e8b43a';
+    ctx.beginPath();
+    ctx.moveTo(hx, hy + hs * 0.9);
+    ctx.bezierCurveTo(hx - hs * 1.3, hy - hs * 0.2, hx - hs * 0.5, hy - hs * 1.1, hx, hy - hs * 0.3);
+    ctx.bezierCurveTo(hx + hs * 0.5, hy - hs * 1.1, hx + hs * 1.3, hy - hs * 0.2, hx, hy + hs * 0.9);
+    ctx.closePath(); ctx.fill();
+    ctx.fillStyle = '#fff2c8';
+    for (let k = 0; k < 4; k++) {
+      const tw = Math.sin(t * 3 + k * 1.7) * 0.5 + 0.5;
+      const spx = cx + (k % 2 ? 1 : -1) * HW * (0.3 + 0.12 * k);
+      const spy = topMid + (1.5 + k * 1.5) * s;
+      ctx.beginPath(); ctx.arc(spx, spy, (0.3 + 0.4 * tw) * s, 0, TAU); ctx.fill();
+    }
+    ctx.restore();
+  }
+  // Bookmark ribbon (sways with _t).
+  const sway = Math.sin(t * 1.6) * 0.8 * s;
+  ctx.fillStyle = glow > 0.5 ? '#e0b04a' : '#b0444e';
+  ctx.beginPath();
+  ctx.moveTo(cx - 0.7 * s, topMid + 0.2 * s);
+  ctx.lineTo(cx + 0.7 * s, topMid + 0.2 * s);
+  ctx.lineTo(cx + 0.7 * s + sway, topMid + 4.6 * s);
+  ctx.lineTo(cx - 0.7 * s + sway, topMid + 4.6 * s);
+  ctx.closePath(); ctx.fill();
+  // Edition label under the book (papel sobre fondo apagado, con sombra).
+  if (prop.label) {
+    ctx.font = '700 ' + Math.round(2.8 * s) + 'px "Plus Jakarta Sans", ui-sans-serif';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+    ctx.fillStyle = 'rgba(12,14,28,0.55)';
+    ctx.fillText(String(prop.label), cx + 1, cy + 2.4 * s + 1);
+    ctx.fillStyle = '#f3ecdc';
+    ctx.fillText(String(prop.label), cx, cy + 2.4 * s);
+  }
+  ctx.restore();
+}
+
 export function drawProp(ctx, prop) {
+  if (prop.type === 'tome') return drawTome(ctx, prop);
+  if (prop.type === 'wall') return drawWall(ctx, prop);
+  if (prop.type === 'dove') return drawDove(ctx, prop);
+  if (prop.type === 'tower') return drawTower(ctx, prop);
+  if (prop.type === 'oven') return drawOven(ctx, prop);
+  if (prop.type === 'candy-house') return drawCandyHouse(ctx, prop);
+  if (prop.type === 'shoe') return drawShoe(ctx, prop);
+  if (prop.type === 'mirror') return drawMirror(ctx, prop);
+  if (prop.type === 'grinder') return drawGrinder(ctx, prop);
+  if (prop.type === 'turtle') return drawTurtle(ctx, prop);
+  if (prop.type === 'pasture') return drawPasture(ctx, prop);
+  if (prop.type === 'sheep') return drawSheep(ctx, prop);
+  if (prop.type === 'fence') return drawFence(ctx, prop);
+  if (prop.type === 'genially') return drawGenially(ctx, prop);
   if (prop.type === 'notebook') return drawNotebook(ctx, prop);
+  if (prop.type === 'laptop') return drawLaptop(ctx, prop);
+  if (prop.type === 'coffee') return drawCoffee(ctx, prop);
+  if (prop.type === 'umbrella') return drawUmbrella(ctx, prop);
+  if (prop.type === 'cityscape') return drawCityscape(ctx, prop);
+  if (prop.type === 'plane') return drawPlane(ctx, prop);
+  if (prop.type === 'cafe-facade') return drawCafeFacade(ctx, prop);
+  if (prop.type === 'awning') return drawAwning(ctx, prop);
+  if (prop.type === 'bistro-table') return drawBistroTable(ctx, prop);
+  if (prop.type === 'bistro-chair') return drawBistroChair(ctx, prop);
+  if (prop.type === 'frame-oval') return drawFrameOval(ctx, prop);
+  if (prop.type === 'screen') return drawScreen(ctx, prop);
   if (prop.type === 'cat') return drawCat(ctx, prop);
   if (prop.type === 'vault') return drawVault(ctx, prop);
   if (prop.type === 'aiorb') return drawAiOrb(ctx, prop);
@@ -1788,6 +3793,7 @@ export function drawProp(ctx, prop) {
   if (prop.type === 'frog') return drawFrog(ctx, prop);
   if (prop.type === 'swing') return drawSwing(ctx, prop);
   if (prop.type === 'clock') return drawClock(ctx, prop);
+  if (prop.type === 'virus') return drawVirus(ctx, prop);
   const def = PROP_SPRITES[prop.type];
   if (!def) return;
   // alpha animable también para sprites (flores que brotan/marchitan, etc.).
@@ -1867,4 +3873,88 @@ export function drawProp(ctx, prop) {
     ctx.arc(prop.x, flickerY, s * 4, 0, Math.PI * 2);
     ctx.fill();
   }
+}
+
+// Virus (patógeno): cápside central con corona de spikes que rota sola y una
+// cápside que late. Ícono del contagio. FLOTA (translate al centro, sin sombra
+// de contacto). `color` tiñe la cápside, `glow` 0..1 enciende un halo rojizo de
+// contagio, `alpha` para aparecer/desvanecer. La corona es el emblema del
+// coronavirus: tallos radiales con una bolita en la punta.
+export function drawVirus(ctx, prop) {
+  const s = prop.scale || 2.6;
+  const cx = Math.round(prop.x);
+  const cy = Math.round(prop.y);
+  const a = prop.alpha == null ? 1 : Math.max(0, Math.min(1, prop.alpha));
+  if (a <= 0.01) return;
+  const t = prop._t || 0;
+  const glow = prop.glow == null ? 0 : Math.max(0, Math.min(1, prop.glow));
+  const col = prop.color || '#c9463a';
+  const colD = mixColors(col, '#000000', 0.45);
+  const colL = mixColors(col, '#ffffff', 0.5);
+  const TAU = Math.PI * 2;
+  const pulse = 0.9 + 0.1 * Math.sin(t * 3);
+  const R = 2.3 * s * pulse;            // radio de la cápside
+  const spikeLen = 1.2 * s;
+  const SPIKES = 12;
+  ctx.save();
+  ctx.globalAlpha *= a;
+  ctx.translate(cx, cy);
+  // Halo de contagio (glow): aura rojiza que late.
+  if (glow > 0.02) {
+    ctx.save();
+    ctx.globalAlpha = ctx.globalAlpha * glow * (0.6 + 0.4 * Math.sin(t * 2.4));
+    const g = ctx.createRadialGradient(0, 0, R * 0.4, 0, 0, R * 3.2);
+    g.addColorStop(0, mixColors(col, '#ffffff', 0.1));
+    g.addColorStop(1, 'rgba(201,70,58,0)');
+    ctx.fillStyle = g;
+    ctx.beginPath(); ctx.arc(0, 0, R * 3.2, 0, TAU); ctx.fill();
+    ctx.restore();
+  }
+  // Corona de spikes que rota (tallo + bolita en la punta).
+  ctx.save();
+  ctx.rotate(t * 0.5);
+  for (let k = 0; k < SPIKES; k++) {
+    const ang = k * TAU / SPIKES;
+    const dx = Math.cos(ang), dy = Math.sin(ang);
+    ctx.strokeStyle = colD;
+    ctx.lineWidth = Math.max(1, s * 0.42);
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(dx * R * 0.92, dy * R * 0.92);
+    ctx.lineTo(dx * (R + spikeLen), dy * (R + spikeLen));
+    ctx.stroke();
+    ctx.fillStyle = col;
+    ctx.beginPath();
+    ctx.arc(dx * (R + spikeLen), dy * (R + spikeLen), 0.55 * s, 0, TAU);
+    ctx.fill();
+    ctx.fillStyle = colL;
+    ctx.beginPath();
+    ctx.arc(dx * (R + spikeLen) - 0.15 * s, dy * (R + spikeLen) - 0.15 * s, 0.22 * s, 0, TAU);
+    ctx.fill();
+  }
+  ctx.restore();
+  // Cápside: sombra, cuerpo, highlight superior.
+  ctx.fillStyle = colD;
+  ctx.beginPath(); ctx.arc(0, 0, R + 0.5 * s, 0, TAU); ctx.fill();
+  ctx.fillStyle = col;
+  ctx.beginPath(); ctx.arc(0, 0, R, 0, TAU); ctx.fill();
+  ctx.fillStyle = colL;
+  ctx.beginPath();
+  ctx.ellipse(-0.5 * s, -0.6 * s, R * 0.55, R * 0.42, -0.5, 0, TAU);
+  ctx.fill();
+  // Material genético interno: pequeños receptores que giran al revés.
+  ctx.save();
+  ctx.rotate(-t * 0.35);
+  ctx.fillStyle = colD;
+  for (let k = 0; k < 5; k++) {
+    const ang = k * TAU / 5 + 0.4;
+    const rr = R * 0.5;
+    ctx.beginPath();
+    ctx.arc(Math.cos(ang) * rr, Math.sin(ang) * rr, 0.32 * s, 0, TAU);
+    ctx.fill();
+  }
+  ctx.fillStyle = mixColors(col, '#000000', 0.25);
+  ctx.beginPath(); ctx.arc(0, 0, 0.5 * s, 0, TAU); ctx.fill();
+  ctx.restore();
+  ctx.restore();
 }

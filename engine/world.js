@@ -2,27 +2,27 @@
 // World class: simulation state + tick + draw orchestration.
 // Owns entities, camera, scripts, fx, bubbles, labels, ambient, audio handles.
 
-import { mulberry32, ease, colorAlpha, mixColors, drawRichText, measureRichText, formatAPA } from './util.js?v=80';
-import { compileHooks } from './hooks.js?v=80';
-import { createAmbientSound } from './audio.js?v=80';
-import { SKY_PRESETS } from './sky-presets.js?v=80';
-import { computeSolidBox, drawProp } from './prop-draw.js?v=80';
-import { PROP_NATURAL_SCALE, PROP_SPRITES } from './prop-sprites.js?v=80';
-import { Draw } from './draw.js?v=80';
-import { initCamera, tickCamera } from './camera.js?v=80';
-import { makeAmbientParticle, tickAmbient, drawAmbient } from './ambient.js?v=80';
+import { mulberry32, ease, colorAlpha, mixColors, drawRichText, measureRichText, drawLabel, formatAPA, htmlToText } from './util.js?v=145';
+import { compileHooks } from './hooks.js?v=145';
+import { createAmbientSound } from './audio.js?v=145';
+import { SKY_PRESETS } from './sky-presets.js?v=145';
+import { computeSolidBox, drawProp } from './prop-draw.js?v=145';
+import { PROP_NATURAL_SCALE, PROP_SPRITES, depthScale } from './prop-sprites.js?v=145';
+import { Draw } from './draw.js?v=145';
+import { initCamera, tickCamera } from './camera.js?v=145';
+import { makeAmbientParticle, tickAmbient, drawAmbient } from './ambient.js?v=145';
 import {
   runScript as _runScript, stopScripts as _stopScripts, tickScripts,
   evalScriptExpr, processScript, execScriptStep,
-} from './scripts.js?v=80';
-import { compileForm } from './forms.js?v=80';
-import { drawFloor } from './floor.js?v=80';
-import { tickAnimatedProps } from './animated-props.js?v=80';
-import { initLearner, touchLearner, tickLearner } from './learner.js?v=80';
-import { handleClick, togglePropInteraction } from './interaction.js?v=80';
+} from './scripts.js?v=145';
+import { compileForm } from './forms.js?v=145';
+import { drawFloor } from './floor.js?v=145';
+import { tickAnimatedProps } from './animated-props.js?v=145';
+import { initLearner, touchLearner, tickLearner } from './learner.js?v=145';
+import { handleClick, togglePropInteraction } from './interaction.js?v=145';
 import {
   createFxApi, spawnBubble, spawnParticles, tickFx, positionBubbles, drawFx,
-} from './fx.js?v=80';
+} from './fx.js?v=145';
 
 // Props que emiten luz solos cuando hay `ambient.darkness` (opt-out con
 // `light: false` en el prop). `dy` ubica la fuente en celdas del sprite
@@ -205,6 +205,21 @@ export class World {
         // coherentes entre sí y con los aprendices). Ver PROP_NATURAL_SCALE.
         scale: p.scale || PROP_NATURAL_SCALE[p.type] || 3,
       };
+      // Profundidad declarativa: `far` (0 = primer plano … 1 = horizonte) hace
+      // DOS cosas coherentes de un tiro: encoge el tamaño aparente (lo lejano se
+      // ve chico, factor `depthScale`) y lo manda a su capa (z automático, más
+      // atrás cuanto más lejos). El autor pone el `scale` como el tamaño del
+      // objeto DE CERCA (proporcional a su tamaño real, ver la tabla de escala de
+      // referencia) y la profundidad hace el resto: un avión grande que vuela
+      // lejos sale chico y por DETRÁS de los edificios, nunca diminuto y por
+      // delante. `z` explícito, si se declara, gana sobre el z de la profundidad.
+      // (Es `far`, no `depth`, porque `depth` ya es un parámetro de dibujo del
+      // prop `pasture`.)
+      if (p.far != null) {
+        const d = Math.max(0, Math.min(1, p.far));
+        prop.scale = prop.scale * depthScale(d);
+        if (p.z == null) prop.z = -Math.round(d * 100);
+      }
       if (prop.solid) computeSolidBox(prop);
       return prop;
     });
@@ -233,7 +248,27 @@ export class World {
     // Tracked timeouts: setTimeout calls registered here are cleared on reset.
     this._timeouts = this._timeouts || new Set();
     const W = this;
+    // Barrido silencioso de la línea de tiempo: durante un seek/medición se
+    // re-simula el guion en un bucle síncrono. Un setTimeout con delay real se
+    // dispararía en wall-clock DESPUÉS del barrido, fuera de lugar; durante
+    // `_seeking` se ejecutan inline (ver setTimeout más abajo) para que su
+    // efecto quede ASENTADO en el estado final del seek. El resto lo maneja el
+    // runner time-based.
+    this._seeking = false;
+    // Duración total del contenido (fin del guion 'main'), medida al arrancar
+    // por measureDuration(). null = escena sin fin declarativo (hooks o loop):
+    // solo pausa, sin barra scrubbable. OJO: _loadEntities corre en CADA reset()
+    // y un seek hacia atrás llama reset(); `??=` preserva la duración ya medida
+    // (no es estado de simulación, es metadata de la escena). Sin esto, retroceder
+    // borraba la duración y la barra desaparecía para siempre.
+    this._duration ??= null;
     this.setTimeout = (fn, ms) => {
+      // Durante un barrido de seek/medición ejecutar el callback inline: colapsa
+      // su efecto al instante del barrido, así una transición de escena
+      // (transitionTo agenda el teleport de cámara y el fin del fade con
+      // setTimeout) queda asentada en el estado final del seek en vez de dejar
+      // la pantalla en negro con la cámara vieja. En play normal se agenda igual.
+      if (W._seeking) { try { fn(); } catch (e) { console.warn('[noesis-scene] seek timeout error', e); } return -1; }
       const id = setTimeout(() => { W._timeouts.delete(id); try { fn(); } catch (e) { console.warn('[noesis-scene] timeout error', e); } }, ms);
       W._timeouts.add(id);
       return id;
@@ -429,10 +464,27 @@ export class World {
     if (this._dialogues) this._dialogues.length = 0;
     if (this._fx) this._fx.length = 0;
     if (this._tweens) this._tweens.length = 0;
+    // La música (si el usuario la activó) sigue sonando en el replay, pero
+    // vuelve a su estado base: un step `music` del guion pudo dejarla
+    // agachada, en silencio o sonando en OTRO mood al terminar la corrida.
+    if (this._ambientMusic) {
+      if (this._musicMood && this._ambientMusic.mood !== this._musicMood) {
+        this._ambientMusic.stop(0.8);
+        this._ambientMusic = null;
+        this.fx.ambientMusic(this._musicMood);
+      } else if (this._ambientMusic.baseVolume != null) {
+        this._ambientMusic.setVolume(this._ambientMusic.baseVolume, 0.8);
+      }
+    }
     this.entities = [];
     this.state = {};
     this.t = 0;
     this.frame = 0;
+    // Re-siembra el RNG para que cada corrida (replay o seek de la línea de
+    // tiempo) reproduzca EXACTAMENTE el mismo estado visual. Sin esto, un seek
+    // hacia atrás reconstruye la escena con el RNG en otro punto y los props
+    // auto-animados (nubes, pájaros) saltarían de posición.
+    this.rng = mulberry32(this.config.seed || 1);
     // Restore camera defaults: otherwise a stale follow target (a now-removed
     // entity), zoom, pan, or in-flight shake leaks into the next run.
     this._initCamera();
@@ -477,6 +529,59 @@ export class World {
     this._tickReplay();
     this._compiled.onStep && this._compiled.onStep(this, dt);
     this._positionBubbles();
+  }
+
+  // --- Línea de tiempo: seek por re-simulación determinista ---
+  // La escena es una simulación reproducible (RNG sembrado en reset, runner de
+  // scripts y tweens time-based). Para ir a un instante T se re-tickea en
+  // silencio hasta world.t == T. Ir hacia ADELANTE continúa desde el estado
+  // actual; ir hacia ATRÁS resetea y re-simula desde cero. El audio y los
+  // timeouts de efecto se suprimen durante el barrido (ver `_seeking`).
+  seek(targetT) {
+    const dur = this._duration;
+    targetT = Math.max(0, dur != null ? Math.min(targetT, dur) : targetT);
+    if (targetT < this.t - 1e-4) this.reset();
+    this._silentAdvance(targetT);
+    this.runDraw();
+  }
+
+  // Avanza la simulación hasta targetT sin dibujar ni sonar. Paso fijo (1/60)
+  // para que el barrido sea determinista e independiente del framerate.
+  _silentAdvance(targetT) {
+    const STEP = 1 / 60;
+    const wasMuted = this._muted;
+    this._muted = true;
+    this._seeking = true;
+    let guard = 0;
+    while (this.t < targetT - 1e-6 && guard++ < 200000) {
+      this.runStep(Math.min(STEP, targetT - this.t));
+    }
+    this._muted = wasMuted;
+    this._seeking = false;
+  }
+
+  // Corre la escena en silencio hasta que el guion 'main' termina (mismo
+  // criterio que _tickReplay) para conocer la duración del contenido, necesaria
+  // para dibujar el scrubber. Devuelve segundos, o null si no termina dentro
+  // del presupuesto (guiones con loop o escenas de solo-hooks). Deja la escena
+  // reseteada en t=0, lista para el usuario.
+  measureDuration() {
+    if (!this._replay || !this._replay.armed) { this._duration = null; return null; }
+    this.reset();
+    const STEP = 1 / 60, MAX_T = 600;
+    const wasMuted = this._muted;
+    this._muted = true;
+    this._seeking = true;
+    let dur = null;
+    while (this.t < MAX_T) {
+      this.runStep(STEP);
+      if (!(this._scripts && this._scripts.some(s => s.id === 'main'))) { dur = this.t; break; }
+    }
+    this._muted = wasMuted;
+    this._seeking = false;
+    this.reset();
+    this._duration = dur;
+    return dur;
   }
 
   runDraw() {
@@ -567,6 +672,7 @@ export class World {
     else this._drawLearners(ctx);
     this._drawFocuses(ctx);
     this._drawCharts(ctx);
+    this._drawFormulas(ctx, false);   // fórmulas en espacio de mundo (push-in las agranda)
     this._drawFx(ctx);
     ctx.restore();
     // Iluminación: scrim de oscuridad perforado por los emisores, sobre el
@@ -586,6 +692,8 @@ export class World {
     // Saturación: dessatura TODO el mundo ya dibujado (gris ↔ color) sin tocar
     // el HUD/captions/watermark, que se pintan después. `ambient.saturation` 0..1.
     this._drawSaturation(ctx);
+    // Fórmulas con `screen: true`: callout HUD fijo (inmune a cámara/saturación).
+    this._drawFormulas(ctx, true);
     // Capa declarativa (captions + meters), en espacio-pantalla, bajo el watermark.
     this._drawDeclarative(ctx);
     // Logo institucional opcional (esquina inferior izquierda), bajo el watermark.
@@ -597,6 +705,18 @@ export class World {
 
   // --- Capa declarativa: elementos que el engine dibuja sin que la escena
   // escriba JS (escenas con `script`/`form` en vez de hooks).
+  // Compila una serie declarada como FUNCIÓN (string en x) a un muestreador,
+  // para no pre-muestrear decenas de puntos a mano (una parábola, un seno, una
+  // exponencial). Inyecta las funciones de Math comunes sin el prefijo `Math.`
+  // (exp, log, sin, pow...). Devuelve null si no compila (el validador ya avisa).
+  _compileFn(expr) {
+    try {
+      const raw = new Function('x', 'exp', 'log', 'log10', 'log2', 'sin', 'cos', 'tan', 'sqrt', 'pow', 'abs', 'min', 'max', 'floor', 'round', 'PI', 'E', 'return (' + expr + ');');
+      const M = Math;
+      return (x) => { try { const v = raw(x, M.exp, M.log, M.log10, M.log2, M.sin, M.cos, M.tan, M.sqrt, M.pow, M.abs, M.min, M.max, M.floor, M.round, M.PI, M.E); return Number.isFinite(v) ? v : 0; } catch { return 0; } };
+    } catch { return null; }
+  }
+
   _initDeclarative() {
     this._caption = { text: '' };
     // Segundo slot de texto: el título de acto (banda superior). Independiente
@@ -634,6 +754,7 @@ export class World {
       id: c.id, type: c.type === 'bars' ? 'bars' : 'line',
       x: c.x ?? 60, y: c.y ?? 60, w: c.w ?? 300, h: c.h ?? 170,
       xDomain: c.xDomain || [0, 1], yDomain: c.yDomain || [0, 1],
+      xScale: c.xScale === 'log' ? 'log' : undefined, yScale: c.yScale === 'log' ? 'log' : undefined,
       xTicks: c.xTicks, yTicks: c.yTicks,
       xLabel: c.xLabel, yLabel: c.yLabel,
       xFormat: c.xFormat || '', yFormat: c.yFormat || '',
@@ -645,10 +766,30 @@ export class World {
         id: sr.id, color: sr.color || '#5b8def', width: sr.width ?? 2.5,
         fill: sr.fill || false, dash: sr.dash, dots: sr.dots,
         data: sr.data || [], reveal: sr.reveal ?? 1,
+        fn: sr.fn ? this._compileFn(sr.fn) : null, head: sr.head || null,
       })),
     }));
     this._chartById = {};
     for (const c of this._charts) this._chartById[c.id] = c;
+    // Fórmulas declarativas: ecuaciones apiladas (world.draw.math) que el guion
+    // muestra/anima con el step `formula`, sin escribir onDraw. Se dibujan en
+    // espacio de mundo por defecto (un push-in las agranda), o en pantalla con
+    // `screen: true` (callout HUD fijo). `tex` es un string o un array de
+    // segmentos { tex, color } que se dibujan en fila (para resaltar un
+    // resultado en otro color). `panel` opcional dibuja una tarjeta de respaldo.
+    this._formulas = (this.config.formulas || []).map(f => ({
+      id: f.id,
+      segs: (Array.isArray(f.tex) ? f.tex : [f.tex])
+        .map(s => (typeof s === 'string' ? { tex: s } : s))
+        .filter(s => s && s.tex),
+      x: f.x ?? this.W / 2, y: f.y ?? 40,
+      px: f.px ?? 22, color: f.color || '#f4e8c6', weight: f.weight || '600',
+      family: f.family, align: f.align || 'center', valign: f.valign || 'middle',
+      alpha: f.alpha ?? 1, screen: f.screen === true,
+      panel: f.panel ? (typeof f.panel === 'object' ? f.panel : {}) : null,
+    }));
+    this._formulaById = {};
+    for (const f of this._formulas) this._formulaById[f.id] = f;
     // Sets de cámara declarativos: vistas nombradas que el step `scene`
     // activa con fade a negro + teleport (fx.transitionTo). La cámara
     // arranca en el primer set de la lista.
@@ -670,6 +811,11 @@ export class World {
     // inferior con fade, en screen-space sobre el mundo y bajo el HUD.
     this._letterbox = 0;
     this._letterboxTarget = 0;
+    // Scrim de transición de escena (fade a negro de transitionTo): limpiarlo
+    // en cada reset para que un seek/replay no arranque con la pantalla a medio
+    // fundir de una transición previa.
+    this._transitionScrim = 0;
+    this._transitionTarget = 0;
   }
 
   _tickLetterbox() {
@@ -707,10 +853,10 @@ export class World {
       if (c.title) {
         ctx.fillStyle = '#d4dbeb'; ctx.font = '600 11px ' + UIQ;
         ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
-        ctx.fillText(String(c.title).toUpperCase(), c.x - 12, c.y - 12);
+        drawLabel(ctx, String(c.title).toUpperCase(), c.x - 12, c.y - 12);
       }
       const f = this.draw.axes(c.x, c.y, c.w, c.h, {
-        xDomain: c.xDomain, yDomain: c.yDomain,
+        xDomain: c.xDomain, yDomain: c.yDomain, xScale: c.xScale, yScale: c.yScale,
         xTicks: c.xTicks, yTicks: c.yTicks,
         xLabel: c.xLabel, yLabel: c.yLabel,
         xFormat: fmt(c.xFormat), yFormat: fmt(c.yFormat),
@@ -721,11 +867,10 @@ export class World {
           color: c.target.color || '#c44a3e', dash: [5, 4], width: 1.5,
         });
         if (c.target.label) {
-          const span = (c.yDomain[1] - c.yDomain[0]) || 1;
-          const py = c.y + c.h * (1 - (c.target.y - c.yDomain[0]) / span);
+          const py = f.map(c.xDomain[0], c.target.y).y;   // via map: correcto también en escala log
           ctx.fillStyle = c.target.color || '#c44a3e'; ctx.font = '600 10px ' + UIQ;
           ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
-          ctx.fillText(c.target.label, c.x + 8, py + 14);
+          drawLabel(ctx, c.target.label, c.x + 8, py + 14);
         }
       }
       if (c.type === 'bars') {
@@ -735,11 +880,63 @@ export class World {
         });
       } else {
         for (const sr of c.series) {
-          this.draw.plot(f, sr.data, {
+          this.draw.plot(f, sr.fn || sr.data, {
             color: sr.color, width: sr.width, dash: sr.dash, dots: sr.dots,
-            reveal: Math.max(0, Math.min(1, sr.reveal)), fill: sr.fill,
+            reveal: Math.max(0, Math.min(1, sr.reveal)), fill: sr.fill, head: sr.head,
           });
         }
+      }
+      ctx.restore();
+    }
+  }
+
+  // Fórmulas declarativas (world.draw.math sin onDraw). `screen` selecciona la
+  // pasada: false = espacio de mundo (dentro de la cámara), true = pantalla.
+  _drawFormulas(ctx, screen) {
+    if (!this._formulas || !this._formulas.length) return;
+    const UIQ = '"Plus Jakarta Sans", ui-sans-serif, system-ui, -apple-system, sans-serif';
+    for (const f of this._formulas) {
+      if (!!f.screen !== !!screen) continue;
+      if (f.alpha < 0.01 || !f.segs.length) continue;
+      const fam = f.family || UIQ;
+      const baseOpts = { px: f.px, weight: f.weight, family: fam };
+      const gap = f.px * 0.5;
+      // Mide cada segmento; la fila comparte baseline (ascenso/descenso máximos).
+      let asc = 0, desc = 0;
+      const ms = f.segs.map(s => {
+        const m = this.draw.measureMath(s.tex, baseOpts);
+        asc = Math.max(asc, m.ascent); desc = Math.max(desc, m.descent);
+        return m;
+      });
+      const totalW = ms.reduce((a, m) => a + m.w, 0) + gap * (f.segs.length - 1);
+      const height = asc + desc;
+      const left = f.align === 'center' ? f.x - totalW / 2 : f.align === 'right' ? f.x - totalW : f.x;
+      const baseline = f.valign === 'middle' ? f.y + (asc - desc) / 2
+        : f.valign === 'top' ? f.y + asc : f.valign === 'bottom' ? f.y - desc : f.y;
+      const top = baseline - asc;
+      ctx.save();
+      ctx.globalAlpha *= Math.min(1, f.alpha);
+      if (f.panel) {
+        const p = f.panel, pad = p.pad ?? 18, titleH = p.title ? 22 : 0, r = p.radius ?? 12;
+        const bx = left - pad, by = top - pad - titleH, bw = totalW + pad * 2, bh = height + pad * 2 + titleH;
+        ctx.fillStyle = p.bg || 'rgba(31,37,71,0.93)';
+        this._declRrect(ctx, bx, by, bw, bh, r); ctx.fill();
+        if (p.border !== false) {
+          ctx.strokeStyle = typeof p.border === 'string' ? p.border : 'rgba(244,172,29,0.30)';
+          ctx.lineWidth = 1; this._declRrect(ctx, bx, by, bw, bh, r); ctx.stroke();
+        }
+        if (p.title) {
+          ctx.fillStyle = p.titleColor || '#c9d2e6';
+          ctx.font = '600 10px ' + fam; ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
+          try { ctx.letterSpacing = '1.5px'; } catch {}
+          ctx.fillText(String(p.title).toUpperCase(), left + totalW / 2, by + 15);
+          try { ctx.letterSpacing = '0px'; } catch {}
+        }
+      }
+      let cx = left;
+      for (let k = 0; k < f.segs.length; k++) {
+        this.draw.math(cx, baseline, f.segs[k].tex, { ...baseOpts, color: f.segs[k].color || f.color, align: 'left', valign: 'baseline' });
+        cx += ms[k].w + gap;
       }
       ctx.restore();
     }
@@ -1064,7 +1261,7 @@ export class World {
         const maxW = Math.min(600, this.W - 110);
         const refLines = []; let totalLines = 0;
         for (const rf of refsArr) {
-          const txt = formatAPA(rf).replace(/<[^>]*>/g, '');
+          const txt = htmlToText(formatAPA(rf));
           const words = txt.split(' ');
           const ls = []; let line = '';
           for (const w of words) {
@@ -1123,7 +1320,7 @@ export class World {
         ctx.font = '600 9px ui-monospace, "SF Mono", Menlo, monospace';
         ctx.textAlign = 'left';
         ctx.textBaseline = 'top';
-        ctx.fillText(String(z.label).toUpperCase(), z.x + 6, z.y + 6);
+        drawLabel(ctx, String(z.label).toUpperCase(), z.x + 6, z.y + 6);
       }
     }
   }
@@ -1143,7 +1340,28 @@ export class World {
     const list = sort
       ? this.props.slice().sort((a, b) => ((a.z || 0) - (b.z || 0)) || (a.y - b.y))
       : this.props;
-    for (const p of list) drawProp(ctx, p);
+    // El prado (pasture) es cobertura de suelo: hay que recortarlo a la región
+    // bajo el horizonte en espacio-PANTALLA, igual que la textura del piso. El
+    // cielo se pinta en espacio-pantalla, así que un push-in de cámara hacia
+    // abajo subiría el prado a la franja del cielo si no se recorta. El resto
+    // de los props no se tocan (un árbol o una nube sí viven sobre el horizonte).
+    const cConf = this.config.canvas || {};
+    const horizonY = cConf.sky ? Math.round(this.H * (cConf.horizon ?? 0.45)) : 0;
+    for (const p of list) {
+      if (p.type === 'pasture' && horizonY > 0) {
+        const t = ctx.getTransform();
+        ctx.save();
+        ctx.setTransform(this._ss, 0, 0, this._ss, 0, 0);
+        ctx.beginPath();
+        ctx.rect(0, horizonY, this.W, this.H - horizonY);
+        ctx.clip();
+        ctx.setTransform(t);
+        drawProp(ctx, p);
+        ctx.restore();
+      } else {
+        drawProp(ctx, p);
+      }
+    }
   }
 
   // Mixed Y-sort helper for onDraw. Pass an array of:

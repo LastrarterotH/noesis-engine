@@ -82,7 +82,9 @@ export function tickAnimatedProps(world, dt) {
       }
       p._flameT += dt * 4;
       p._nextSpark -= dt;
-      if (p._nextSpark <= 0) {
+      // Al desvanecerse (alpha bajo), deja de emitir chispas para que el fade out
+      // sea limpio y no queden partículas sueltas tras apagar el fuego.
+      if (p._nextSpark <= 0 && (p.alpha == null || p.alpha > 0.25)) {
         world._fx.push({
           type: 'particle', x: p.x + (world.rng() - 0.5) * 8, y: p.y - 18,
           vx: (world.rng() - 0.5) * 12, vy: -30 - world.rng() * 25,
@@ -177,8 +179,43 @@ export function tickAnimatedProps(world, dt) {
       // Reloj para la rotación del anillo y el pulso del núcleo.
       if (p._t == null) p._t = world.rng() * Math.PI * 2;
       p._t += dt;
-    } else if (p.type === 'notebook') {
-      // Reloj para el pulso del resplandor cuando la IA procesa.
+    } else if (p.type === 'virus') {
+      // Reloj para la corona de spikes que rota y el latido de la cápside.
+      if (p._t == null) p._t = world.rng() * Math.PI * 2;
+      p._t += dt;
+    } else if (p.type === 'notebook' || p.type === 'laptop') {
+      // Reloj para el pulso del resplandor de la pantalla al crear.
+      if (p._t == null) p._t = world.rng() * Math.PI * 2;
+      p._t += dt;
+    } else if (p.type === 'coffee') {
+      // Reloj para las volutas de vapor que suben.
+      if (p._t == null) p._t = world.rng() * Math.PI * 2;
+      p._t += dt;
+    } else if (p.type === 'genially') {
+      // El aro arcoíris del logo gira solo, despacio.
+      p.spin = (p.spin || 0) + dt * 0.5;
+    } else if (p.type === 'screen' || p.type === 'frame-oval') {
+      // Reloj para el punto rojo pulsante de "EN VIVO".
+      if (p._t == null) p._t = world.rng() * Math.PI * 2;
+      p._t += dt;
+    } else if (p.type === 'plane') {
+      // Cruza el cielo con velocidad constante, leve cabeceo, y reaparece por el
+      // otro borde. `_dir` (1/-1) lo lee el drawer para espejarlo.
+      if (p._planeInit == null) {
+        p._planeInit = true;
+        p._anchorY = p.y;
+        p._t = world.rng() * Math.PI * 2;
+        p._speed = 30 + world.rng() * 16;
+        p._dir = p.dir === 'left' ? -1 : 1;
+      }
+      p._t += dt;
+      p.x += p._dir * p._speed * dt;
+      p.y = p._anchorY + Math.sin(p._t * 0.5) * 2.5;
+      const right = world.worldRight || world.W;
+      if (p._dir > 0 && p.x > right + 120) p.x = -120;
+      else if (p._dir < 0 && p.x < -120) p.x = right + 120;
+    } else if (p.type === 'grinder') {
+      // Reloj para el pulso de la luz interna cuando la moledora muele.
       if (p._t == null) p._t = world.rng() * Math.PI * 2;
       p._t += dt;
     } else if (p.type === 'basilisk') {
@@ -203,6 +240,24 @@ export function tickAnimatedProps(world, dt) {
         });
         p._nextSpark = (0.04 + world.rng() * 0.07) / Math.max(0.2, eyeP);
       }
+    } else if (p.type === 'pasture') {
+      // Reloj para el vaivén de la hierba.
+      if (p._swayT == null) p._swayT = world.rng() * Math.PI * 2;
+      p._swayT += dt * 1.1;
+    } else if (p.type === 'sheep') {
+      // Reloj para la respiración suave del lomo.
+      if (p._t == null) p._t = world.rng() * Math.PI * 2;
+      p._t += dt;
+    } else if (p.type === 'turtle') {
+      // Reloj para la cabeza que asoma y el balanceo de patas.
+      if (p._t == null) p._t = world.rng() * Math.PI * 2;
+      p._t += dt;
+    } else if (p.type === 'tower' || p.type === 'oven' || p.type === 'candy-house' || p.type === 'mirror' || p.type === 'dove' || p.type === 'tome') {
+      // Reloj propio: trenza que ondea, llamas del horno, humo de la chimenea, el
+      // destello del espejo y el aleteo de la paloma. La paloma no se traslada
+      // sola (se coreografía con tween de x/y), solo bate las alas.
+      if (p._t == null) p._t = world.rng() * Math.PI * 2;
+      p._t += dt;
     } else if (p.type === 'bird') {
       if (p._birdSpeed == null) {
         p._birdSpeed = 60 + world.rng() * 50;

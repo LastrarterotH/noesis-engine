@@ -144,12 +144,40 @@ export function execScriptStep(world, step, sc) {
   if (step.reinforce) fx.reinforce(world.byId(step.reinforce));
   if (step.tone != null) fx.tone(step.tone, step.dur ?? 0.4, step.opts || {});
   if (step.sweep) fx.sweep(step.sweep[0], step.sweep[1], step.dur ?? 0.3, step.opts || {});
+  if (step.music != null) {
+    // Música reactiva al guion: { volume, duration } agacha o levanta la
+    // música ambiental (volume = fracción del volumen base del mood: 1
+    // normal, 0 silencio); { mood, duration } cambia el mood con crossfade
+    // (escenas multi-acto: el replay vuelve al de meta.music); "stinger"
+    // dispara un golpe musical cuantizado al siguiente tiempo fuerte de la
+    // grilla. Si el usuario no activó ♪, todos son no-ops: la escena corre
+    // idéntica sin música.
+    if (step.music === 'stinger') fx.ambientMusicStinger();
+    else if (typeof step.music === 'object') {
+      if (step.music.mood) fx.ambientMusicMood(step.music.mood, step.music.duration ?? 1.5);
+      else if (step.music.volume != null) fx.ambientMusicVolume(step.music.volume, step.music.duration ?? 1.2);
+    }
+  }
   if (step.particles) fx.particles(step.particles.x, step.particles.y, step.particles);
   if (step.floatNumber) fx.floatNumber(step.floatNumber.x, step.floatNumber.y, step.floatNumber.text, step.floatNumber);
   // --- Pasos declarativos (escenas sin JS): reacciones, camara, caption, meter ---
   if (step.celebrate) fx.celebrate(world.byId(step.celebrate));
   if (step.cry) fx.cry(world.byId(step.cry));
   if (step.thinking) fx.thinking(world.byId(step.thinking));
+  if (step.jump) fx.jump(world.byId(step.jump), step.duration != null ? { duration: step.duration } : undefined);
+  if (step.lookAt != null) {
+    // Dirigir la mirada de un personaje sin JS: hacia otra entidad (id de `to`),
+    // un punto [x,y] / {x,y}, o soltarla (sin `to` o `to: null`). El movimiento
+    // manda sobre lookAt (draw.js); un blob quieto orienta las pupilas ahí.
+    const e = world.byId(step.lookAt);
+    if (e) {
+      const t = step.to;
+      if (t == null) e.lookAt = null;
+      else if (typeof t === 'string') e.lookAt = t;
+      else if (Array.isArray(t)) e.lookAt = { x: t[0], y: t[1] };
+      else if (typeof t === 'object') e.lookAt = { x: t.x, y: t.y };
+    }
+  }
   if (step.appear) fx.appear(world.byId(step.appear), step.duration);
   if (step.vanish) fx.vanish(world.byId(step.vanish), step.duration);
   if (step.scene) {
@@ -241,6 +269,20 @@ export function execScriptStep(world, step, sc) {
       }
     }
   }
+  if (step.formula) {
+    // Step de fórmulas declarativas: mostrar/ocultar/animar una ecuación
+    // (world.draw.math) sin onDraw, con tween opcional de su opacidad.
+    const f = world._formulaById && world._formulaById[step.formula];
+    if (f) {
+      const ease = step.easing || 'easeInOut';
+      const tw = (obj, key, to2) => step.duration
+        ? world.tween(obj, key, to2, { duration: step.duration, easing: ease })
+        : (obj[key] = to2);
+      if (step.show === true) tw(f, 'alpha', 1);
+      if (step.hide === true) tw(f, 'alpha', 0);
+      if (typeof step.alpha === 'number') tw(f, 'alpha', step.alpha);
+    }
+  }
   if (step.weather != null) {
     // Clima en vivo: arranca o detiene partículas de ambiente a mitad de
     // escena (la tormenta que arrecia, la nieve que empieza, la lluvia que
@@ -290,26 +332,44 @@ export function execScriptStep(world, step, sc) {
       world.tween(f, 'alpha', 1, { duration: fdur, easing: 'easeInOut' });
     }
   }
-  if (step.tween) {
-    // Tween declarativo: anima una clave de world.state ("deuda") o una
-    // propiedad de una entidad por id con punto ("alma._alpha") sin JS.
+  if (step.tween && typeof step.to === 'number') {
+    // Tween declarativo: anima una clave de world.state ("deuda"), una propiedad
+    // de una entidad/prop por id ("alma._alpha", "d1.fall"), "ambient.darkness",
+    // o un GRUPO de props sin JS: "type:tree.alpha" (todos los props de ese
+    // type) o "tag:primavera.alpha" (los que declaren tag). Sirve para el viraje
+    // de estación (desvanecer todos los árboles de una) sin un `do` con forEach.
     const tpath = String(step.tween);
     const tdot = tpath.indexOf('.');
-    let tobj = world.state, tkey = tpath;
-    if (tdot > 0) {
-      const thead = tpath.slice(0, tdot);
-      // "ambient.darkness" anima el ambiente vivo (amaneceres, anocheceres);
-      // cualquier otro prefijo es el id de una entidad.
-      tobj = thead === 'ambient'
-        ? (world._ambient || (world._ambient = {}))
-        : (world.byId(thead) || (world.props && world.props.find(pp => pp.id === thead)) || null);
-      tkey = tpath.slice(tdot + 1);
-    }
-    if (tobj && typeof step.to === 'number') {
-      world.tween(tobj, tkey, step.to, { duration: step.duration ?? 0.6, easing: step.easing || 'easeInOut' });
+    const topts = { duration: step.duration ?? 0.6, easing: step.easing || 'easeInOut' };
+    if (tdot <= 0) {
+      world.tween(world.state, tpath, step.to, topts);
+    } else {
+      const thead = tpath.slice(0, tdot), tkey = tpath.slice(tdot + 1);
+      const hasTag = (p, tag) => p.tag === tag || (Array.isArray(p.tag) && p.tag.includes(tag));
+      if (thead.startsWith('type:')) {
+        const ty = thead.slice(5);
+        for (const p of (world.props || [])) if (p.type === ty) world.tween(p, tkey, step.to, topts);
+      } else if (thead.startsWith('tag:')) {
+        const tag = thead.slice(4);
+        for (const p of (world.props || [])) if (hasTag(p, tag)) world.tween(p, tkey, step.to, topts);
+      } else if (thead === 'ambient') {
+        world.tween(world._ambient || (world._ambient = {}), tkey, step.to, topts);
+      } else {
+        const obj = world.byId(thead) || (world.props && world.props.find(pp => pp.id === thead)) || null;
+        if (obj) world.tween(obj, tkey, step.to, topts);
+      }
     }
   }
-  if (step.set) for (const [k, v] of Object.entries(step.set)) world.state[k] = v;
+  if (step.set) for (const [k, v] of Object.entries(step.set)) {
+    // Una clave con punto ("granada.seeds", "puerta.open") escribe en la
+    // entidad/prop por id; sin punto (o si el id no existe), en world.state.
+    const dot = k.indexOf('.');
+    if (dot > 0) {
+      const obj = world.byId(k.slice(0, dot)) || (world.props && world.props.find(pp => pp.id === k.slice(0, dot)));
+      if (obj) { obj[k.slice(dot + 1)] = v; continue; }
+    }
+    world.state[k] = v;
+  }
   if (step.add) for (const [k, v] of Object.entries(step.add)) world.state[k] = (world.state[k] || 0) + v;
   if (step.clamp) for (const [k, r] of Object.entries(step.clamp)) world.state[k] = Math.max(r[0], Math.min(r[1], world.state[k] || 0));
   if (step.do) {

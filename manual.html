@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>noesis · el manual</title>
+<meta name="description" content="Cómo usar noesis con Claude Code: clonar, servir, autorear con la skill /noesis, validar y previsualizar.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="topbar is-stuck">
+  <a class="wordmark" href="index.html" aria-label="noesis, inicio"><span class="wm-name">noesis<span class="wm-dot">.</span></span></a>
+  <nav class="topnav">
+    <a href="index.html">Inicio</a>
+    <a href="vision.html">La visión</a>
+    <a class="ghlink" href="https://github.com/LastrarterotH/noesis-engine" target="_blank" rel="noopener">GitHub</a>
+  </nav>
+</header>
+
+<main>
+<article class="doc">
+  <p class="label"><span class="bullet"></span>El manual</p>
+  <span class="doc-soon">En preparación</span>
+  <h1>Cómo se usa noesis con <em>Claude Code</em>.</h1>
+  <p class="doc-lead">El manual completo está en preparación. Mientras tanto, este es el camino corto para
+    tener noesis corriendo y autorear tu primera escena.</p>
+
+  <h2>1 · Conseguirlo</h2>
+  <p>noesis es open source. Lo clonas desde GitHub, lo sirves estático y ya tienes el motor, el repertorio
+    y la skill de autoría. No hay paquete que instalar, ni build.</p>
+  <pre><code>git clone https://github.com/LastrarterotH/noesis-engine
+cd noesis-engine
+python3 -m http.server 8765</code></pre>
+  <p>Y abres <code>http://localhost:8765/index.html</code> en el navegador.</p>
+
+  <h2>2 · Autorear una escena con Claude Code</h2>
+  <p>Las escenas no se escriben a mano: se construyen dialogando el concepto con <strong>Claude Code</strong>.
+    La skill <code>/noesis</code> conversa la idea contigo, elige la mecánica que mejor la encarna, arma el
+    JSON con el vocabulario del motor, lo valida y lo previsualiza. Tú aportas el criterio.</p>
+  <p>Honestamente: Claude Code tiene un costo. noesis no fuerza ser gratis al cien por ciento. Las buenas
+    herramientas a veces se pagan.</p>
+
+  <h2>3 · Validar y previsualizar</h2>
+  <p>Cada escena se chequea contra el vocabulario real del motor antes de correr, y se prueba en un smoke
+    test headless que la construye y la tickea para cazar errores silenciosos.</p>
+  <pre><code>node tools/validate.mjs scenes/NN-slug.json
+node tools/smoke.mjs</code></pre>
+  <p>Luego se sirve estático y se verifica en el navegador. La verificación visual la hace el autor.</p>
+
+  <h2>4 · Embeber una escena</h2>
+  <p>Una escena terminada se incrusta en cualquier página con el Web Component, cargando el motor como
+    módulo ES. Sin dependencias.</p>
+  <pre><code>&lt;script type="module" src="engine/noesis-engine.js"&gt;&lt;/script&gt;
+&lt;noesis-scene src="scenes/01-netflix-prize.json" lang="es"&gt;&lt;/noesis-scene&gt;</code></pre>
+
+  <p>El manual completo, paso a paso y con todas las convenciones de autoría, llegará a esta misma página.</p>
+
+  <a class="doc-back" href="index.html" data-hover><span class="bullet"></span>Volver al inicio</a>
+</article>
+</main>
+</body>
+</html>

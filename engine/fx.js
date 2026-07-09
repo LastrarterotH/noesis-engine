@@ -7,8 +7,8 @@
 // _positionBubbles/_drawFx as thin wrappers. The `fx` getter memoizes this api
 // on world._fxApi, so it is built once per World (not rebuilt every access).
 
-import { tone, sweep, createAmbientSound, createAmbientMusic, audio } from './audio.js?v=80';
-import { richToHtml } from './util.js?v=80';
+import { tone, sweep, createAmbientSound, createAmbientMusic, audio } from './audio.js?v=145';
+import { richToHtml, drawLabel } from './util.js?v=145';
 
 export function createFxApi(world) {
   const W = world;
@@ -243,6 +243,31 @@ export function createFxApi(world) {
   api.ambientMusicStop = (opts = {}) => {
     const fadeOut = opts.fadeOut ?? 1.2;
     if (W._ambientMusic) { W._ambientMusic.stop(fadeOut); W._ambientMusic = null; }
+  };
+  // Música reactiva al guion (step `music`). `frac` es FRACCIÓN del volumen
+  // base del mood (1 = normal, 0 = silencio, tope 1.5): el autor de la
+  // escena no necesita conocer la mezcla interna. Si el usuario no activó ♪
+  // no hay handle y ambas son no-ops silenciosos: la escena corre igual.
+  api.ambientMusicVolume = (frac, dur) => {
+    const m = W._ambientMusic;
+    if (!m || m.baseVolume == null) return;
+    const f = Math.max(0, Math.min(1.5, frac));
+    m.setVolume(m.baseVolume * f, dur);
+  };
+  api.ambientMusicStinger = () => {
+    const m = W._ambientMusic;
+    if (m && m.stinger) m.stinger();
+  };
+  // Cambio de mood a MITAD de escena con crossfade (step music.mood): el
+  // mood viejo se apaga en `dur` segundos mientras el nuevo entra con su
+  // ramp propio (~2.2 s). Solo actúa si la música ya suena (el usuario
+  // decide con ♪); el reset del replay vuelve al mood de meta.music.
+  api.ambientMusicMood = (mood, dur = 1.5) => {
+    const cur = W._ambientMusic;
+    if (!cur || cur.mood === mood) return;
+    cur.stop(dur);
+    const m = createAmbientMusic(mood);
+    if (m) W._ambientMusic = m;
   };
   api.cameraShake = (intensity = 8, duration = 0.4) => {
     const cam = W.camera;
@@ -627,7 +652,7 @@ export function drawFx(world, ctx) {
       ctx.font = `600 ${fx.size || 13}px ui-monospace, monospace`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.fillText(fx.text, fx.x, fx.y);
+      drawLabel(ctx, fx.text, fx.x, fx.y);   // notación _/^ (ej. "10^{9}") en la cifra
     } else if (fx.type === 'lightPulse') {
       // Beam of light: glowing dot with halo + fading trail.
       let a = Math.max(0, 1 - fx.age / fx.duration);

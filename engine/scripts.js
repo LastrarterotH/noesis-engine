@@ -283,6 +283,36 @@ export function execScriptStep(world, step, sc) {
       if (typeof step.alpha === 'number') tw(f, 'alpha', step.alpha);
     }
   }
+  if (step.annotation) {
+    // Step de anotaciones/callouts declarativos: mostrar/ocultar/animar un chip
+    // señalador (world._annotations) sin onDraw, con tween opcional de opacidad.
+    const a = world._annotationById && world._annotationById[step.annotation];
+    if (a) {
+      const ease = step.easing || 'easeInOut';
+      const tw = (obj, key, to2) => step.duration
+        ? world.tween(obj, key, to2, { duration: step.duration, easing: ease })
+        : (obj[key] = to2);
+      if (step.show === true) tw(a, 'alpha', 1);
+      if (step.hide === true) tw(a, 'alpha', 0);
+      if (typeof step.alpha === 'number') tw(a, 'alpha', step.alpha);
+    }
+  }
+  if (step.diagram) {
+    // Step de diagramas declarativos: mostrar/ocultar el diagrama (`alpha` de
+    // grupo) y correr el barrido escalonado de sus hijos (`reveal` 0..1), sin
+    // onDraw. Espeja el step `chart`.
+    const d = world._diagramById && world._diagramById[step.diagram];
+    if (d) {
+      const ease = step.easing || 'easeInOut';
+      const tw = (obj, key, to2) => step.duration
+        ? world.tween(obj, key, to2, { duration: step.duration, easing: ease })
+        : (obj[key] = to2);
+      if (step.show === true) tw(d, 'alpha', 1);
+      if (step.hide === true) tw(d, 'alpha', 0);
+      if (typeof step.alpha === 'number') tw(d, 'alpha', step.alpha);
+      if (typeof step.reveal === 'number') tw(d, 'reveal', step.reveal);
+    }
+  }
   if (step.weather != null) {
     // Clima en vivo: arranca o detiene partículas de ambiente a mitad de
     // escena (la tormenta que arrecia, la nieve que empieza, la lluvia que

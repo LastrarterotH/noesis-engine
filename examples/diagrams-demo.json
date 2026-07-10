@@ -1,0 +1,42 @@
+{
+  "meta": { "id": "diagrams-demo", "version": "0.1", "lang": ["es"] },
+  "seed": 3,
+  "canvas": { "w": 820, "h": 440, "bg": "#10162e", "floor": "dots" },
+  "diagrams": [
+    {
+      "id": "mapa",
+      "alpha": 0,
+      "reveal": 0,
+      "panel": { "fill": "rgba(12,16,32,0.82)", "stroke": "rgba(110,120,150,0.30)", "radius": 14, "pad": 16, "title": "El argumento del conocimiento", "titleColor": "#F4AC1D" },
+      "nodes": [
+        { "id": "a",     "x": 168, "y": 96,  "w": 232, "h": 46, "label": "Conoce todos los hechos físicos", "fill": "#F6F2E8", "labelColor": "#1F2547", "at": 0.00 },
+        { "id": "b",     "x": 168, "y": 160, "w": 232, "h": 46, "label": "Al ver el rojo, aprende algo",     "fill": "#F6F2E8", "labelColor": "#1F2547", "at": 0.12 },
+        { "id": "c",     "x": 452, "y": 124, "w": 196, "h": 58, "label": "Algo escapa a lo físico", "fill": "#1F2547", "labelColor": "#FBFAF6", "stroke": "#F4AC1D", "strokeWidth": 2, "at": 0.30 },
+        { "id": "forkL", "x": 150, "y": 252, "w": 232, "h": 52, "label": "Un hecho nuevo · Jackson",             "fill": "#a8443a", "labelColor": "#FBFAF6", "at": 0.60 },
+        { "id": "forkR", "x": 418, "y": 252, "w": 252, "h": 52, "label": "Solo una habilidad · Lewis, Dennett", "fill": "#3f6f4f", "labelColor": "#FBFAF6", "at": 0.60 }
+      ],
+      "edges": [
+        { "from": "a", "fromSide": "right",  "to": "c", "toSide": "left", "curve": 14,  "color": "#F4AC1D", "at": 0.30 },
+        { "from": "b", "fromSide": "right",  "to": "c", "toSide": "left", "curve": -14, "color": "#F4AC1D", "at": 0.30 },
+        { "from": "c", "fromSide": "bottom", "to": "forkL", "toSide": "top", "curve": 16,  "color": "#9aa3bd", "at": 0.60 },
+        { "from": "c", "fromSide": "bottom", "to": "forkR", "toSide": "top", "curve": -16, "color": "#9aa3bd", "at": 0.60 }
+      ],
+      "texts": [
+        { "id": "cierre", "x": 410, "y": 336, "text": "La réplica no cierra la cadena", "align": "center", "color": "#F4AC1D", "px": 14, "weight": "600", "at": 0.80 }
+      ]
+    }
+  ],
+  "script": [
+    { "caption": "Diagramas declarativos", "style": "title" },
+    { "wait": 1.3 },
+    { "caption": "Nodos y conectores por id de nodo, sin escribir onDraw." },
+    { "diagram": "mapa", "show": true, "duration": 0.5 },
+    { "diagram": "mapa", "reveal": 1, "duration": 3.4, "easing": "easeInOut" },
+    { "wait": 4.2 },
+    { "caption": "El barrido reveal escalona premisas, conclusión, réplicas y cierre." },
+    { "wait": 3.4 },
+    { "caption": "" },
+    { "caption": "", "style": "title" },
+    { "wait": 1.2 }
+  ]
+}

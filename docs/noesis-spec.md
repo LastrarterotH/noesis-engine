@@ -97,6 +97,8 @@ Estructura de nivel superior:
   "meters": [ ... ],          // barras de umbral
   "charts": [ ... ],          // gráficos declarativos (line/bars)
   "formulas":[ ... ],         // ecuaciones LaTeX declarativas
+  "annotations":[ ... ],      // callouts: chip + línea guía a un objetivo
+  "diagrams":[ ... ],         // flujos/grafos/redes (nodos + edges + panel)
   "hooks":  { ... }           // JS: onInit/onStep/onDraw/onClick/onReset (escotilla)
 }
 ```
@@ -442,7 +444,8 @@ world.runScript([
 `focus:'<id>'|[x,y], off?, color?, radius?`.
 **Animar valores:** `tween:'<clave|id.prop|type:.prop|tag:.prop>', to, duration?, easing?` ·
 `meter:'<id>', to, duration?` · `chart:'<id>', show?|hide?|alpha?|reveal?, series?` ·
-`formula:'<id>', show?|hide?|alpha?`.
+`formula:'<id>', show?|hide?|alpha?` · `annotation:'<id>', show?|hide?|alpha?` (callout) ·
+`diagram:'<id>', show?|hide?|alpha?|reveal?` (flujo/grafo: nodos+edges, barrido `reveal`).
 **Atmósfera / audio:** `weather:'rain'|'none', intensity?` ·
 `music:{ volume|mood, duration? }|'stinger'` · `particles:{...}|preset` ·
 `floatNumber:{...}` · `tone` · `sweep`.

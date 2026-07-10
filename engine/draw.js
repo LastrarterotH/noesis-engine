@@ -2,9 +2,9 @@
 // Pixel-art draw primitives: learner blob, eye geometry, mood-routing,
 // accessories overlay. Instantiated once per World.
 
-import { mixColors, drawMath, measureMath as _measureMath, drawLabel, measureLabel } from './util.js?v=145';
-import { drawMoodOverlays } from './mood.js?v=145';
-import { drawAccessories } from './accessories.js?v=145';
+import { mixColors, drawMath, measureMath as _measureMath, drawLabel, measureLabel } from './util.js?v=149';
+import { drawMoodOverlays } from './mood.js?v=149';
+import { drawAccessories } from './accessories.js?v=149';
 
 export class Draw {
   constructor(world) { this.world = world; }
@@ -522,7 +522,7 @@ export class Draw {
       ctx.font = opts.font || '600 12px "Plus Jakarta Sans", ui-sans-serif, system-ui, -apple-system, sans-serif';
       ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
       if (opts.labelBg !== false) {
-        const tw = measureLabel(ctx, opts.label).w;
+        const tw = measureLabel(ctx, opts.label);
         const padX = 5, h = 16;
         this.rrect(mx - tw / 2 - padX, my - h / 2, tw + padX * 2, h, 5);
         ctx.fillStyle = opts.labelBg || 'rgba(20,22,40,0.82)'; ctx.fill();

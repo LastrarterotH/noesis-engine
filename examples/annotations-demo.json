@@ -1,0 +1,39 @@
+{
+  "meta": { "id": "annotations-demo", "version": "0.1", "lang": ["es"] },
+  "seed": 7,
+  "canvas": { "w": 900, "h": 520, "bg": "#141a30", "floor": "dots", "horizon": 0.72 },
+  "props": [
+    { "type": "table", "id": "mesa", "x": 450, "y": 372, "scale": 4 },
+    { "type": "plant", "id": "planta", "x": 300, "y": 332, "scale": 3.4 },
+    { "type": "lamp", "id": "lampara", "x": 604, "y": 330, "scale": 3.4 },
+    { "type": "book", "id": "libro", "x": 468, "y": 352, "scale": 3 }
+  ],
+  "entities": [
+    { "type": "learner", "id": "ana", "x": 782, "y": 360, "scale": 5, "hero": true, "body": "#d8a878", "accessory": "glasses", "sleepable": false, "lookAt": [460, 340], "behavior": null }
+  ],
+  "annotations": [
+    { "id": "n1", "target": "planta", "text": "La planta\n(el ser vivo)", "dx": -120, "dy": -54, "alpha": 0 },
+    { "id": "n2", "target": "lampara", "text": "La lámpara\n(la fuente de luz)", "dx": 34, "dy": -74, "alpha": 0 },
+    { "id": "n3", "target": [452, 392], "text": "La mesa (el soporte)", "dx": 78, "dy": 60, "alpha": 0, "color": "#5b8def" },
+    { "id": "n4", "target": "ana", "text": "Quien observa", "dx": -108, "dy": -64, "alpha": 0, "color": "#4f8a5e" }
+  ],
+  "script": [
+    { "caption": "Anotaciones declarativas", "style": "title" },
+    { "wait": 1.4 },
+    { "caption": "Cada parte se nombra señalándola: un chip anclado por su línea guía." },
+    { "annotation": "n1", "show": true, "duration": 0.6 },
+    { "wait": 2.4 },
+    { "annotation": "n2", "show": true, "duration": 0.6 },
+    { "wait": 2.6 },
+    { "caption": "El objetivo puede ser un prop, un punto del mundo o una entidad." },
+    { "annotation": "n3", "show": true, "duration": 0.6 },
+    { "wait": 2.4 },
+    { "annotation": "n4", "show": true, "duration": 0.6 },
+    { "wait": 3.0 },
+    { "caption": "Viven en el espacio del mundo: la cámara y el zoom los tratan como a todo lo demás." },
+    { "wait": 3.4 },
+    { "caption": "" },
+    { "caption": "", "style": "title" },
+    { "wait": 1.2 }
+  ]
+}

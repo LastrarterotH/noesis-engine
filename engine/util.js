@@ -160,14 +160,14 @@ function richSubSup(str) {
 
 // Mide el ancho de un string con notación, en el ctx dado.
 export function measureRichText(ctx, str, opts = {}) {
-  return _richRuns(ctx, parseScriptRuns(texToPlain(str)), opts).w;
+  return _richMeasure(ctx, str, opts).w;
 }
 
 // Dibuja un string con notación. `align`: left|center|right. Respeta el
 // fillStyle/shadow ya seteados; cambia ctx.font por run y lo deja en el base.
 export function drawRichText(ctx, str, x, y, opts = {}) {
-  const runs = parseScriptRuns(texToPlain(str));
-  const m = _richRuns(ctx, runs, opts);
+  const m = _richMeasure(ctx, str, opts);
+  const runs = m.runs;
   const align = opts.align || 'left';
   let cx = align === 'center' ? x - m.w / 2 : align === 'right' ? x - m.w : x;
   const prevAlign = ctx.textAlign;
@@ -197,6 +197,48 @@ function _richRuns(ctx, runs, opts) {
   }
   return { w, fonts, widths };
 }
+
+// --- Cachés de layout de texto y matemáticas ------------------------------
+// Parsear los runs y medir cada glyph es DETERMINISTA por (texto, fuente), pero
+// se recalculaba en CADA frame: las captions se re-wrapean palabra por palabra,
+// los labels de charts/diagramas se remiden, y los paneles de ecuaciones se
+// miden Y se dibujan (dos veces por frame, world.js _drawFormulas). Se memoiza
+// por (texto, px, weight, family): content-keyed, así que nunca queda stale
+// (mismo texto+fuente → mismo layout) y no hace falta invalidar en reset. La
+// ÚNICA excepción es la webfont: las medidas tomadas ANTES de que cargue salen
+// con la fuente de fallback, así que al resolver `document.fonts.ready` se
+// vacían los cachés y se vuelven a medir con la fuente real. En Node (smoke) no
+// hay `document`, y el content-keying sigue siendo correcto.
+const _richCache = new Map();
+const _mathCache = new Map();
+function _richMeasure(ctx, str, opts) {
+  const px = opts.px || 14, weight = opts.weight || '500', family = opts.family || 'sans-serif', sub = opts.subScale || 0.72;
+  const key = str + ' ' + px + ' ' + weight + ' ' + family + ' ' + sub;
+  let hit = _richCache.get(key);
+  if (hit === undefined) {
+    const runs = parseScriptRuns(texToPlain(str));
+    const m = _richRuns(ctx, runs, opts);
+    hit = { runs, w: m.w, fonts: m.fonts, widths: m.widths };
+    if (_richCache.size >= 3000) _richCache.clear();
+    _richCache.set(key, hit);
+  }
+  return hit;
+}
+function _mathBoxCached(ctx, src, px, opts) {
+  const key = String(src) + ' ' + px + ' ' + (opts.weight || '500') + ' ' + (opts.family || '');
+  let box = _mathCache.get(key);
+  if (box === undefined) {
+    box = _mathBox(ctx, src, px, opts);
+    if (_mathCache.size >= 2000) _mathCache.clear();
+    _mathCache.set(key, box);
+  }
+  return box;
+}
+try {
+  if (typeof document !== 'undefined' && document.fonts && document.fonts.ready && typeof document.fonts.ready.then === 'function') {
+    document.fonts.ready.then(() => { _richCache.clear(); _mathCache.clear(); });
+  }
+} catch { /* sin DOM (Node): el content-keying basta */ }
 
 // Parsea px/weight/family de un ctx.font ("600 11px fam") para drawRichText.
 export function fontToOpts(font) {
@@ -568,7 +610,7 @@ function _mathBox(ctx, src, px, opts) {
 
 // Mide una fórmula LaTeX en el ctx dado. Devuelve { w, ascent, descent, height }.
 export function measureMath(ctx, tex, opts = {}) {
-  const box = _mathBox(ctx, tex, opts.px || 16, opts);
+  const box = _mathBoxCached(ctx, tex, opts.px || 16, opts);
   return { w: box.w, ascent: box.a, descent: box.d, height: box.a + box.d };
 }
 
@@ -579,7 +621,7 @@ export function measureMath(ctx, tex, opts = {}) {
 // contiguas: { w, ascent, descent, height, x, baseline }.
 export function drawMath(ctx, tex, x, y, opts = {}) {
   const px = opts.px || 16;
-  const box = _mathBox(ctx, tex, px, opts);
+  const box = _mathBoxCached(ctx, tex, px, opts);
   const align = opts.align || 'left';
   const left = align === 'center' ? x - box.w / 2 : align === 'right' ? x - box.w : x;
   const va = opts.valign || 'baseline';

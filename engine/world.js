@@ -2,27 +2,27 @@
 // World class: simulation state + tick + draw orchestration.
 // Owns entities, camera, scripts, fx, bubbles, labels, ambient, audio handles.
 
-import { mulberry32, ease, colorAlpha, mixColors, drawRichText, measureRichText, drawLabel, formatAPA, htmlToText } from './util.js?v=145';
-import { compileHooks } from './hooks.js?v=145';
-import { createAmbientSound } from './audio.js?v=145';
-import { SKY_PRESETS } from './sky-presets.js?v=145';
-import { computeSolidBox, drawProp } from './prop-draw.js?v=145';
-import { PROP_NATURAL_SCALE, PROP_SPRITES, depthScale } from './prop-sprites.js?v=145';
-import { Draw } from './draw.js?v=145';
-import { initCamera, tickCamera } from './camera.js?v=145';
-import { makeAmbientParticle, tickAmbient, drawAmbient } from './ambient.js?v=145';
+import { mulberry32, ease, colorAlpha, mixColors, drawRichText, measureRichText, drawLabel, measureLabel, formatAPA, htmlToText } from './util.js?v=147';
+import { compileHooks } from './hooks.js?v=147';
+import { createAmbientSound } from './audio.js?v=147';
+import { SKY_PRESETS } from './sky-presets.js?v=147';
+import { computeSolidBox, drawProp } from './prop-draw.js?v=147';
+import { PROP_NATURAL_SCALE, PROP_SPRITES, depthScale } from './prop-sprites.js?v=147';
+import { Draw } from './draw.js?v=147';
+import { initCamera, tickCamera } from './camera.js?v=147';
+import { makeAmbientParticle, tickAmbient, drawAmbient } from './ambient.js?v=147';
 import {
   runScript as _runScript, stopScripts as _stopScripts, tickScripts,
   evalScriptExpr, processScript, execScriptStep,
-} from './scripts.js?v=145';
-import { compileForm } from './forms.js?v=145';
-import { drawFloor } from './floor.js?v=145';
-import { tickAnimatedProps } from './animated-props.js?v=145';
-import { initLearner, touchLearner, tickLearner } from './learner.js?v=145';
-import { handleClick, togglePropInteraction } from './interaction.js?v=145';
+} from './scripts.js?v=147';
+import { compileForm } from './forms.js?v=147';
+import { drawFloor } from './floor.js?v=147';
+import { tickAnimatedProps } from './animated-props.js?v=147';
+import { initLearner, touchLearner, tickLearner } from './learner.js?v=147';
+import { handleClick, togglePropInteraction } from './interaction.js?v=147';
 import {
   createFxApi, spawnBubble, spawnParticles, tickFx, positionBubbles, drawFx,
-} from './fx.js?v=145';
+} from './fx.js?v=147';
 
 // Props que emiten luz solos cuando hay `ambient.darkness` (opt-out con
 // `light: false` en el prop). `dy` ubica la fuente en celdas del sprite
@@ -673,6 +673,7 @@ export class World {
     this._drawFocuses(ctx);
     this._drawCharts(ctx);
     this._drawFormulas(ctx, false);   // fórmulas en espacio de mundo (push-in las agranda)
+    this._drawAnnotations(ctx, false); // callouts en espacio de mundo (anclados a lo señalado)
     this._drawFx(ctx);
     ctx.restore();
     // Iluminación: scrim de oscuridad perforado por los emisores, sobre el
@@ -694,6 +695,8 @@ export class World {
     this._drawSaturation(ctx);
     // Fórmulas con `screen: true`: callout HUD fijo (inmune a cámara/saturación).
     this._drawFormulas(ctx, true);
+    // Anotaciones con `screen: true`: callout HUD fijo (inmune a cámara).
+    this._drawAnnotations(ctx, true);
     // Capa declarativa (captions + meters), en espacio-pantalla, bajo el watermark.
     this._drawDeclarative(ctx);
     // Logo institucional opcional (esquina inferior izquierda), bajo el watermark.
@@ -790,6 +793,27 @@ export class World {
     }));
     this._formulaById = {};
     for (const f of this._formulas) this._formulaById[f.id] = f;
+    // Anotaciones/callouts declarativos: un chip de texto anclado a una
+    // entidad, prop, chart o punto por una línea guía, que el guion revela con
+    // el step `annotation`. Es la herramienta de la mecánica de disección
+    // (nombrar cada parte señalándola) sin escribir onDraw. Se dibujan en
+    // espacio de mundo por defecto (un push-in los agranda) o en pantalla con
+    // `screen: true`. `text` respeta la notación (_/^ y $...$): se pinta con
+    // drawLabel. `dx`/`dy` desplazan el chip desde el objetivo (pueden ser
+    // negativos). `\n` en el texto hace varias líneas.
+    this._annotations = (this.config.annotations || []).map(a => ({
+      id: a.id,
+      target: Array.isArray(a.target) ? { x: a.target[0], y: a.target[1] } : a.target,
+      lines: String(a.text ?? '').split('\n'),
+      dx: a.dx ?? 64, dy: a.dy ?? -48,
+      px: a.px ?? 13, weight: a.weight || '600', align: a.align || 'left',
+      color: a.color || '#F4AC1D', textColor: a.textColor || '#FBFAF6',
+      bg: a.bg || 'rgba(31,37,71,0.94)',
+      dot: a.dot !== false, head: a.head === true,
+      alpha: a.alpha ?? 1, screen: a.screen === true,
+    }));
+    this._annotationById = {};
+    for (const a of this._annotations) this._annotationById[a.id] = a;
     // Sets de cámara declarativos: vistas nombradas que el step `scene`
     // activa con fade a negro + teleport (fx.transitionTo). La cámara
     // arranca en el primer set de la lista.
@@ -937,6 +961,73 @@ export class World {
       for (let k = 0; k < f.segs.length; k++) {
         this.draw.math(cx, baseline, f.segs[k].tex, { ...baseOpts, color: f.segs[k].color || f.color, align: 'left', valign: 'baseline' });
         cx += ms[k].w + gap;
+      }
+      ctx.restore();
+    }
+  }
+
+  // Anotaciones/callouts declarativos: un chip de texto + una línea guía hacia
+  // un objetivo (entidad / prop / chart / punto). Reusa `_focusPoint` para
+  // resolver el objetivo (y respeta su ocultamiento: una entidad `vanish`-eada
+  // no recibe callout). El texto respeta la notación (drawLabel). `screen`
+  // separa los callouts de mundo (bajo la cámara) de los de HUD fijo.
+  _drawAnnotations(ctx, screen) {
+    if (!this._annotations || !this._annotations.length) return;
+    const UIQ = '"Plus Jakarta Sans", ui-sans-serif, system-ui, -apple-system, sans-serif';
+    for (const a of this._annotations) {
+      if (!!a.screen !== !!screen) continue;
+      if (a.alpha < 0.01 || !a.lines.length) continue;
+      const pt = this._focusPoint({ target: a.target });
+      if (!pt) continue;
+      // Los ids (entidad/prop/chart) traen radio: la guía se recorta al borde
+      // del cuerpo. Un punto [x,y] no: la guía llega al punto exacto.
+      const isId = typeof a.target === 'string';
+      const tx = pt.x, ty = pt.y, tr = isId ? (pt.r || 0) : 0;
+      ctx.save();
+      ctx.globalAlpha *= Math.min(1, a.alpha);
+      // Medir el chip (varias líneas: el ancho es el máximo, con notación).
+      ctx.font = `${a.weight} ${a.px}px ${UIQ}`;
+      const lineH = a.px * 1.34;
+      let tw = 0;
+      for (const ln of a.lines) tw = Math.max(tw, measureLabel(ctx, ln));
+      const padX = 10, padY = 7;
+      const bw = tw + padX * 2, bh = a.lines.length * lineH + padY * 2;
+      // El chip se centra en objetivo + (dx, dy).
+      const ccx = tx + a.dx, ccy = ty + a.dy;
+      const bx = ccx - bw / 2, by = ccy - bh / 2;
+      // Salida de la guía: el borde del chip que mira al objetivo (ray-box).
+      const ex = tx - ccx, ey = ty - ccy;
+      let sx = ccx, sy = ccy;
+      if (Math.abs(ex) > 1e-3 || Math.abs(ey) > 1e-3) {
+        const t = Math.min(
+          Math.abs(ex) > 1e-3 ? (bw / 2) / Math.abs(ex) : Infinity,
+          Math.abs(ey) > 1e-3 ? (bh / 2) / Math.abs(ey) : Infinity);
+        sx = ccx + ex * t; sy = ccy + ey * t;
+      }
+      // Fin de la guía: en el borde del objetivo (recorte por su radio).
+      const dlen = Math.hypot(tx - sx, ty - sy) || 1;
+      const ux = (tx - sx) / dlen, uy = (ty - sy) / dlen;
+      const endX = tx - ux * tr, endY = ty - uy * tr;
+      // Línea guía + punto (o punta de flecha) en el objetivo.
+      ctx.strokeStyle = a.color; ctx.lineWidth = 1.5; ctx.lineCap = 'round';
+      ctx.beginPath(); ctx.moveTo(sx, sy); ctx.lineTo(endX, endY); ctx.stroke();
+      if (a.head) {
+        this.draw._arrowhead(endX, endY, Math.atan2(endY - sy, endX - sx), 7, a.color);
+      } else if (a.dot) {
+        ctx.fillStyle = a.color;
+        ctx.beginPath(); ctx.arc(endX, endY, 3, 0, Math.PI * 2); ctx.fill();
+      }
+      // Chip (tarjeta redondeada con borde en el color de la anotación).
+      this._declRrect(ctx, bx, by, bw, bh, 7); ctx.fillStyle = a.bg; ctx.fill();
+      ctx.strokeStyle = a.color; ctx.lineWidth = 1.5;
+      this._declRrect(ctx, bx, by, bw, bh, 7); ctx.stroke();
+      // Texto con notación, línea a línea.
+      ctx.fillStyle = a.textColor;
+      ctx.font = `${a.weight} ${a.px}px ${UIQ}`;
+      ctx.textBaseline = 'middle'; ctx.textAlign = a.align;
+      const textX = a.align === 'center' ? ccx : a.align === 'right' ? bx + bw - padX : bx + padX;
+      for (let i = 0; i < a.lines.length; i++) {
+        drawLabel(ctx, a.lines[i], textX, by + padY + lineH * (i + 0.5));
       }
       ctx.restore();
     }

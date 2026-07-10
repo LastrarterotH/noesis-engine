@@ -10,10 +10,10 @@
 // hooks) o se escanean del código fuente del motor (buildVocab recibe un
 // lector de fuentes), así el validador no se desincroniza al crecer el motor.
 
-import { PROP_SPRITES } from './prop-sprites.js?v=145';
-import { SKY_PRESETS } from './sky-presets.js?v=145';
-import { HOOK_NAMES, HOOK_ARGS } from './hooks.js?v=145';
-import { compileForm, FORM_TYPES } from './forms.js?v=145';
+import { PROP_SPRITES } from './prop-sprites.js?v=147';
+import { SKY_PRESETS } from './sky-presets.js?v=147';
+import { HOOK_NAMES, HOOK_ARGS } from './hooks.js?v=147';
+import { compileForm, FORM_TYPES } from './forms.js?v=147';
 
 // Fuentes del motor que buildVocab escanea con regex (enums de despachos
 // if/else que no se exportan como datos).
@@ -78,9 +78,10 @@ const LABEL_ANCHORS = ['top-left', 'top', 'top-right', 'left', 'center', 'right'
 const HEALTH_KINDS = ['normal', 'sick', 'feverish', 'frozen'];
 const ZONE_EFFECTS = ['mood', 'reinforce', 'quiet', 'sleep'];
 
-const TOP_KEYS = ['meta', 'text', 'hint', 'hintDuration', 'canvas', 'entities', 'props', 'labels', 'walls', 'zones', 'ambient', 'hooks', 'script', 'meters', 'charts', 'formulas', 'sets', 'seed', 'form'];
+const TOP_KEYS = ['meta', 'text', 'hint', 'hintDuration', 'canvas', 'entities', 'props', 'labels', 'walls', 'zones', 'ambient', 'hooks', 'script', 'meters', 'charts', 'formulas', 'annotations', 'sets', 'seed', 'form'];
 const FORMULA_KEYS = ['id', 'tex', 'x', 'y', 'px', 'color', 'weight', 'family', 'align', 'valign', 'alpha', 'screen', 'panel'];
 const FORMULA_PANEL_KEYS = ['title', 'titleColor', 'bg', 'border', 'pad', 'radius'];
+const ANNOTATION_KEYS = ['id', 'target', 'text', 'dx', 'dy', 'px', 'weight', 'align', 'color', 'textColor', 'bg', 'dot', 'head', 'alpha', 'screen'];
 const SET_KEYS = ['id', 'cx', 'cy', 'zoom'];
 const CHART_KEYS = ['id', 'type', 'x', 'y', 'w', 'h', 'xDomain', 'yDomain', 'xScale', 'yScale', 'xTicks', 'yTicks', 'xLabel', 'yLabel', 'xFormat', 'yFormat', 'title', 'target', 'panel', 'alpha', 'reveal', 'gap', 'color', 'series', 'values'];
 const SERIES_KEYS = ['id', 'color', 'width', 'fill', 'dash', 'dots', 'data', 'fn', 'reveal', 'head'];
@@ -97,7 +98,7 @@ const STEP_KEYS = [
   'stop', 'say', 'think', 'text', 'exclaim', 'surprise', 'wonder', 'mood', 'value',
   'flash', 'reinforce', 'tone', 'dur', 'opts', 'sweep', 'particles', 'floatNumber',
   'celebrate', 'cry', 'thinking', 'jump', 'lookAt', 'appear', 'vanish', 'camera', 'caption', 'meter',
-  'tween', 'chart', 'formula', 'show', 'hide', 'alpha', 'series', 'reveal',
+  'tween', 'chart', 'formula', 'annotation', 'show', 'hide', 'alpha', 'series', 'reveal',
   'focus', 'off', 'radius', 'color', 'style', 'scene', 'move', 'weather', 'intensity',
   'showLabel', 'hideLabel', 'music',
   'set', 'add', 'clamp', 'do', 'call', 'runScript', 'runScriptOpts',
@@ -339,6 +340,7 @@ function checkDuplicateIds(ctx, config) {
   scan(config.labels, 'labels');
   scan(config.meters, 'meters');
   scan(config.formulas, 'formulas');
+  scan(config.annotations, 'annotations');
   // series por chart
   (config.charts || []).forEach((c, i) => {
     if (c && Array.isArray(c.series)) scan(c.series, `charts[${i}].series`);
@@ -741,6 +743,39 @@ export function createValidator(vocab) {
     }
   }
 
+  function vAnnotation(ctx, a, i, knownIds) {
+    const p = `annotations[${i}]`;
+    if (!a || typeof a !== 'object' || Array.isArray(a)) return ctx.err(p, 'cada anotación es un objeto { "id", "target", "text", ... }.');
+    if (!a.id || typeof a.id !== 'string') ctx.err(`${p}.id`, 'falta el id (el step "annotation" lo usa para mostrarla/animarla).');
+    if (a.text == null || String(a.text).trim() === '') {
+      ctx.err(`${p}.text`, 'falta "text": la etiqueta del callout (soporta notación _/^ y $...$; usa \\n para varias líneas).');
+    } else {
+      checkTextStyle(ctx, `${p}.text`, String(a.text).replace(/\n/g, ' '));
+    }
+    if (a.target == null) {
+      ctx.err(`${p}.target`, 'falta "target": a qué apunta el callout (id de entidad, prop o chart, o un punto [x, y]).');
+    } else if (Array.isArray(a.target)) {
+      if (a.target.length !== 2 || !a.target.every(n => typeof n === 'number')) ctx.err(`${p}.target`, 'un punto es [x, y] en píxeles.');
+    } else if (typeof a.target === 'string') {
+      if (!knownIds.has(a.target)) {
+        ctx.err(`${p}.target`, `"${a.target}" no es id de ninguna entidad, prop ni chart declarado. Usa un id existente o un punto [x, y].`);
+      }
+    } else {
+      ctx.err(`${p}.target`, 'target es un id (string) de entidad/prop/chart, o un punto [x, y].');
+    }
+    for (const k of Object.keys(a)) {
+      if (!ANNOTATION_KEYS.includes(k)) ctx.warn(`${p}.${k}`, `clave desconocida. Conocidas: ${list(ANNOTATION_KEYS)}.`);
+    }
+    for (const k of ['dx', 'dy', 'px']) {
+      if (a[k] != null && typeof a[k] !== 'number') ctx.err(`${p}.${k}`, `${k} es un número${k === 'px' ? '' : ' (puede ser negativo: es un desplazamiento del chip respecto al objetivo)'}.`);
+    }
+    for (const [k, v] of [['color', a.color], ['textColor', a.textColor], ['bg', a.bg]]) {
+      if (v != null && !COLOR_RE.test(v)) ctx.warn(`${p}.${k}`, `"${v}" no parece un color CSS.`);
+    }
+    if (a.align != null && !['left', 'center', 'right'].includes(a.align)) ctx.err(`${p}.align`, 'align es "left", "center" o "right".');
+    if (a.alpha != null && (typeof a.alpha !== 'number' || a.alpha < 0 || a.alpha > 1)) ctx.warn(`${p}.alpha`, 'alpha es la opacidad inicial 0..1 (usa 0 para revelarla luego con el step "annotation").');
+  }
+
   function vSteps(ctx, steps, p, scope) {
     if (!Array.isArray(steps)) return ctx.err(p, 'script debe ser un array de steps.');
     // goto puede apuntar a labels de ramas then/else (se inyectan al correr).
@@ -905,9 +940,19 @@ export function createValidator(vocab) {
         ctx.err(`${p}.alpha`, 'alpha es la opacidad, un número entre 0 y 1.');
       }
       for (const k of ['series', 'reveal']) if (s[k] != null) ctx.err(`${p}.${k}`, `"${k}" es de "chart", no de "formula".`);
+    } else if (s.annotation != null) {
+      if (!scope.annotationIds || !scope.annotationIds.has(s.annotation)) {
+        ctx.err(`${p}.annotation`, `"${s.annotation}" no es el id de ninguna anotación declarada (${list(scope.annotationIds || []) || 'ninguna'}). Declárala en la lista top-level "annotations".`);
+      }
+      const acts = ['show', 'hide', 'alpha'].filter(k => s[k] != null);
+      if (!acts.length) ctx.err(p, 'el step annotation necesita una acción: "show": true, "hide": true o "alpha": n (con "duration" opcional para el fade).');
+      if (s.alpha != null && (typeof s.alpha !== 'number' || s.alpha < 0 || s.alpha > 1)) {
+        ctx.err(`${p}.alpha`, 'alpha es la opacidad, un número entre 0 y 1.');
+      }
+      for (const k of ['series', 'reveal']) if (s[k] != null) ctx.err(`${p}.${k}`, `"${k}" es de "chart", no de "annotation".`);
     } else {
       for (const k of ['show', 'hide', 'series', 'reveal']) {
-        if (s[k] != null) ctx.err(`${p}.${k}`, `"${k}" solo tiene sentido junto a "chart": "<id>" o "formula": "<id>".`);
+        if (s[k] != null) ctx.err(`${p}.${k}`, `"${k}" solo tiene sentido junto a "chart": "<id>", "formula": "<id>" o "annotation": "<id>".`);
       }
     }
     if (s.focus != null) {
@@ -1132,6 +1177,7 @@ export function createValidator(vocab) {
         setIds: new Set((Array.isArray(config.sets) ? config.sets : []).map(st => st?.id).filter(Boolean)),
         labelIds: new Set((config.labels || []).map(l => l?.id).filter(Boolean)),
         formulaIds: new Set((config.formulas || []).map(f => f?.id).filter(Boolean)),
+        annotationIds: new Set((config.annotations || []).map(a => a?.id).filter(Boolean)),
         _config: config,
         hasHooks: Object.values(config.hooks || {}).some(v => typeof v === 'string' && v.trim()),
         hasMusic: typeof config.meta?.music === 'string' && config.meta.music.trim() !== '',
@@ -1200,6 +1246,12 @@ export function createValidator(vocab) {
     });
     (config.charts || []).forEach((c, i) => vChart(ctx, c, i));
     (config.formulas || []).forEach((f, i) => vFormula(ctx, f, i));
+    const annotTargetIds = new Set([
+      ...(config.entities || []).map(e => e?.id),
+      ...(config.props || []).map(pr => pr?.id),
+      ...(config.charts || []).map(c => c?.id),
+    ].filter(Boolean));
+    (config.annotations || []).forEach((a, i) => vAnnotation(ctx, a, i, annotTargetIds));
     if (config.sets != null) {
       if (!Array.isArray(config.sets)) ctx.err('sets', 'debe ser un array de vistas { "id", "cx" }. La cámara arranca en la primera.');
       else {
@@ -1229,6 +1281,7 @@ export function createValidator(vocab) {
         setIds: new Set((Array.isArray(config.sets) ? config.sets : []).map(st => st?.id).filter(Boolean)),
         labelIds: new Set((config.labels || []).map(l => l?.id).filter(Boolean)),
         formulaIds: new Set((config.formulas || []).map(f => f?.id).filter(Boolean)),
+        annotationIds: new Set((config.annotations || []).map(a => a?.id).filter(Boolean)),
         _config: config,
         hasHooks: Object.values(config.hooks || {}).some(v => typeof v === 'string' && v.trim()),
         hasMusic: typeof config.meta?.music === 'string' && config.meta.music.trim() !== '',

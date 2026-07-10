@@ -2,27 +2,27 @@
 // World class: simulation state + tick + draw orchestration.
 // Owns entities, camera, scripts, fx, bubbles, labels, ambient, audio handles.
 
-import { mulberry32, ease, colorAlpha, mixColors, drawRichText, measureRichText, drawLabel, measureLabel, formatAPA, htmlToText } from './util.js?v=147';
-import { compileHooks } from './hooks.js?v=147';
-import { createAmbientSound } from './audio.js?v=147';
-import { SKY_PRESETS } from './sky-presets.js?v=147';
-import { computeSolidBox, drawProp } from './prop-draw.js?v=147';
-import { PROP_NATURAL_SCALE, PROP_SPRITES, depthScale } from './prop-sprites.js?v=147';
-import { Draw } from './draw.js?v=147';
-import { initCamera, tickCamera } from './camera.js?v=147';
-import { makeAmbientParticle, tickAmbient, drawAmbient } from './ambient.js?v=147';
+import { mulberry32, ease, colorAlpha, mixColors, drawRichText, measureRichText, drawLabel, measureLabel, formatAPA, htmlToText } from './util.js?v=149';
+import { compileHooks } from './hooks.js?v=149';
+import { createAmbientSound } from './audio.js?v=149';
+import { SKY_PRESETS } from './sky-presets.js?v=149';
+import { computeSolidBox, drawProp } from './prop-draw.js?v=149';
+import { PROP_NATURAL_SCALE, PROP_SPRITES, depthScale } from './prop-sprites.js?v=149';
+import { Draw } from './draw.js?v=149';
+import { initCamera, tickCamera } from './camera.js?v=149';
+import { makeAmbientParticle, tickAmbient, drawAmbient } from './ambient.js?v=149';
 import {
   runScript as _runScript, stopScripts as _stopScripts, tickScripts,
   evalScriptExpr, processScript, execScriptStep,
-} from './scripts.js?v=147';
-import { compileForm } from './forms.js?v=147';
-import { drawFloor } from './floor.js?v=147';
-import { tickAnimatedProps } from './animated-props.js?v=147';
-import { initLearner, touchLearner, tickLearner } from './learner.js?v=147';
-import { handleClick, togglePropInteraction } from './interaction.js?v=147';
+} from './scripts.js?v=149';
+import { compileForm } from './forms.js?v=149';
+import { drawFloor } from './floor.js?v=149';
+import { tickAnimatedProps } from './animated-props.js?v=149';
+import { initLearner, touchLearner, tickLearner } from './learner.js?v=149';
+import { handleClick, togglePropInteraction } from './interaction.js?v=149';
 import {
   createFxApi, spawnBubble, spawnParticles, tickFx, positionBubbles, drawFx,
-} from './fx.js?v=147';
+} from './fx.js?v=149';
 
 // Props que emiten luz solos cuando hay `ambient.darkness` (opt-out con
 // `light: false` en el prop). `dy` ubica la fuente en celdas del sprite
@@ -674,6 +674,7 @@ export class World {
     this._drawCharts(ctx);
     this._drawFormulas(ctx, false);   // fórmulas en espacio de mundo (push-in las agranda)
     this._drawAnnotations(ctx, false); // callouts en espacio de mundo (anclados a lo señalado)
+    this._drawDiagrams(ctx, false);    // diagramas declarativos (nodos + edges + textos)
     this._drawFx(ctx);
     ctx.restore();
     // Iluminación: scrim de oscuridad perforado por los emisores, sobre el
@@ -697,6 +698,8 @@ export class World {
     this._drawFormulas(ctx, true);
     // Anotaciones con `screen: true`: callout HUD fijo (inmune a cámara).
     this._drawAnnotations(ctx, true);
+    // Diagramas con `screen: true`: HUD fijo (inmune a cámara).
+    this._drawDiagrams(ctx, true);
     // Capa declarativa (captions + meters), en espacio-pantalla, bajo el watermark.
     this._drawDeclarative(ctx);
     // Logo institucional opcional (esquina inferior izquierda), bajo el watermark.
@@ -814,6 +817,33 @@ export class World {
     }));
     this._annotationById = {};
     for (const a of this._annotations) this._annotationById[a.id] = a;
+    // Diagramas declarativos: flujos/grafos/mapas (nodos + conectores por id de
+    // nodo + textos + panel de respaldo) que el guion muestra y revela sin
+    // escribir onDraw. Es el envoltorio declarativo del toolkit de diagramas
+    // (draw.node/connector/arrow): cero código de dibujo nuevo. Dos escalares
+    // animables por el step `diagram`: `alpha` (opacidad del grupo, para el
+    // cross-fade entre diagramas) y `reveal` (barrido escalonado: cada hijo
+    // entra en su umbral `at` con ancho `fadeIn`). El `at` sin declarar se
+    // reparte parejo en orden panel→nodos→edges→texts (cascada sin solaparse
+    // con las dependencias). Reset-safe (se re-materializa del config).
+    this._diagrams = (this.config.diagrams || []).map(d => {
+      const nodes = (d.nodes || []).map(n => ({ ...n }));
+      const edges = (d.edges || []).map(e => ({ ...e }));
+      const texts = (d.texts || []).map(t => ({ ...t }));
+      const panel = d.panel ? { ...d.panel } : null;
+      const children = [...(panel ? [panel] : []), ...nodes, ...edges, ...texts];
+      const N = children.length;
+      children.forEach((c, i) => {
+        if (c.at == null) c.at = N > 1 ? (i / (N - 1)) * 0.82 : 0;
+        if (c.fadeIn == null) c.fadeIn = 0.15;
+      });
+      return {
+        id: d.id, alpha: d.alpha ?? 1, reveal: d.reveal ?? 1,
+        screen: d.screen === true, panel, nodes, edges, texts,
+      };
+    });
+    this._diagramById = {};
+    for (const d of this._diagrams) this._diagramById[d.id] = d;
     // Sets de cámara declarativos: vistas nombradas que el step `scene`
     // activa con fade a negro + teleport (fx.transitionTo). La cámara
     // arranca en el primer set de la lista.
@@ -1028,6 +1058,130 @@ export class World {
       const textX = a.align === 'center' ? ccx : a.align === 'right' ? bx + bw - padX : bx + padX;
       for (let i = 0; i < a.lines.length; i++) {
         drawLabel(ctx, a.lines[i], textX, by + padY + lineH * (i + 0.5));
+      }
+      ctx.restore();
+    }
+  }
+
+  // Diagramas declarativos: envoltorio del toolkit draw.node/connector/arrow.
+  // Dibuja el panel de respaldo, los nodos (guardando su geometría por id), los
+  // edges (conectando anclas de nodo por id, con auto-side o `fromSide`/`toSide`)
+  // y los textos. La opacidad de grupo (`alpha`) y el barrido (`reveal` + `at`)
+  // se aplican por multiplicación de globalAlpha, así el reveal escalona los
+  // hijos sin tocar el `alpha` absoluto de node/connector. `screen` separa los
+  // de mundo (bajo la cámara) de los de HUD fijo.
+  _drawDiagrams(ctx, screen) {
+    if (!this._diagrams || !this._diagrams.length) return;
+    const UIQ = '"Plus Jakarta Sans", ui-sans-serif, system-ui, -apple-system, sans-serif';
+    const childAlpha = (c, reveal) => {
+      const at = c.at || 0, fi = c.fadeIn || 0.15;
+      return fi > 0 ? Math.max(0, Math.min(1, (reveal - at) / fi)) : (reveal >= at ? 1 : 0);
+    };
+    const nodePos = (n) => {
+      if (n.target != null) {
+        const pt = this._focusPoint({ target: Array.isArray(n.target) ? { x: n.target[0], y: n.target[1] } : n.target });
+        if (!pt) return null;
+        return { x: pt.x - (n.w || 90) / 2, y: pt.y - (n.h || 40) / 2 };
+      }
+      return { x: n.x ?? 0, y: n.y ?? 0 };
+    };
+    const autoSide = (g, o) => {
+      const dx = o.x - g.x, dy = o.y - g.y;
+      if (Math.abs(dx) * g.h >= Math.abs(dy) * g.w) return dx >= 0 ? g.right : g.left;
+      return dy >= 0 ? g.bottom : g.top;
+    };
+    for (const d of this._diagrams) {
+      if (!!d.screen !== !!screen) continue;
+      if (d.alpha < 0.01) continue;
+      const rv = d.reveal ?? 1;
+      ctx.save();
+      ctx.globalAlpha *= Math.min(1, d.alpha);
+      // Panel de respaldo: bbox de los nodos + pad, o x/y/w/h explícitos.
+      if (d.panel) {
+        const p = d.panel, pca = childAlpha(p, rv);
+        if (pca > 0.001) {
+          let bx, by, bw, bh;
+          if (p.x != null && p.w != null) { bx = p.x; by = p.y ?? 0; bw = p.w; bh = p.h ?? 0; }
+          else {
+            let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+            for (const n of d.nodes) {
+              const pos = nodePos(n); if (!pos) continue;
+              minX = Math.min(minX, pos.x); minY = Math.min(minY, pos.y);
+              maxX = Math.max(maxX, pos.x + (n.w || 90)); maxY = Math.max(maxY, pos.y + (n.h || 40));
+            }
+            const pad = p.pad ?? 16, titleH = p.title ? 20 : 0;
+            bx = minX - pad; by = minY - pad - titleH;
+            bw = (maxX - minX) + pad * 2; bh = (maxY - minY) + pad * 2 + titleH;
+          }
+          if (isFinite(bx) && isFinite(bw) && bw > 0) {
+            ctx.save(); ctx.globalAlpha *= pca;
+            this._declRrect(ctx, bx, by, bw, bh, p.radius ?? 14);
+            ctx.fillStyle = p.fill || 'rgba(12,16,32,0.82)'; ctx.fill();
+            if (p.stroke !== false) {
+              ctx.strokeStyle = typeof p.stroke === 'string' ? p.stroke : 'rgba(110,120,150,0.30)';
+              ctx.lineWidth = p.strokeWidth ?? 1;
+              this._declRrect(ctx, bx, by, bw, bh, p.radius ?? 14); ctx.stroke();
+            }
+            if (p.title) {
+              ctx.fillStyle = p.titleColor || '#F4AC1D';
+              ctx.font = '600 10px ' + UIQ; ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+              try { ctx.letterSpacing = '1.5px'; } catch {}
+              ctx.fillText(String(p.title).toUpperCase(), bx + 14, by + 18);
+              try { ctx.letterSpacing = '0px'; } catch {}
+            }
+            ctx.restore();
+          }
+        }
+      }
+      // Nodos: draw.node dibuja la caja y devuelve sus anclas de borde por id.
+      const geom = {};
+      for (const n of d.nodes) {
+        const pos = nodePos(n); if (!pos) continue;
+        let font = n.font;
+        if (!font && (n.px || n.weight)) font = `${n.weight || '600'} ${n.px || 12}px ${UIQ}`;
+        ctx.save(); ctx.globalAlpha *= childAlpha(n, rv);
+        geom[n.id] = this.draw.node(pos.x, pos.y, n.w || 90, n.h || 40, {
+          fill: n.fill, stroke: n.stroke, strokeWidth: n.strokeWidth, radius: n.radius,
+          label: n.label, labelColor: n.labelColor, font,
+        });
+        ctx.restore();
+      }
+      // Edges: conectan anclas de nodo por id (o un punto/entidad libre).
+      for (const e of d.edges) {
+        const ga = geom[e.from], gb = geom[e.to];
+        const centerOf = (ref, g) => {
+          if (g) return { x: g.x, y: g.y };
+          if (Array.isArray(ref)) return { x: ref[0], y: ref[1] };
+          const pt = this._focusPoint({ target: ref });
+          return pt ? { x: pt.x, y: pt.y, r: pt.r } : null;
+        };
+        const ca = centerOf(e.from, ga), cb = centerOf(e.to, gb);
+        if (!ca || !cb) continue;
+        const anchor = (g, side, center, other) => {
+          if (g) return (side && g[side]) ? g[side] : autoSide(g, other);
+          return center;
+        };
+        const A = anchor(ga, e.fromSide, ca, cb), B = anchor(gb, e.toSide, cb, ca);
+        const eca = childAlpha(e, rv);
+        if (eca < 0.001) continue;
+        ctx.save(); ctx.globalAlpha *= eca;
+        this.draw.connector(A, B, {
+          color: e.color, width: e.width, dash: e.dash, curve: e.curve,
+          head: e.head, both: e.both, label: e.label, labelColor: e.labelColor,
+          labelBg: e.labelBg, gap: e.gap ?? 2,
+        });
+        ctx.restore();
+      }
+      // Textos sueltos (con notación _/^ y $...$ vía drawLabel).
+      for (const t of d.texts) {
+        const tca = childAlpha(t, rv);
+        if (tca < 0.001) continue;
+        ctx.save(); ctx.globalAlpha *= tca;
+        ctx.font = t.font || `${t.weight || '600'} ${t.px || 13}px ${UIQ}`;
+        ctx.textAlign = t.align || 'center'; ctx.textBaseline = 'middle';
+        ctx.fillStyle = t.color || '#1F2547';
+        drawLabel(ctx, String(t.text ?? ''), t.x ?? 0, t.y ?? 0);
+        ctx.restore();
       }
       ctx.restore();
     }

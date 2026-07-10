@@ -87,6 +87,118 @@ const DNODE_KEYS = ['id', 'x', 'y', 'w', 'h', 'label', 'fill', 'stroke', 'stroke
 const DEDGE_KEYS = ['from', 'fromSide', 'to', 'toSide', 'curve', 'color', 'width', 'dash', 'head', 'both', 'label', 'labelColor', 'labelBg', 'gap', 'at', 'fadeIn'];
 const DTEXT_KEYS = ['id', 'x', 'y', 'text', 'align', 'color', 'px', 'weight', 'font', 'at', 'fadeIn'];
 const DPANEL_KEYS = ['x', 'y', 'w', 'h', 'radius', 'pad', 'fill', 'stroke', 'strokeWidth', 'title', 'titleColor'];
+
+// Reloj del guion: simula `config.script` para obtener la línea de tiempo (a qué
+// segundo dispara cada step y qué queda visible). Puro y sin dibujar: suma los
+// `wait`, estima los `waitFor: arrive` por distancia/velocidad, calcula la
+// duración de LECTURA de cada globo (el mismo piso que fx.js: max(dur ?? 2.2,
+// min(7, 1.2 + 0.4·palabras))) y rastrea la visibilidad (appear/vanish/_alpha).
+// Es el simulador que comparten la herramienta `tools/beats.mjs` y el lint de
+// tiempos `checkTiming`. Devuelve { beats, duration }.
+function _wordCount(s) { return String(s == null ? '' : s).trim().split(/\s+/).filter(Boolean).length; }
+function _sayDur(step) { return Math.max(typeof step.duration === 'number' ? step.duration : 2.2, Math.min(7, 1.2 + 0.4 * _wordCount(step.text))); }
+function _resAxis(v, size) {
+  if (typeof v === 'number') return v >= 0 && v <= 1 ? v * size : v;
+  if (typeof v === 'string') { const m = v.match(/^(left|right|top|bottom|center|middle)([+-]\d+(\.\d+)?)?$/); if (m) { const base = { left: 0, top: 0, center: size / 2, middle: size / 2, right: size, bottom: size }[m[1]] || 0; return base + (m[2] ? parseFloat(m[2]) : 0); } }
+  return size / 2;
+}
+export function simulateScript(config) {
+  const script = Array.isArray(config && config.script) ? config.script : null;
+  if (!script) return { beats: [], duration: 0 };
+  const W = (config.canvas && config.canvas.w) || 800, H = (config.canvas && config.canvas.h) || 450;
+  const pos = {}, alpha = {};
+  for (const e of config.entities || []) {
+    if (!e || !e.id) continue;
+    pos[e.id] = { x: _resAxis(e.x, W), y: _resAxis(e.y, H) };
+    alpha[e.id] = e._alpha == null ? 1 : e._alpha;
+  }
+  const beats = [];
+  let t = 0, pendingWalk = null;
+  for (let i = 0; i < script.length; i++) {
+    const s = script[i];
+    if (!s || typeof s !== 'object' || Array.isArray(s)) continue;
+    const vis = { ...alpha };
+    const push = (kind, extra) => beats.push({ t, i, kind, vis, ...(extra || {}) });
+    if ('caption' in s && s.caption) push(s.style === 'title' ? 'title' : 'caption', { text: s.caption, dur: Math.min(7, 1.2 + 0.4 * _wordCount(s.caption)) });
+    if (s.say != null) push('say', { entity: s.say, text: s.text, dur: _sayDur(s), pos: pos[s.say] ? { x: pos[s.say].x, y: pos[s.say].y } : null });
+    if (s.think != null) push('think', { entity: s.think, text: s.text, dur: _sayDur(s), pos: pos[s.think] ? { x: pos[s.think].x, y: pos[s.think].y } : null });
+    if (s.focus != null) push('focus', { target: Array.isArray(s.focus) ? null : s.focus, off: s.off === true, text: Array.isArray(s.focus) ? `[${s.focus.join(',')}]` : String(s.focus) });
+    if (s.camera && typeof s.camera === 'object') push('camera', { target: typeof s.camera.to === 'string' ? s.camera.to : (typeof s.camera.follow === 'string' ? s.camera.follow : null), text: JSON.stringify(s.camera).slice(0, 40) });
+    if (s.chart) push('chart', { text: s.chart });
+    if (s.formula) push('formula', { text: s.formula });
+    if (s.annotation) push('annotation', { text: s.annotation });
+    if (s.diagram) push('diagram', { text: s.diagram });
+    if (s.meter) push('meter', { text: s.meter });
+    if (s.scene) push('scene', { text: s.scene });
+    if (s.music != null) push('music', { text: typeof s.music === 'string' ? s.music : JSON.stringify(s.music) });
+    if (s.weather != null) push('weather', { text: String(s.weather) });
+    if (s.mood != null) push('mood', { entity: s.mood, text: s.value });
+    // Movimiento: recuerda el último walk para estimar el arrive.
+    if (s.walk != null && pos[s.walk]) {
+      const to = Array.isArray(s.to) ? { x: s.to[0], y: s.to[1] } : (typeof s.to === 'string' && pos[s.to] ? pos[s.to] : null);
+      if (to) pendingWalk = { id: s.walk, dist: Math.hypot(to.x - pos[s.walk].x, to.y - pos[s.walk].y), speed: s.speed || 60, to };
+    }
+    // Visibilidad declarativa.
+    if (s.appear != null && alpha[s.appear] != null) alpha[s.appear] = 1;
+    if (s.vanish != null && alpha[s.vanish] != null) alpha[s.vanish] = 0;
+    if (s.set && typeof s.set === 'object') for (const k of Object.keys(s.set)) { const m = k.match(/^(.+)\._alpha$/); if (m && alpha[m[1]] != null && typeof s.set[k] === 'number') alpha[m[1]] = s.set[k]; }
+    // Avance del reloj.
+    if (typeof s.wait === 'number') t += s.wait;
+    if (s.waitFor === 'arrive' || (typeof s.waitFor === 'string' && s.waitFor.startsWith('arrive'))) {
+      if (pendingWalk) { t += pendingWalk.dist / (pendingWalk.speed || 60); pos[pendingWalk.id] = pendingWalk.to; pendingWalk = null; }
+      else t += 1.5;
+    }
+  }
+  return { beats, duration: t };
+}
+
+// Lints de TIEMPO colgados del reloj `simulateScript` (fallos que "corren" pero
+// se ven mal): (1) una caption/título que se reemplaza antes de poder leerse (el
+// motor NO le pone piso de lectura como a los globos); (2) un foco o la cámara
+// que apunta a una entidad oculta (vanish/_alpha 0) en ese beat: el halo cae
+// sobre la nada. Ambos son warnings y conservadores. (El solape de globos NO se
+// lintea: el motor ya lo resuelve subiendo el segundo globo en `positionBubbles`,
+// así que avisar sería redundante y ruidoso.)
+function checkTiming(ctx, config) {
+  if (!Array.isArray(config.script) || !config.script.length) return;
+  // Si la escena puede mostrar/ocultar entidades por vías que el simulador NO
+  // rastrea (hooks, o steps `do`/`call`/`if` en el guion), no se puede confiar
+  // en la visibilidad simulada: se omite el lint (2) para no falsear como la
+  // escena 11. El lint (1) es puro tiempo y no se ve afectado.
+  const visUncertain = Object.values(config.hooks || {}).some(v => typeof v === 'string' && v.trim())
+    || config.script.some(s => s && (s.do != null || s.call != null || s.if != null));
+  const { beats } = simulateScript(config);
+  // (1) Captions/títulos que pasan de largo: el próximo beat del MISMO slot los
+  // reemplaza MUY por debajo de lo que toma leerlos. Conservador a propósito
+  // (una caption de narración continua se lee más rápido que un globo, y el
+  // motor no le pone piso): usa un modelo de lectura realista (~0.5 s + 0.3 s por
+  // palabra) y solo avisa cuando el hueco es menos de la MITAD de eso, para no
+  // castigar el ritmo rápido deliberado. Es el caso claramente roto (una frase
+  // larga que se borra en un instante), no el estilístico.
+  for (const slot of ['caption', 'title']) {
+    const sb = beats.filter(b => b.kind === slot);
+    for (let k = 0; k < sb.length; k++) {
+      const b = sb[k], next = sb[k + 1];
+      if (!b.text || !next) continue;
+      const words = _wordCount(b.text);
+      if (words < 4) continue; // 1-3 palabras se leen de un vistazo
+      const read = 0.5 + 0.3 * words;
+      const gap = next.t - b.t;
+      if (gap + 0.05 < read * 0.5) {
+        ctx.warn(`script[${b.i}].caption`, `este ${slot === 'title' ? 'título' : 'caption'} (${words} palabras, ~${read.toFixed(1)} s de lectura) se reemplaza a los ${gap.toFixed(1)} s: pasa de largo sin poder leerse. Sube el "wait" antes del próximo ${slot}.`);
+      }
+    }
+  }
+  // (2) Foco/cámara sobre una entidad oculta en ese momento.
+  if (!visUncertain) for (const b of beats) {
+    if ((b.kind !== 'focus' && b.kind !== 'camera') || b.off) continue;
+    const id = b.target;
+    if (!id || typeof id !== 'string' || b.vis[id] == null) continue; // solo entidades rastreadas
+    if (b.vis[id] < 0.05) {
+      ctx.warn(`script[${b.i}].${b.kind}`, `${b.kind === 'camera' ? 'la cámara apunta a' : 'el foco cae sobre'} "${id}", que está oculto (vanish/_alpha 0) en t≈${b.t.toFixed(1)} s: ${b.kind === 'camera' ? 'encuadra el vacío' : 'el halo cae sobre la nada'}. Muéstralo (appear) antes o apunta a otra cosa.`);
+    }
+  }
+}
 const SET_KEYS = ['id', 'cx', 'cy', 'zoom'];
 const CHART_KEYS = ['id', 'type', 'x', 'y', 'w', 'h', 'xDomain', 'yDomain', 'xScale', 'yScale', 'xTicks', 'yTicks', 'xLabel', 'yLabel', 'xFormat', 'yFormat', 'title', 'target', 'panel', 'alpha', 'reveal', 'gap', 'color', 'series', 'values'];
 const SERIES_KEYS = ['id', 'color', 'width', 'fill', 'dash', 'dots', 'data', 'fn', 'reveal', 'head'];
@@ -1423,6 +1535,7 @@ export function createValidator(vocab) {
     checkMovement(ctx, config);
     checkReachability(ctx, config);
     checkDuplicateIds(ctx, config);
+    checkTiming(ctx, config);
     return { errors, warnings };
   }
 

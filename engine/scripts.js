@@ -133,6 +133,24 @@ export function execScriptStep(world, step, sc) {
       }
     }
   }
+  if (step.carry != null) {
+    // El prop `carry` pasa a seguir a la entidad `by` cada frame (+ offset),
+    // reemplazando un carry previo del mismo prop. El step `drop` lo suelta.
+    if (!world._carries) world._carries = [];
+    world._carries = world._carries.filter(c => c.prop !== step.carry);
+    if (step.by != null) {
+      const off = Array.isArray(step.offset) ? step.offset : [16, 0];
+      world._carries.push({ prop: step.carry, entity: step.by, dx: off[0] || 0, dy: off[1] || 0 });
+    }
+  }
+  if (step.drop != null) {
+    // Suelta el prop (deja de seguir a su portador). Con `to`, lo deja ahí.
+    if (world._carries) world._carries = world._carries.filter(c => c.prop !== step.drop);
+    if (Array.isArray(step.to)) {
+      const p = world.props.find(pr => pr.id === step.drop);
+      if (p) { p.x = step.to[0]; p.y = step.to[1]; }
+    }
+  }
   if (step.stop) { const e = world.byId(step.stop); if (e) e.behavior = { type: 'stop' }; }
   if (step.say) { const e = world.byId(step.say); if (e) fx.say(e, step.text || '', { duration: step.duration ?? 2.5 }); }
   if (step.think) { const e = world.byId(step.think); if (e) fx.think(e, step.text || '', { duration: step.duration ?? 2.5 }); }

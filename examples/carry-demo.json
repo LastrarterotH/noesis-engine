@@ -1,0 +1,39 @@
+{
+  "meta": { "id": "carry-demo", "version": "0.1", "lang": ["es"] },
+  "seed": 5,
+  "canvas": { "w": 880, "h": 470, "bg": "#3c463a", "floor": "grass", "horizon": 0.6 },
+  "props": [
+    { "type": "table", "id": "mesa", "x": 440, "y": 366, "scale": 4 },
+    { "type": "crate", "id": "caja", "x": 150, "y": 356, "scale": 3 },
+    { "type": "barrel", "id": "barril", "x": 730, "y": 356, "scale": 3 }
+  ],
+  "entities": [
+    { "type": "learner", "id": "ana", "x": 186, "y": 352, "scale": 5, "hero": true, "body": "#d8a878", "sleepable": false, "lookAt": [440, 352], "behavior": null },
+    { "type": "learner", "id": "beto", "x": 694, "y": 352, "scale": 5, "hero": true, "body": "#e89a3a", "sleepable": false, "lookAt": [440, 352], "behavior": null }
+  ],
+  "script": [
+    { "caption": "Cada quien trae su pieza", "style": "title" },
+    { "wait": 1.4 },
+    { "caption": "Ana y Beto levantan sus piezas: al caminar, cada una los sigue." },
+    { "carry": "caja", "by": "ana", "offset": [24, 4] },
+    { "carry": "barril", "by": "beto", "offset": [-24, 4] },
+    { "wait": 1.2 },
+    { "walk": "ana", "to": [378, 352], "speed": 68 },
+    { "walk": "beto", "to": [502, 352], "speed": 68 },
+    { "waitFor": "arrive" },
+    { "wait": 0.6 },
+    { "caption": "Al llegar, las dejan en el centro: las piezas se juntan." },
+    { "drop": "caja", "to": [406, 384] },
+    { "drop": "barril", "to": [474, 384] },
+    { "wait": 0.8 },
+    { "walk": "ana", "to": [236, 352], "speed": 60 },
+    { "walk": "beto", "to": [644, 352], "speed": 60 },
+    { "waitFor": "arrive" },
+    { "wait": 0.6 },
+    { "caption": "Nada apareció solo: los cuerpos trajeron cada pieza caminando." },
+    { "wait": 3.4 },
+    { "caption": "" },
+    { "caption": "", "style": "title" },
+    { "wait": 1.2 }
+  ]
+}

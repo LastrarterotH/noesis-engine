@@ -170,6 +170,7 @@ Step keys (one primary action per step; combine multiple keys if they should fir
 - `waitUntil: '<expr>'` — block until JS expression is truthy, evaluated each tick. Scope: `world`, `state`, `s` (blocking).
 - `walk: <id>, to: [x,y] | <otherId>, speed?: 70` — set walkTo behavior.
 - `stop: <id>` — set behavior to stop.
+- `carry: <idProp>, by: <idEntidad>, offset?: [dx,dy]` — el prop se pega al portador y lo sigue cada frame (para "los personajes traen las piezas caminando", en vez de teletransportar el objeto). `drop: <idProp>, to?: [x,y]` lo suelta (con `to`, lo deja en un punto).
 - `say: <id>, text: '...', duration?: 2.5` / `think: <id>, text: ..., duration?` — bubble.
 - `exclaim: <id>` / `surprise: <id>` / `wonder: <id>` / `flash: <id>` / `reinforce: <id>`.
 - `mood: <id>, value: 'happy', duration?: 1.4`.

@@ -10,10 +10,10 @@
 // hooks) o se escanean del código fuente del motor (buildVocab recibe un
 // lector de fuentes), así el validador no se desincroniza al crecer el motor.
 
-import { PROP_SPRITES } from './prop-sprites.js?v=150';
-import { SKY_PRESETS } from './sky-presets.js?v=150';
-import { HOOK_NAMES, HOOK_ARGS } from './hooks.js?v=150';
-import { compileForm, FORM_TYPES } from './forms.js?v=150';
+import { PROP_SPRITES } from './prop-sprites.js?v=151';
+import { SKY_PRESETS } from './sky-presets.js?v=151';
+import { HOOK_NAMES, HOOK_ARGS } from './hooks.js?v=151';
+import { compileForm, FORM_TYPES } from './forms.js?v=151';
 
 // Fuentes del motor que buildVocab escanea con regex (enums de despachos
 // if/else que no se exportan como datos).
@@ -217,10 +217,10 @@ const STEP_KEYS = [
   'celebrate', 'cry', 'thinking', 'jump', 'lookAt', 'appear', 'vanish', 'camera', 'caption', 'meter',
   'tween', 'chart', 'formula', 'annotation', 'diagram', 'show', 'hide', 'alpha', 'series', 'reveal',
   'focus', 'off', 'radius', 'color', 'style', 'scene', 'move', 'weather', 'intensity',
-  'showLabel', 'hideLabel', 'music',
+  'showLabel', 'hideLabel', 'music', 'carry', 'drop', 'by', 'offset',
   'set', 'add', 'clamp', 'do', 'call', 'runScript', 'runScriptOpts',
 ];
-const STEP_ENTITY_REFS = ['walk', 'stop', 'say', 'think', 'exclaim', 'surprise', 'wonder', 'mood', 'flash', 'reinforce', 'celebrate', 'cry', 'thinking', 'appear', 'vanish', 'jump', 'lookAt'];
+const STEP_ENTITY_REFS = ['walk', 'stop', 'say', 'think', 'exclaim', 'surprise', 'wonder', 'mood', 'flash', 'reinforce', 'celebrate', 'cry', 'thinking', 'appear', 'vanish', 'jump', 'lookAt', 'by'];
 
 const ANCHOR_RE = /^(left|right|center|top|bottom|middle)([+-]\d+(\.\d+)?)?$/;
 const COLOR_RE = /^(#[0-9a-fA-F]{3,8}|rgba?\(|hsla?\()/;
@@ -993,6 +993,24 @@ export function createValidator(vocab) {
       }
     };
     for (const k of STEP_ENTITY_REFS) if (s[k] != null) refEntity(k);
+
+    if (s.carry != null) {
+      if (typeof s.carry !== 'string' || !(scope.propIds && scope.propIds.has(s.carry))) {
+        ctx.err(`${p}.carry`, `"${s.carry}" no es el id de ningún prop declarado (${list(scope.propIds || []) || 'ninguno'}). carry es el id del prop que la entidad transporta.`);
+      }
+      if (s.by == null) ctx.err(p, 'el step carry necesita "by": el id de la entidad que lleva el prop.');
+      if (s.offset != null && (!Array.isArray(s.offset) || s.offset.length !== 2 || !s.offset.every(n => typeof n === 'number'))) {
+        ctx.err(`${p}.offset`, 'offset es [dx, dy] (números): el desplazamiento del prop respecto al centro del portador.');
+      }
+    }
+    if (s.drop != null) {
+      if (typeof s.drop !== 'string' || !(scope.propIds && scope.propIds.has(s.drop))) {
+        ctx.err(`${p}.drop`, `"${s.drop}" no es el id de ningún prop declarado (${list(scope.propIds || []) || 'ninguno'}).`);
+      }
+      if (s.to != null && (!Array.isArray(s.to) || s.to.length !== 2 || !s.to.every(n => typeof n === 'number'))) {
+        ctx.err(`${p}.to`, 'en un "drop", "to" es el punto [x, y] donde dejar el prop.');
+      }
+    }
 
     if (s.walk != null) {
       const t = s.to;

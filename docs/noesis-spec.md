@@ -433,7 +433,9 @@ world.runScript([
 **Tiempo/flujo:** `wait:<s>` · `waitFor:'arrive'|'arrive:id'` · `waitUntil:'<expr>'` ·
 `label:'x'` + `goto:'x'` · `loop:true` · `end:true` · `if:'expr', then:[...], else:[...]`.
 **Movimiento:** `walk:<id>, to:[x,y]|<id>, speed?` · `stop:<id>` ·
-`path:<id>, points:[...], speed|duration, easing, curve, loop, fromCurrent`.
+`path:<id>, points:[...], speed|duration, easing, curve, loop, fromCurrent` ·
+`carry:<idProp>, by:<idEntidad>, offset?:[dx,dy]` (el prop sigue al portador) ·
+`drop:<idProp>, to?:[x,y]` (lo suelta).
 **Expresión/burbujas:** `say` · `think` (`text`, `duration?`) · `exclaim` ·
 `surprise` · `wonder` · `flash` · `reinforce` · `celebrate` · `cry` · `thinking` ·
 `mood:<id>, value, duration?` · `jump:<id>, duration?` ·

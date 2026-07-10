@@ -2,27 +2,27 @@
 // World class: simulation state + tick + draw orchestration.
 // Owns entities, camera, scripts, fx, bubbles, labels, ambient, audio handles.
 
-import { mulberry32, ease, colorAlpha, mixColors, drawRichText, measureRichText, drawLabel, measureLabel, formatAPA, htmlToText } from './util.js?v=150';
-import { compileHooks } from './hooks.js?v=150';
-import { createAmbientSound } from './audio.js?v=150';
-import { SKY_PRESETS } from './sky-presets.js?v=150';
-import { computeSolidBox, drawProp } from './prop-draw.js?v=150';
-import { PROP_NATURAL_SCALE, PROP_SPRITES, depthScale } from './prop-sprites.js?v=150';
-import { Draw } from './draw.js?v=150';
-import { initCamera, tickCamera } from './camera.js?v=150';
-import { makeAmbientParticle, tickAmbient, drawAmbient } from './ambient.js?v=150';
+import { mulberry32, ease, colorAlpha, mixColors, drawRichText, measureRichText, drawLabel, measureLabel, formatAPA, htmlToText } from './util.js?v=151';
+import { compileHooks } from './hooks.js?v=151';
+import { createAmbientSound } from './audio.js?v=151';
+import { SKY_PRESETS } from './sky-presets.js?v=151';
+import { computeSolidBox, drawProp } from './prop-draw.js?v=151';
+import { PROP_NATURAL_SCALE, PROP_SPRITES, depthScale } from './prop-sprites.js?v=151';
+import { Draw } from './draw.js?v=151';
+import { initCamera, tickCamera } from './camera.js?v=151';
+import { makeAmbientParticle, tickAmbient, drawAmbient } from './ambient.js?v=151';
 import {
   runScript as _runScript, stopScripts as _stopScripts, tickScripts,
   evalScriptExpr, processScript, execScriptStep,
-} from './scripts.js?v=150';
-import { compileForm } from './forms.js?v=150';
-import { drawFloor } from './floor.js?v=150';
-import { tickAnimatedProps } from './animated-props.js?v=150';
-import { initLearner, touchLearner, tickLearner } from './learner.js?v=150';
-import { handleClick, togglePropInteraction } from './interaction.js?v=150';
+} from './scripts.js?v=151';
+import { compileForm } from './forms.js?v=151';
+import { drawFloor } from './floor.js?v=151';
+import { tickAnimatedProps } from './animated-props.js?v=151';
+import { initLearner, touchLearner, tickLearner } from './learner.js?v=151';
+import { handleClick, togglePropInteraction } from './interaction.js?v=151';
 import {
   createFxApi, spawnBubble, spawnParticles, tickFx, positionBubbles, drawFx,
-} from './fx.js?v=150';
+} from './fx.js?v=151';
 
 // Props que emiten luz solos cuando hay `ambient.darkness` (opt-out con
 // `light: false` en el prop). `dy` ubica la fuente en celdas del sprite
@@ -88,6 +88,23 @@ export class World {
   _initLearner(e) { initLearner(this, e); }
   _touchLearner(e) { touchLearner(this, e); }
   _tickLearner(e, dt) { tickLearner(this, e, dt); }
+
+  // Props cargados por una entidad (step `carry`): cada frame el prop se pega a
+  // la posición del portador + offset. Es el parenting simple que permite "los
+  // personajes traen las piezas caminando" (caminar → llegar → soltar), y la
+  // mitad de la mecánica de ensamblaje. El step `drop` lo suelta. `this._carries`
+  // se limpia en cada reset (_initDeclarative), así el replay no arrastra nada.
+  _tickCarries() {
+    if (!this._carries || !this._carries.length) return;
+    for (const c of this._carries) {
+      const e = this.byId(c.entity);
+      if (!e) continue;
+      const p = this.props.find(pr => pr.id === c.prop);
+      if (!p) continue;
+      p.x = e.x + c.dx;
+      p.y = e.y + c.dy;
+    }
+  }
   handleClick(x, y, sx, sy) { handleClick(this, x, y, sx, sy); }
   _togglePropInteraction(p) { togglePropInteraction(this, p); }
   get fx() { return this._fxApi ??= createFxApi(this); }
@@ -519,6 +536,7 @@ export class World {
     for (const e of this.entities) {
       if (e.type === 'learner') this._tickLearner(e, dt);
     }
+    this._tickCarries();   // props que siguen a su portador (step `carry`)
     this._tickFx(dt);
     this._tickAmbient(dt);
     this._tickAnimatedProps(dt);
@@ -732,6 +750,9 @@ export class World {
     // sobre una entidad o un punto. Cada uno: { key, target, color, radius,
     // alpha (lo anima world.tween), phase }.
     this._focuses = [];
+    // Props cargados por una entidad (step `carry`): { prop, entity, dx, dy }.
+    // Se sincronizan en _tickCarries; el step `drop` los saca. Reset-safe.
+    this._carries = [];
     // Replay declarativo: para escenas con `script` top-level el motor ofrece
     // "Ver nuevamente" solo, cuando el guion termina y tras el tiempo de
     // gracia de 3 s (regla de CLAUDE.md). Las escenas con hooks siguen

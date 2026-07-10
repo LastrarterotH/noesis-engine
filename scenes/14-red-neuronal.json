@@ -1,0 +1,1122 @@
+{
+  "meta": {
+    "id": "14-red-neuronal",
+    "number": 14,
+    "version": "0.2",
+    "lang": [
+      "es"
+    ],
+    "music": "pedagogical"
+  },
+  "text": {
+    "es": {
+      "title": "Una neurona que decide: el perceptrón",
+      "body": [
+        "Una <strong>red neuronal</strong> se construye con una pieza mínima: la <strong>neurona artificial</strong>, o perceptrón. Frank Rosenblatt la propuso en 1958 inspirándose en la neurona biológica que Santiago Ramón y Cajal había descrito décadas antes: recibe varias señales, las combina y, si lo que llega supera un umbral, se activa (Rosenblatt, 1958).",
+        "La combinación es una cuenta simple y exacta, no una intuición. Cada entrada llega como un número y cada conexión tiene un <em>peso</em>: cuánto importa esa entrada. La neurona multiplica cada entrada por su peso, suma todo y compara el total con un <strong>umbral</strong>. Si lo pasa, se enciende; si no, permanece apagada.",
+        "Con pesos mal elegidos, la neurona se equivoca. Esa distancia entre lo que predijo y la respuesta correcta es el <strong>error</strong>, y es lo único que puede usar para corregirse. Aprender es mover cada peso en la dirección que reduce el error, un paso pequeño por vez, repetido sobre muchos ejemplos.",
+        "El algoritmo que reparte ese ajuste hacia atrás por toda una red de varias capas es la <strong>retropropagación</strong> (Rumelhart, Hinton y Williams, 1986). Lo que desde afuera se ve como aprendizaje es, por dentro, esta corrección de pesos hecha millones de veces.",
+        "El límite es honesto: la red ajusta pesos hasta fallar menos sobre los ejemplos que vio, pero eso no es comprender. Una neurona que aprende que el frío pesa en contra de salir a correr no sabe qué es el frío, ni por qué alguien corre."
+      ],
+      "references": [
+        {
+          "authors": "Rosenblatt, F.",
+          "year": 1958,
+          "title": "The perceptron: A probabilistic model for information storage and organization in the brain",
+          "journal": "Psychological Review",
+          "volume": "65(6)",
+          "pages": "386-408"
+        },
+        {
+          "authors": "Rumelhart, D. E., Hinton, G. E., & Williams, R. J.",
+          "year": 1986,
+          "title": "Learning representations by back-propagating errors",
+          "journal": "Nature",
+          "volume": "323",
+          "pages": "533-536"
+        },
+        {
+          "authors": "Goodfellow, I., Bengio, Y., & Courville, A.",
+          "year": 2016,
+          "title": "Deep Learning",
+          "publisher": "MIT Press"
+        }
+      ]
+    }
+  },
+  "hint": {
+    "es": "una sola decisión: ¿sale a correr?"
+  },
+  "hintDuration": 4,
+  "canvas": {
+    "w": 940,
+    "h": 620,
+    "bg": "#0e1430",
+    "floor": "dots",
+    "safeArea": 20
+  },
+  "entities": [
+    {
+      "type": "learner",
+      "id": "lucia",
+      "x": 86,
+      "y": 452,
+      "scale": 5,
+      "hero": true,
+      "body": "#d8a878",
+      "name": "Lucía",
+      "accessory": "headband",
+      "accessoryColor": "#5b8def",
+      "sleepable": false,
+      "lookAt": [
+        420,
+        250
+      ],
+      "behavior": null
+    }
+  ],
+  "diagrams": [
+    {
+      "id": "red",
+      "alpha": 0,
+      "reveal": 0,
+      "nodes": [
+        {
+          "id": "sol",
+          "x": 224,
+          "y": 122,
+          "w": 52,
+          "h": 52,
+          "radius": 26,
+          "fill": "#2b3566"
+        },
+        {
+          "id": "tiempo",
+          "x": 224,
+          "y": 224,
+          "w": 52,
+          "h": 52,
+          "radius": 26,
+          "fill": "#2b3566"
+        },
+        {
+          "id": "frio",
+          "x": 224,
+          "y": 326,
+          "w": 52,
+          "h": 52,
+          "radius": 26,
+          "fill": "#2b3566"
+        },
+        {
+          "id": "N",
+          "x": 515,
+          "y": 217,
+          "w": 66,
+          "h": 66,
+          "radius": 33,
+          "fill": "#243a2c"
+        },
+        {
+          "id": "out",
+          "x": 700,
+          "y": 224,
+          "w": 52,
+          "h": 52,
+          "radius": 26,
+          "fill": "#2b3566"
+        }
+      ],
+      "edges": [
+        {
+          "from": "sol",
+          "fromSide": "right",
+          "to": "N",
+          "toSide": "left",
+          "color": "#F4AC1D",
+          "width": 5,
+          "head": 0,
+          "at": 0.34,
+          "fadeIn": 0.1
+        },
+        {
+          "from": "tiempo",
+          "fromSide": "right",
+          "to": "N",
+          "toSide": "left",
+          "color": "#F4AC1D",
+          "width": 5,
+          "head": 0,
+          "at": 0.42,
+          "fadeIn": 0.1
+        },
+        {
+          "from": "frio",
+          "fromSide": "right",
+          "to": "N",
+          "toSide": "left",
+          "color": "#5a6488",
+          "width": 1.2,
+          "head": 0,
+          "at": 0.5,
+          "fadeIn": 0.1
+        },
+        {
+          "from": "N",
+          "fromSide": "right",
+          "to": "out",
+          "toSide": "left",
+          "color": "#5a6488",
+          "width": 2,
+          "head": 8,
+          "at": 0.66,
+          "fadeIn": 0.1
+        }
+      ],
+      "texts": [
+        {
+          "x": 250,
+          "y": 104,
+          "text": "hace sol",
+          "align": "center",
+          "color": "#c9d2e6",
+          "px": 13,
+          "at": 0.0
+        },
+        {
+          "x": 250,
+          "y": 206,
+          "text": "tengo tiempo",
+          "align": "center",
+          "color": "#c9d2e6",
+          "px": 13,
+          "at": 0.12
+        },
+        {
+          "x": 250,
+          "y": 308,
+          "text": "hace frío",
+          "align": "center",
+          "color": "#c9d2e6",
+          "px": 13,
+          "at": 0.24
+        },
+        {
+          "x": 250,
+          "y": 154,
+          "text": "1",
+          "align": "center",
+          "color": "#FBFAF6",
+          "px": 17,
+          "weight": "700",
+          "at": 0.0
+        },
+        {
+          "x": 250,
+          "y": 256,
+          "text": "1",
+          "align": "center",
+          "color": "#FBFAF6",
+          "px": 17,
+          "weight": "700",
+          "at": 0.12
+        },
+        {
+          "x": 250,
+          "y": 358,
+          "text": "1",
+          "align": "center",
+          "color": "#FBFAF6",
+          "px": 17,
+          "weight": "700",
+          "at": 0.24
+        },
+        {
+          "x": 548,
+          "y": 257,
+          "text": "$\\Sigma$",
+          "align": "center",
+          "color": "#FBFAF6",
+          "px": 22,
+          "at": 0.42
+        },
+        {
+          "x": 726,
+          "y": 206,
+          "text": "¿sale?",
+          "align": "center",
+          "color": "#c9d2e6",
+          "px": 13,
+          "at": 0.66
+        },
+        {
+          "x": 384,
+          "y": 178,
+          "text": "peso 2",
+          "align": "center",
+          "color": "#F4AC1D",
+          "px": 13,
+          "weight": "700",
+          "at": 0.34
+        },
+        {
+          "x": 384,
+          "y": 242,
+          "text": "peso 2",
+          "align": "center",
+          "color": "#F4AC1D",
+          "px": 13,
+          "weight": "700",
+          "at": 0.42
+        },
+        {
+          "x": 384,
+          "y": 316,
+          "text": "peso 0",
+          "align": "center",
+          "color": "#8f9ab8",
+          "px": 13,
+          "weight": "700",
+          "at": 0.5
+        }
+      ]
+    },
+    {
+      "id": "red2",
+      "alpha": 0,
+      "reveal": 1,
+      "nodes": [
+        {
+          "id": "sol",
+          "x": 224,
+          "y": 122,
+          "w": 52,
+          "h": 52,
+          "radius": 26,
+          "fill": "#2b3566"
+        },
+        {
+          "id": "tiempo",
+          "x": 224,
+          "y": 224,
+          "w": 52,
+          "h": 52,
+          "radius": 26,
+          "fill": "#2b3566"
+        },
+        {
+          "id": "frio",
+          "x": 224,
+          "y": 326,
+          "w": 52,
+          "h": 52,
+          "radius": 26,
+          "fill": "#2b3566"
+        },
+        {
+          "id": "N",
+          "x": 515,
+          "y": 217,
+          "w": 66,
+          "h": 66,
+          "radius": 33,
+          "fill": "#243a2c"
+        },
+        {
+          "id": "out",
+          "x": 700,
+          "y": 224,
+          "w": 52,
+          "h": 52,
+          "radius": 26,
+          "fill": "#2b3566"
+        }
+      ],
+      "edges": [
+        {
+          "from": "sol",
+          "fromSide": "right",
+          "to": "N",
+          "toSide": "left",
+          "color": "#F4AC1D",
+          "width": 3.4,
+          "head": 0,
+          "at": 0.0,
+          "fadeIn": 0.1
+        },
+        {
+          "from": "tiempo",
+          "fromSide": "right",
+          "to": "N",
+          "toSide": "left",
+          "color": "#F4AC1D",
+          "width": 3.4,
+          "head": 0,
+          "at": 0.0,
+          "fadeIn": 0.1
+        },
+        {
+          "from": "frio",
+          "fromSide": "right",
+          "to": "N",
+          "toSide": "left",
+          "color": "#c44a3e",
+          "width": 3.4,
+          "head": 0,
+          "at": 0.0,
+          "fadeIn": 0.1
+        },
+        {
+          "from": "N",
+          "fromSide": "right",
+          "to": "out",
+          "toSide": "left",
+          "color": "#5a6488",
+          "width": 2,
+          "head": 8,
+          "at": 0.0
+        }
+      ],
+      "texts": [
+        {
+          "x": 250,
+          "y": 104,
+          "text": "hace sol",
+          "align": "center",
+          "color": "#c9d2e6",
+          "px": 13,
+          "at": 0.0
+        },
+        {
+          "x": 250,
+          "y": 206,
+          "text": "tengo tiempo",
+          "align": "center",
+          "color": "#c9d2e6",
+          "px": 13,
+          "at": 0.12
+        },
+        {
+          "x": 250,
+          "y": 308,
+          "text": "hace frío",
+          "align": "center",
+          "color": "#c9d2e6",
+          "px": 13,
+          "at": 0.24
+        },
+        {
+          "x": 250,
+          "y": 154,
+          "text": "1",
+          "align": "center",
+          "color": "#FBFAF6",
+          "px": 17,
+          "weight": "700",
+          "at": 0.0
+        },
+        {
+          "x": 250,
+          "y": 256,
+          "text": "1",
+          "align": "center",
+          "color": "#FBFAF6",
+          "px": 17,
+          "weight": "700",
+          "at": 0.12
+        },
+        {
+          "x": 250,
+          "y": 358,
+          "text": "1",
+          "align": "center",
+          "color": "#FBFAF6",
+          "px": 17,
+          "weight": "700",
+          "at": 0.24
+        },
+        {
+          "x": 548,
+          "y": 257,
+          "text": "$\\Sigma$",
+          "align": "center",
+          "color": "#FBFAF6",
+          "px": 22,
+          "at": 0.42
+        },
+        {
+          "x": 726,
+          "y": 206,
+          "text": "¿sale?",
+          "align": "center",
+          "color": "#c9d2e6",
+          "px": 13,
+          "at": 0.66
+        },
+        {
+          "x": 384,
+          "y": 178,
+          "text": "peso 1",
+          "align": "center",
+          "color": "#F4AC1D",
+          "px": 13,
+          "weight": "700",
+          "at": 0.0
+        },
+        {
+          "x": 384,
+          "y": 242,
+          "text": "peso 1",
+          "align": "center",
+          "color": "#F4AC1D",
+          "px": 13,
+          "weight": "700",
+          "at": 0.0
+        },
+        {
+          "x": 384,
+          "y": 316,
+          "text": "peso −1",
+          "align": "center",
+          "color": "#c44a3e",
+          "px": 13,
+          "weight": "700",
+          "at": 0.0
+        }
+      ]
+    },
+    {
+      "id": "redbig",
+      "alpha": 0,
+      "reveal": 1,
+      "nodes": [
+        {
+          "id": "z560_0",
+          "x": 549,
+          "y": 139,
+          "w": 22,
+          "h": 22,
+          "radius": 11,
+          "fill": "#223"
+        },
+        {
+          "id": "z560_1",
+          "x": 549,
+          "y": 199,
+          "w": 22,
+          "h": 22,
+          "radius": 11,
+          "fill": "#223"
+        },
+        {
+          "id": "z560_2",
+          "x": 549,
+          "y": 259,
+          "w": 22,
+          "h": 22,
+          "radius": 11,
+          "fill": "#223"
+        },
+        {
+          "id": "z560_3",
+          "x": 549,
+          "y": 319,
+          "w": 22,
+          "h": 22,
+          "radius": 11,
+          "fill": "#223"
+        },
+        {
+          "id": "z560_4",
+          "x": 549,
+          "y": 379,
+          "w": 22,
+          "h": 22,
+          "radius": 11,
+          "fill": "#223"
+        },
+        {
+          "id": "z660_0",
+          "x": 649,
+          "y": 169,
+          "w": 22,
+          "h": 22,
+          "radius": 11,
+          "fill": "#223"
+        },
+        {
+          "id": "z660_1",
+          "x": 649,
+          "y": 239,
+          "w": 22,
+          "h": 22,
+          "radius": 11,
+          "fill": "#223"
+        },
+        {
+          "id": "z660_2",
+          "x": 649,
+          "y": 309,
+          "w": 22,
+          "h": 22,
+          "radius": 11,
+          "fill": "#223"
+        },
+        {
+          "id": "z760_0",
+          "x": 749,
+          "y": 189,
+          "w": 22,
+          "h": 22,
+          "radius": 11,
+          "fill": "#223"
+        },
+        {
+          "id": "z760_1",
+          "x": 749,
+          "y": 289,
+          "w": 22,
+          "h": 22,
+          "radius": 11,
+          "fill": "#223"
+        },
+        {
+          "id": "z850_0",
+          "x": 839,
+          "y": 239,
+          "w": 22,
+          "h": 22,
+          "radius": 11,
+          "fill": "#223"
+        }
+      ],
+      "edges": [
+        {
+          "from": "z560_0",
+          "to": "z660_0",
+          "color": "#3a4468",
+          "width": 0.7,
+          "head": 0
+        },
+        {
+          "from": "z560_0",
+          "to": "z660_1",
+          "color": "#3a4468",
+          "width": 0.7,
+          "head": 0
+        },
+        {
+          "from": "z560_0",
+          "to": "z660_2",
+          "color": "#3a4468",
+          "width": 0.7,
+          "head": 0
+        },
+        {
+          "from": "z560_1",
+          "to": "z660_0",
+          "color": "#3a4468",
+          "width": 0.7,
+          "head": 0
+        },
+        {
+          "from": "z560_1",
+          "to": "z660_1",
+          "color": "#3a4468",
+          "width": 0.7,
+          "head": 0
+        },
+        {
+          "from": "z560_1",
+          "to": "z660_2",
+          "color": "#3a4468",
+          "width": 0.7,
+          "head": 0
+        },
+        {
+          "from": "z560_2",
+          "to": "z660_0",
+          "color": "#3a4468",
+          "width": 0.7,
+          "head": 0
+        },
+        {
+          "from": "z560_2",
+          "to": "z660_1",
+          "color": "#3a4468",
+          "width": 0.7,
+          "head": 0
+        },
+        {
+          "from": "z560_2",
+          "to": "z660_2",
+          "color": "#3a4468",
+          "width": 0.7,
+          "head": 0
+        },
+        {
+          "from": "z560_3",
+          "to": "z660_0",
+          "color": "#3a4468",
+          "width": 0.7,
+          "head": 0
+        },
+        {
+          "from": "z560_3",
+          "to": "z660_1",
+          "color": "#3a4468",
+          "width": 0.7,
+          "head": 0
+        },
+        {
+          "from": "z560_3",
+          "to": "z660_2",
+          "color": "#3a4468",
+          "width": 0.7,
+          "head": 0
+        },
+        {
+          "from": "z560_4",
+          "to": "z660_0",
+          "color": "#3a4468",
+          "width": 0.7,
+          "head": 0
+        },
+        {
+          "from": "z560_4",
+          "to": "z660_1",
+          "color": "#3a4468",
+          "width": 0.7,
+          "head": 0
+        },
+        {
+          "from": "z560_4",
+          "to": "z660_2",
+          "color": "#3a4468",
+          "width": 0.7,
+          "head": 0
+        },
+        {
+          "from": "z660_0",
+          "to": "z760_0",
+          "color": "#3a4468",
+          "width": 0.7,
+          "head": 0
+        },
+        {
+          "from": "z660_0",
+          "to": "z760_1",
+          "color": "#3a4468",
+          "width": 0.7,
+          "head": 0
+        },
+        {
+          "from": "z660_1",
+          "to": "z760_0",
+          "color": "#3a4468",
+          "width": 0.7,
+          "head": 0
+        },
+        {
+          "from": "z660_1",
+          "to": "z760_1",
+          "color": "#3a4468",
+          "width": 0.7,
+          "head": 0
+        },
+        {
+          "from": "z660_2",
+          "to": "z760_0",
+          "color": "#3a4468",
+          "width": 0.7,
+          "head": 0
+        },
+        {
+          "from": "z660_2",
+          "to": "z760_1",
+          "color": "#3a4468",
+          "width": 0.7,
+          "head": 0
+        },
+        {
+          "from": "z760_0",
+          "to": "z850_0",
+          "color": "#3a4468",
+          "width": 0.7,
+          "head": 0
+        },
+        {
+          "from": "z760_1",
+          "to": "z850_0",
+          "color": "#3a4468",
+          "width": 0.7,
+          "head": 0
+        }
+      ]
+    }
+  ],
+  "meters": [
+    {
+      "id": "suma",
+      "label": "suma",
+      "x": 560,
+      "y": 556,
+      "w": 340,
+      "h": 22,
+      "max": 6,
+      "value": 0,
+      "color": [
+        {
+          "at": 0.0,
+          "color": "#c44a3e"
+        },
+        {
+          "at": 0.49,
+          "color": "#c44a3e"
+        },
+        {
+          "at": 0.51,
+          "color": "#4f8a5e"
+        },
+        {
+          "at": 1.0,
+          "color": "#4f8a5e"
+        }
+      ],
+      "showValue": true
+    }
+  ],
+  "formulas": [
+    {
+      "id": "fsuma",
+      "tex": "2\\cdot 1 + 2\\cdot 1 + 0\\cdot 1 = 4",
+      "x": 250,
+      "y": 512,
+      "px": 21,
+      "color": "#f4e8c6",
+      "align": "left",
+      "valign": "middle",
+      "alpha": 0,
+      "panel": {
+        "title": "la suma ponderada",
+        "titleColor": "#F4AC1D"
+      }
+    },
+    {
+      "id": "fregla",
+      "tex": "peso \\leftarrow peso + error \\cdot entrada",
+      "x": 250,
+      "y": 512,
+      "px": 18,
+      "color": "#f4e8c6",
+      "align": "left",
+      "valign": "middle",
+      "alpha": 0,
+      "panel": {
+        "title": "aprender",
+        "titleColor": "#F4AC1D"
+      }
+    },
+    {
+      "id": "frecalc",
+      "tex": [
+        {
+          "tex": "1 + 1 + (-1) = 1",
+          "color": "#f4e8c6"
+        },
+        {
+          "tex": "\\;<\\; 3",
+          "color": "#c44a3e"
+        }
+      ],
+      "x": 250,
+      "y": 512,
+      "px": 21,
+      "align": "left",
+      "valign": "middle",
+      "alpha": 0,
+      "panel": {
+        "title": "la nueva suma",
+        "titleColor": "#F4AC1D"
+      }
+    },
+    {
+      "id": "fumbral",
+      "tex": [
+        {
+          "tex": "4 \\;\\ge\\; 3",
+          "color": "#4f8a5e"
+        }
+      ],
+      "x": 588,
+      "y": 512,
+      "px": 20,
+      "align": "left",
+      "valign": "middle",
+      "alpha": 0,
+      "panel": {
+        "title": "pasa el umbral",
+        "titleColor": "#4f8a5e"
+      }
+    }
+  ],
+  "annotations": [
+    {
+      "id": "aent",
+      "target": [
+        250,
+        148
+      ],
+      "text": "entrada:\nun número, 1 o 0",
+      "dx": -120,
+      "dy": -14,
+      "alpha": 0,
+      "color": "#5b8def"
+    },
+    {
+      "id": "apeso",
+      "target": [
+        384,
+        242
+      ],
+      "text": "peso: cuánto importa\nesa entrada\n(como una sinapsis)",
+      "dx": 40,
+      "dy": -84,
+      "alpha": 0
+    }
+  ],
+  "script": [
+    {
+      "caption": "Una neurona que decide",
+      "style": "title"
+    },
+    {
+      "wait": 1.6
+    },
+    {
+      "caption": "Lucía decide lo mismo cada mañana: ¿sale a correr?"
+    },
+    {
+      "think": "lucia",
+      "text": "Hace sol, tengo tiempo... pero hace frío.",
+      "duration": 3.6
+    },
+    {
+      "wait": 4.2
+    },
+    {
+      "caption": "Cada señal es un número: 1 o 0. Hoy las tres son 1."
+    },
+    {
+      "diagram": "red",
+      "show": true,
+      "duration": 0.4
+    },
+    {
+      "diagram": "red",
+      "reveal": 0.32,
+      "duration": 1.8,
+      "easing": "easeInOut"
+    },
+    {
+      "annotation": "aent",
+      "show": true,
+      "duration": 0.5
+    },
+    {
+      "wait": 5.0
+    },
+    {
+      "annotation": "aent",
+      "hide": true,
+      "duration": 0.4
+    },
+    {
+      "caption": "Cada conexión tiene un peso: cuánto importa esa entrada. El frío pesa 0."
+    },
+    {
+      "diagram": "red",
+      "reveal": 1,
+      "duration": 2.4,
+      "easing": "easeInOut"
+    },
+    {
+      "annotation": "apeso",
+      "show": true,
+      "duration": 0.5
+    },
+    {
+      "wait": 5.0
+    },
+    {
+      "annotation": "apeso",
+      "hide": true,
+      "duration": 0.4
+    },
+    {
+      "caption": "Multiplica cada entrada por su peso y suma: 2 + 2 + 0 = 4."
+    },
+    {
+      "formula": "fsuma",
+      "show": true,
+      "duration": 0.6
+    },
+    {
+      "wait": 5.4
+    },
+    {
+      "caption": "La suma pasa el umbral de 3: la neurona se enciende y predice que sale."
+    },
+    {
+      "meter": "suma",
+      "to": 4,
+      "duration": 1.0
+    },
+    {
+      "formula": "fumbral",
+      "show": true,
+      "duration": 0.5
+    },
+    {
+      "focus": [
+        548,
+        250
+      ],
+      "color": "#4f8a5e",
+      "radius": 46
+    },
+    {
+      "music": "stinger"
+    },
+    {
+      "wait": 5.6
+    },
+    {
+      "caption": "Pero Lucía no sale: hace mucho frío. Predijo sí; la respuesta era no."
+    },
+    {
+      "focus": [
+        548,
+        250
+      ],
+      "off": true
+    },
+    {
+      "formula": "fumbral",
+      "hide": true,
+      "duration": 0.3
+    },
+    {
+      "formula": "fsuma",
+      "hide": true,
+      "duration": 0.3
+    },
+    {
+      "weather": "snow",
+      "intensity": 0.7
+    },
+    {
+      "mood": "lucia",
+      "value": "sad",
+      "duration": 7
+    },
+    {
+      "wait": 4.4
+    },
+    {
+      "caption": "El error corrige los pesos. El del frío se vuelve negativo: ahora pesa en contra."
+    },
+    {
+      "formula": "fregla",
+      "show": true,
+      "duration": 0.6
+    },
+    {
+      "diagram": "red",
+      "hide": true,
+      "duration": 1.2
+    },
+    {
+      "diagram": "red2",
+      "show": true,
+      "duration": 1.2
+    },
+    {
+      "wait": 5.2
+    },
+    {
+      "caption": "Mismos datos, nuevos pesos: 1 + 1 − 1 = 1. No pasa el umbral: ahora acierta."
+    },
+    {
+      "formula": "fregla",
+      "hide": true,
+      "duration": 0.3
+    },
+    {
+      "formula": "frecalc",
+      "show": true,
+      "duration": 0.6
+    },
+    {
+      "meter": "suma",
+      "to": 1,
+      "duration": 1.2
+    },
+    {
+      "mood": "lucia",
+      "value": "happy",
+      "duration": 7
+    },
+    {
+      "music": "stinger"
+    },
+    {
+      "wait": 5.8
+    },
+    {
+      "caption": "Una red es esto repetido: muchas neuronas en capas, cada flecha un peso."
+    },
+    {
+      "weather": "none"
+    },
+    {
+      "diagram": "red2",
+      "hide": true,
+      "duration": 0.8
+    },
+    {
+      "formula": "frecalc",
+      "hide": true,
+      "duration": 0.5
+    },
+    {
+      "meter": "suma",
+      "to": 0,
+      "duration": 0.6
+    },
+    {
+      "diagram": "redbig",
+      "show": true,
+      "duration": 1.6
+    },
+    {
+      "wait": 5.2
+    },
+    {
+      "caption": "Su límite honesto: ajustar pesos para fallar menos no es entender."
+    },
+    {
+      "wait": 4.4
+    },
+    {
+      "caption": ""
+    },
+    {
+      "caption": "",
+      "style": "title"
+    },
+    {
+      "wait": 1.6
+    }
+  ]
+}

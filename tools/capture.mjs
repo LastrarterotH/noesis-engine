@@ -33,6 +33,7 @@ const SCENES = [
   { slug: '11-cuentos-grimm', wait: 114 },
   { slug: '12-bosque-oscuro', wait: 3 },
   { slug: '13-genially-coffee', wait: 19 },
+  { slug: '14-red-neuronal', wait: 23 },
 ];
 
 if (!existsSync(OUT)) mkdirSync(OUT, { recursive: true });

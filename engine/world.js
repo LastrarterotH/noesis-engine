@@ -2,27 +2,27 @@
 // World class: simulation state + tick + draw orchestration.
 // Owns entities, camera, scripts, fx, bubbles, labels, ambient, audio handles.
 
-import { mulberry32, ease, colorAlpha, mixColors, drawRichText, measureRichText, drawLabel, measureLabel, formatAPA, htmlToText } from './util.js?v=151';
-import { compileHooks } from './hooks.js?v=151';
-import { createAmbientSound } from './audio.js?v=151';
-import { SKY_PRESETS } from './sky-presets.js?v=151';
-import { computeSolidBox, drawProp } from './prop-draw.js?v=151';
-import { PROP_NATURAL_SCALE, PROP_SPRITES, depthScale } from './prop-sprites.js?v=151';
-import { Draw } from './draw.js?v=151';
-import { initCamera, tickCamera } from './camera.js?v=151';
-import { makeAmbientParticle, tickAmbient, drawAmbient } from './ambient.js?v=151';
+import { mulberry32, ease, colorAlpha, mixColors, drawRichText, measureRichText, drawLabel, measureLabel, formatAPA, htmlToText } from './util.js?v=155';
+import { compileHooks } from './hooks.js?v=155';
+import { createAmbientSound } from './audio.js?v=155';
+import { SKY_PRESETS } from './sky-presets.js?v=155';
+import { computeSolidBox, drawProp } from './prop-draw.js?v=155';
+import { PROP_NATURAL_SCALE, PROP_SPRITES, depthScale } from './prop-sprites.js?v=155';
+import { Draw } from './draw.js?v=155';
+import { initCamera, tickCamera } from './camera.js?v=155';
+import { makeAmbientParticle, tickAmbient, drawAmbient } from './ambient.js?v=155';
 import {
   runScript as _runScript, stopScripts as _stopScripts, tickScripts,
   evalScriptExpr, processScript, execScriptStep,
-} from './scripts.js?v=151';
-import { compileForm } from './forms.js?v=151';
-import { drawFloor } from './floor.js?v=151';
-import { tickAnimatedProps } from './animated-props.js?v=151';
-import { initLearner, touchLearner, tickLearner } from './learner.js?v=151';
-import { handleClick, togglePropInteraction } from './interaction.js?v=151';
+} from './scripts.js?v=155';
+import { compileForm } from './forms.js?v=155';
+import { drawFloor } from './floor.js?v=155';
+import { tickAnimatedProps } from './animated-props.js?v=155';
+import { initLearner, touchLearner, tickLearner } from './learner.js?v=155';
+import { handleClick, togglePropInteraction } from './interaction.js?v=155';
 import {
   createFxApi, spawnBubble, spawnParticles, tickFx, positionBubbles, drawFx,
-} from './fx.js?v=151';
+} from './fx.js?v=155';
 
 // Props que emiten luz solos cuando hay `ambient.darkness` (opt-out con
 // `light: false` en el prop). `dy` ubica la fuente en celdas del sprite
@@ -1511,7 +1511,10 @@ export class World {
       }
       if (line) lines.push(line);
       const lh = 20;
-      let y = this.H - 18 - (lines.length - 1) * lh;
+      // El caption se ancla en H-40 (no H-18): reserva ~22 px al pie para la
+      // barra de avance (scrubber), que si no se le monta encima. Mantener en
+      // sintonía con CAPTION_BAND de learner.js y el reserve de fx.js.
+      let y = this.H - 40 - (lines.length - 1) * lh;
       ctx.shadowColor = 'rgba(10,12,22,0.95)'; ctx.shadowBlur = 8; ctx.shadowOffsetY = 1;
       ctx.fillStyle = '#eef1f6';
       for (const ln of lines) { drawRichText(ctx, ln, this.W / 2, y, { ...capFont, align: 'center' }); y += lh; }

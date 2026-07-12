@@ -7,8 +7,8 @@
 // _positionBubbles/_drawFx as thin wrappers. The `fx` getter memoizes this api
 // on world._fxApi, so it is built once per World (not rebuilt every access).
 
-import { tone, sweep, createAmbientSound, createAmbientMusic, audio } from './audio.js?v=151';
-import { richToHtml, drawLabel } from './util.js?v=151';
+import { tone, sweep, createAmbientSound, createAmbientMusic, audio } from './audio.js?v=155';
+import { richToHtml, drawLabel } from './util.js?v=155';
 
 export function createFxApi(world) {
   const W = world;
@@ -536,23 +536,21 @@ export function positionBubbles(world) {
   const cam = world.camera || { x: world.W / 2, y: world.H / 2, zoom: 1, shakeX: 0, shakeY: 0 };
   const screenXPct = (ex) => (((ex - cam.x) * cam.zoom + world.W / 2 + cam.shakeX) / world.W) * 100;
   const screenYPct = (ey) => (((ey - cam.y) * cam.zoom + world.H / 2 + cam.shakeY) / world.H) * 100;
-  // Cache the wrap rect once per frame to avoid layout thrash.
-  const wrap = world.host?.shadowRoot?.querySelector('.wrap');
-  const wrapRect = wrap?.getBoundingClientRect();
-  // HTML overlays (labels, bubbles, name-labels, hint) use px font/padding, so
-  // they don't grow when the canvas is scaled up (fullscreen). Publish a
-  // --ui-scale on .overlays = displayed canvas width / base width, so the CSS
-  // can scale text proportionally. Clamp to >=1: only grow (fullscreen), never
-  // shrink small embeds below their current size. .stage width tracks the
-  // displayed canvas (letterboxed in fullscreen), unlike .wrap (full viewport).
+  // Rect del STAGE = el canvas MOSTRADO (letterboxed en fullscreen). El clamp de
+  // las burbujas va contra ESTO, no contra .wrap: en fullscreen .wrap es el
+  // viewport entero y .stage es más chico (barras negras a los lados), así que
+  // clampar contra .wrap dejaba las burbujas escaparse del canvas visible. En
+  // modo normal .stage == .wrap, así que el embed no cambia. HTML overlays usan
+  // px fijos y no crecen con el canvas: se publica --ui-scale = ancho mostrado /
+  // base (>=1) para que el CSS escale el texto en fullscreen.
   const stageEl = world.host?.shadowRoot?.querySelector('.stage');
-  if (stageEl) {
-    const sw = stageEl.getBoundingClientRect().width;
-    const uiScale = sw > 0 ? Math.max(1, sw / world.W) : 1;
+  const wrapRect = stageEl?.getBoundingClientRect();
+  if (stageEl && wrapRect) {
+    const uiScale = wrapRect.width > 0 ? Math.max(1, wrapRect.width / world.W) : 1;
     stageEl.style.setProperty('--ui-scale', uiScale.toFixed(4));
   }
-  // Margin in screen pixels = (visual wall thickness in canvas px + small buffer) × scale.
-  // Keeps bubbles clear of the painted in-canvas walls regardless of zoom level.
+  // Margen en px de pantalla = safeArea × escala de display. Mantiene las
+  // burbujas dentro del canvas MOSTRADO en cualquier zoom o fullscreen.
   const scale = wrapRect ? wrapRect.width / world.W : 1;
   const safe = world._safeArea();
   const marginLeftPx = Math.round(safe.left * scale);
@@ -634,9 +632,10 @@ export function positionBubbles(world) {
       // diálogo y se tapaban. Media altura del sprite (hero 11 celdas, minion
       // 7) más un margen corto, con tope DURO por encima de la banda de
       // subtítulos (máxima de noesis): el nombre nunca cae sobre el caption.
-      // El 56 es CAPTION_BAND de learner.js; mantener en sintonía.
+      // Tope del name-label: por encima del caption (ahora en H-40), no de la
+      // banda de learners. 74 lo mantiene despejado del caption de 2 líneas.
       const half = ((e.hero !== false ? 11 : 7) * (e.scale || 4)) / 2;
-      const ny = Math.min(e.y + half + 4, world.H - 56);
+      const ny = Math.min(e.y + half + 4, world.H - 74);
       n.el.style.left = `${screenXPct(e.x)}%`;
       n.el.style.top = `${screenYPct(ny)}%`;
       n.el.style.opacity = e._sleeping ? '0.35' : String(e._alpha ?? 1);

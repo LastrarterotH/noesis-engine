@@ -2,9 +2,9 @@
 // <noesis-scene> custom element. Owns the canvas, loads scene config,
 // instantiates World, runs the RAF loop, exposes labels via Shadow DOM.
 
-import { escapeHtml, anchorTransform, formatAPA, richToHtml } from './util.js?v=151';
-import { audioCtx, audioUnlock, getRecordingStream } from './audio.js?v=151';
-import { World } from './world.js?v=151';
+import { escapeHtml, anchorTransform, formatAPA, richToHtml } from './util.js?v=155';
+import { audioCtx, audioUnlock, getRecordingStream } from './audio.js?v=155';
+import { World } from './world.js?v=155';
 
 export class NoesisScene extends HTMLElement {
   constructor() {
@@ -194,8 +194,13 @@ export class NoesisScene extends HTMLElement {
           font: 500 calc(12px * var(--ui-scale))/1.35 'Plus Jakarta Sans', "Apple Color Emoji", "Segoe UI Emoji", system-ui, sans-serif;
           /* Wrap on any screen, not just bare. Cap width with a fixed pixel
              ceiling so long dialogue never falls off the edge and never
-             stretches into ribbons of widely-spaced words. */
+             stretches into ribbons of widely-spaced words. width:max-content
+             dimensiona el globo por su CONTENIDO (hasta el max-width), no por
+             el espacio disponible: sin esto, un hablante pegado al borde
+             derecho colapsaba el globo a una palabra por línea (el shrink-to-fit
+             de un absolute posicionado con left alto solo tiene el resto). */
           white-space: normal !important;
+          width: max-content;
           max-width: min(calc(420px * var(--ui-scale)), 78%) !important;
           overflow-wrap: break-word;
           text-align: left !important;
@@ -310,7 +315,7 @@ export class NoesisScene extends HTMLElement {
         /* Fila de controles (hover) */
         .tl-row {
           display: flex; align-items: center; gap: calc(9px * var(--ui-scale));
-          padding: calc(7px * var(--ui-scale)) calc(11px * var(--ui-scale)) calc(9px * var(--ui-scale));
+          padding: calc(6px * var(--ui-scale)) calc(11px * var(--ui-scale)) calc(6px * var(--ui-scale));
           background: linear-gradient(to top, rgba(14,20,48,0.62), rgba(14,20,48,0));
           opacity: 0; transform: translateY(5px);
           transition: opacity 0.25s ease, transform 0.25s ease;

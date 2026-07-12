@@ -8,8 +8,12 @@
 
 // Máxima de noesis: la banda inferior del lienzo es de los subtítulos. Ningún
 // learner (ni su name-label, que cuelga bajo los pies) puede invadirla. El
-// caption se ancla en H-18 y crece hacia arriba; estos valores reservan su
-// alto más el del nombre. Mantener en sintonía con el mismo reserve en fx.js.
+// El caption VISUAL se dibuja en H-40 (subido para dejar una franja al pie para
+// la barra de avance/scrubber), pero CAPTION_BAND se MANTIENE en 56: de esta
+// banda depende la ALCANZABILIDAD de los `walk` (learner.js clampa el pie a
+// H-CAPTION_BAND-NAME_RESERVE = H-76). Subirla volvería inalcanzables destinos
+// que quedan en la franja y colgaría el guion. Con 56, el pie (H-76) queda
+// apenas por encima del tope de una caption de 2 líneas (~H-74): no se pisan.
 export const CAPTION_BAND = 56;   // alto reservado para el caption (hasta 2 líneas)
 export const NAME_RESERVE = 20;   // alto del name-label que cuelga bajo los pies
 

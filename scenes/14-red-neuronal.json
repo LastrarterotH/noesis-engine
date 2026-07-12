@@ -10,7 +10,7 @@
   },
   "text": {
     "es": {
-      "title": "Una neurona que decide: el perceptrón",
+      "title": "Una neurona que decide: la sala que aprende",
       "body": [
         "Una <strong>red neuronal</strong> se construye con una pieza mínima: la <strong>neurona artificial</strong>, o perceptrón. Frank Rosenblatt la propuso en 1958 inspirándose en la neurona biológica que Santiago Ramón y Cajal había descrito décadas antes: recibe varias señales, las combina y, si lo que llega supera un umbral, se activa (Rosenblatt, 1958).",
         "La combinación es una cuenta simple y exacta, no una intuición. Cada entrada llega como un número y cada conexión tiene un <em>peso</em>: cuánto importa esa entrada. La neurona multiplica cada entrada por su peso, suma todo y compara el total con un <strong>umbral</strong>. Si lo pasa, se enciende; si no, permanece apagada.",
@@ -45,22 +45,26 @@
     }
   },
   "hint": {
-    "es": "una sola decisión: ¿sale a correr?"
+    "es": "una sala que aprende: pesa, se enciende, se corrige"
   },
   "hintDuration": 4,
   "canvas": {
-    "w": 940,
-    "h": 620,
-    "bg": "#0e1430",
+    "w": 960,
+    "h": 600,
+    "bg": "#0b1024",
     "floor": "dots",
     "safeArea": 20
+  },
+  "ambient": {
+    "saturation": 1,
+    "darkness": 0
   },
   "entities": [
     {
       "type": "learner",
       "id": "lucia",
-      "x": 86,
-      "y": 452,
+      "x": 72,
+      "y": 470,
       "scale": 5,
       "hero": true,
       "body": "#d8a878",
@@ -69,700 +73,105 @@
       "accessoryColor": "#5b8def",
       "sleepable": false,
       "lookAt": [
-        420,
-        250
+        240,
+        260
+      ],
+      "behavior": null
+    },
+    {
+      "type": "learner",
+      "id": "nora",
+      "x": 430,
+      "y": 205,
+      "scale": 5,
+      "hero": true,
+      "body": "#e8b45e",
+      "name": "Nora",
+      "sleepable": false,
+      "lookAt": [
+        175,
+        175
+      ],
+      "behavior": null
+    },
+    {
+      "type": "learner",
+      "id": "teo",
+      "x": 130,
+      "y": 420,
+      "scale": 5,
+      "hero": true,
+      "body": "#7f8fbf",
+      "name": "Teo",
+      "sleepable": false,
+      "lookAt": [
+        175,
+        425
+      ],
+      "behavior": null
+    },
+    {
+      "type": "learner",
+      "id": "dalia",
+      "x": 130,
+      "y": 345,
+      "scale": 5,
+      "hero": true,
+      "body": "#cf9a6a",
+      "name": "Dalia",
+      "sleepable": false,
+      "lookAt": [
+        430,
+        300
+      ],
+      "behavior": null
+    },
+    {
+      "type": "learner",
+      "id": "tobias",
+      "x": 898,
+      "y": 432,
+      "scale": 5,
+      "hero": true,
+      "body": "#9a6f5a",
+      "name": "Tobías",
+      "accessory": "glasses",
+      "sleepable": false,
+      "lookAt": [
+        680,
+        300
       ],
       "behavior": null
     }
   ],
-  "diagrams": [
+  "props": [
     {
-      "id": "red",
-      "alpha": 0,
-      "reveal": 0,
-      "nodes": [
-        {
-          "id": "sol",
-          "x": 224,
-          "y": 122,
-          "w": 52,
-          "h": 52,
-          "radius": 26,
-          "fill": "#2b3566"
-        },
-        {
-          "id": "tiempo",
-          "x": 224,
-          "y": 224,
-          "w": 52,
-          "h": 52,
-          "radius": 26,
-          "fill": "#2b3566"
-        },
-        {
-          "id": "frio",
-          "x": 224,
-          "y": 326,
-          "w": 52,
-          "h": 52,
-          "radius": 26,
-          "fill": "#2b3566"
-        },
-        {
-          "id": "N",
-          "x": 515,
-          "y": 217,
-          "w": 66,
-          "h": 66,
-          "radius": 33,
-          "fill": "#243a2c"
-        },
-        {
-          "id": "out",
-          "x": 700,
-          "y": 224,
-          "w": 52,
-          "h": 52,
-          "radius": 26,
-          "fill": "#2b3566"
-        }
-      ],
-      "edges": [
-        {
-          "from": "sol",
-          "fromSide": "right",
-          "to": "N",
-          "toSide": "left",
-          "color": "#F4AC1D",
-          "width": 5,
-          "head": 0,
-          "at": 0.34,
-          "fadeIn": 0.1
-        },
-        {
-          "from": "tiempo",
-          "fromSide": "right",
-          "to": "N",
-          "toSide": "left",
-          "color": "#F4AC1D",
-          "width": 5,
-          "head": 0,
-          "at": 0.42,
-          "fadeIn": 0.1
-        },
-        {
-          "from": "frio",
-          "fromSide": "right",
-          "to": "N",
-          "toSide": "left",
-          "color": "#5a6488",
-          "width": 1.2,
-          "head": 0,
-          "at": 0.5,
-          "fadeIn": 0.1
-        },
-        {
-          "from": "N",
-          "fromSide": "right",
-          "to": "out",
-          "toSide": "left",
-          "color": "#5a6488",
-          "width": 2,
-          "head": 8,
-          "at": 0.66,
-          "fadeIn": 0.1
-        }
-      ],
-      "texts": [
-        {
-          "x": 250,
-          "y": 104,
-          "text": "hace sol",
-          "align": "center",
-          "color": "#c9d2e6",
-          "px": 13,
-          "at": 0.0
-        },
-        {
-          "x": 250,
-          "y": 206,
-          "text": "tengo tiempo",
-          "align": "center",
-          "color": "#c9d2e6",
-          "px": 13,
-          "at": 0.12
-        },
-        {
-          "x": 250,
-          "y": 308,
-          "text": "hace frío",
-          "align": "center",
-          "color": "#c9d2e6",
-          "px": 13,
-          "at": 0.24
-        },
-        {
-          "x": 250,
-          "y": 154,
-          "text": "1",
-          "align": "center",
-          "color": "#FBFAF6",
-          "px": 17,
-          "weight": "700",
-          "at": 0.0
-        },
-        {
-          "x": 250,
-          "y": 256,
-          "text": "1",
-          "align": "center",
-          "color": "#FBFAF6",
-          "px": 17,
-          "weight": "700",
-          "at": 0.12
-        },
-        {
-          "x": 250,
-          "y": 358,
-          "text": "1",
-          "align": "center",
-          "color": "#FBFAF6",
-          "px": 17,
-          "weight": "700",
-          "at": 0.24
-        },
-        {
-          "x": 548,
-          "y": 257,
-          "text": "$\\Sigma$",
-          "align": "center",
-          "color": "#FBFAF6",
-          "px": 22,
-          "at": 0.42
-        },
-        {
-          "x": 726,
-          "y": 206,
-          "text": "¿sale?",
-          "align": "center",
-          "color": "#c9d2e6",
-          "px": 13,
-          "at": 0.66
-        },
-        {
-          "x": 384,
-          "y": 178,
-          "text": "peso 2",
-          "align": "center",
-          "color": "#F4AC1D",
-          "px": 13,
-          "weight": "700",
-          "at": 0.34
-        },
-        {
-          "x": 384,
-          "y": 242,
-          "text": "peso 2",
-          "align": "center",
-          "color": "#F4AC1D",
-          "px": 13,
-          "weight": "700",
-          "at": 0.42
-        },
-        {
-          "x": 384,
-          "y": 316,
-          "text": "peso 0",
-          "align": "center",
-          "color": "#8f9ab8",
-          "px": 13,
-          "weight": "700",
-          "at": 0.5
-        }
-      ]
+      "type": "column",
+      "id": "col1",
+      "x": 250,
+      "y": 568,
+      "scale": 5,
+      "alpha": 0.45,
+      "z": -2
     },
     {
-      "id": "red2",
-      "alpha": 0,
-      "reveal": 1,
-      "nodes": [
-        {
-          "id": "sol",
-          "x": 224,
-          "y": 122,
-          "w": 52,
-          "h": 52,
-          "radius": 26,
-          "fill": "#2b3566"
-        },
-        {
-          "id": "tiempo",
-          "x": 224,
-          "y": 224,
-          "w": 52,
-          "h": 52,
-          "radius": 26,
-          "fill": "#2b3566"
-        },
-        {
-          "id": "frio",
-          "x": 224,
-          "y": 326,
-          "w": 52,
-          "h": 52,
-          "radius": 26,
-          "fill": "#2b3566"
-        },
-        {
-          "id": "N",
-          "x": 515,
-          "y": 217,
-          "w": 66,
-          "h": 66,
-          "radius": 33,
-          "fill": "#243a2c"
-        },
-        {
-          "id": "out",
-          "x": 700,
-          "y": 224,
-          "w": 52,
-          "h": 52,
-          "radius": 26,
-          "fill": "#2b3566"
-        }
-      ],
-      "edges": [
-        {
-          "from": "sol",
-          "fromSide": "right",
-          "to": "N",
-          "toSide": "left",
-          "color": "#F4AC1D",
-          "width": 3.4,
-          "head": 0,
-          "at": 0.0,
-          "fadeIn": 0.1
-        },
-        {
-          "from": "tiempo",
-          "fromSide": "right",
-          "to": "N",
-          "toSide": "left",
-          "color": "#F4AC1D",
-          "width": 3.4,
-          "head": 0,
-          "at": 0.0,
-          "fadeIn": 0.1
-        },
-        {
-          "from": "frio",
-          "fromSide": "right",
-          "to": "N",
-          "toSide": "left",
-          "color": "#c44a3e",
-          "width": 3.4,
-          "head": 0,
-          "at": 0.0,
-          "fadeIn": 0.1
-        },
-        {
-          "from": "N",
-          "fromSide": "right",
-          "to": "out",
-          "toSide": "left",
-          "color": "#5a6488",
-          "width": 2,
-          "head": 8,
-          "at": 0.0
-        }
-      ],
-      "texts": [
-        {
-          "x": 250,
-          "y": 104,
-          "text": "hace sol",
-          "align": "center",
-          "color": "#c9d2e6",
-          "px": 13,
-          "at": 0.0
-        },
-        {
-          "x": 250,
-          "y": 206,
-          "text": "tengo tiempo",
-          "align": "center",
-          "color": "#c9d2e6",
-          "px": 13,
-          "at": 0.12
-        },
-        {
-          "x": 250,
-          "y": 308,
-          "text": "hace frío",
-          "align": "center",
-          "color": "#c9d2e6",
-          "px": 13,
-          "at": 0.24
-        },
-        {
-          "x": 250,
-          "y": 154,
-          "text": "1",
-          "align": "center",
-          "color": "#FBFAF6",
-          "px": 17,
-          "weight": "700",
-          "at": 0.0
-        },
-        {
-          "x": 250,
-          "y": 256,
-          "text": "1",
-          "align": "center",
-          "color": "#FBFAF6",
-          "px": 17,
-          "weight": "700",
-          "at": 0.12
-        },
-        {
-          "x": 250,
-          "y": 358,
-          "text": "1",
-          "align": "center",
-          "color": "#FBFAF6",
-          "px": 17,
-          "weight": "700",
-          "at": 0.24
-        },
-        {
-          "x": 548,
-          "y": 257,
-          "text": "$\\Sigma$",
-          "align": "center",
-          "color": "#FBFAF6",
-          "px": 22,
-          "at": 0.42
-        },
-        {
-          "x": 726,
-          "y": 206,
-          "text": "¿sale?",
-          "align": "center",
-          "color": "#c9d2e6",
-          "px": 13,
-          "at": 0.66
-        },
-        {
-          "x": 384,
-          "y": 178,
-          "text": "peso 1",
-          "align": "center",
-          "color": "#F4AC1D",
-          "px": 13,
-          "weight": "700",
-          "at": 0.0
-        },
-        {
-          "x": 384,
-          "y": 242,
-          "text": "peso 1",
-          "align": "center",
-          "color": "#F4AC1D",
-          "px": 13,
-          "weight": "700",
-          "at": 0.0
-        },
-        {
-          "x": 384,
-          "y": 316,
-          "text": "peso −1",
-          "align": "center",
-          "color": "#c44a3e",
-          "px": 13,
-          "weight": "700",
-          "at": 0.0
-        }
-      ]
-    },
-    {
-      "id": "redbig",
-      "alpha": 0,
-      "reveal": 1,
-      "nodes": [
-        {
-          "id": "z560_0",
-          "x": 549,
-          "y": 139,
-          "w": 22,
-          "h": 22,
-          "radius": 11,
-          "fill": "#223"
-        },
-        {
-          "id": "z560_1",
-          "x": 549,
-          "y": 199,
-          "w": 22,
-          "h": 22,
-          "radius": 11,
-          "fill": "#223"
-        },
-        {
-          "id": "z560_2",
-          "x": 549,
-          "y": 259,
-          "w": 22,
-          "h": 22,
-          "radius": 11,
-          "fill": "#223"
-        },
-        {
-          "id": "z560_3",
-          "x": 549,
-          "y": 319,
-          "w": 22,
-          "h": 22,
-          "radius": 11,
-          "fill": "#223"
-        },
-        {
-          "id": "z560_4",
-          "x": 549,
-          "y": 379,
-          "w": 22,
-          "h": 22,
-          "radius": 11,
-          "fill": "#223"
-        },
-        {
-          "id": "z660_0",
-          "x": 649,
-          "y": 169,
-          "w": 22,
-          "h": 22,
-          "radius": 11,
-          "fill": "#223"
-        },
-        {
-          "id": "z660_1",
-          "x": 649,
-          "y": 239,
-          "w": 22,
-          "h": 22,
-          "radius": 11,
-          "fill": "#223"
-        },
-        {
-          "id": "z660_2",
-          "x": 649,
-          "y": 309,
-          "w": 22,
-          "h": 22,
-          "radius": 11,
-          "fill": "#223"
-        },
-        {
-          "id": "z760_0",
-          "x": 749,
-          "y": 189,
-          "w": 22,
-          "h": 22,
-          "radius": 11,
-          "fill": "#223"
-        },
-        {
-          "id": "z760_1",
-          "x": 749,
-          "y": 289,
-          "w": 22,
-          "h": 22,
-          "radius": 11,
-          "fill": "#223"
-        },
-        {
-          "id": "z850_0",
-          "x": 839,
-          "y": 239,
-          "w": 22,
-          "h": 22,
-          "radius": 11,
-          "fill": "#223"
-        }
-      ],
-      "edges": [
-        {
-          "from": "z560_0",
-          "to": "z660_0",
-          "color": "#3a4468",
-          "width": 0.7,
-          "head": 0
-        },
-        {
-          "from": "z560_0",
-          "to": "z660_1",
-          "color": "#3a4468",
-          "width": 0.7,
-          "head": 0
-        },
-        {
-          "from": "z560_0",
-          "to": "z660_2",
-          "color": "#3a4468",
-          "width": 0.7,
-          "head": 0
-        },
-        {
-          "from": "z560_1",
-          "to": "z660_0",
-          "color": "#3a4468",
-          "width": 0.7,
-          "head": 0
-        },
-        {
-          "from": "z560_1",
-          "to": "z660_1",
-          "color": "#3a4468",
-          "width": 0.7,
-          "head": 0
-        },
-        {
-          "from": "z560_1",
-          "to": "z660_2",
-          "color": "#3a4468",
-          "width": 0.7,
-          "head": 0
-        },
-        {
-          "from": "z560_2",
-          "to": "z660_0",
-          "color": "#3a4468",
-          "width": 0.7,
-          "head": 0
-        },
-        {
-          "from": "z560_2",
-          "to": "z660_1",
-          "color": "#3a4468",
-          "width": 0.7,
-          "head": 0
-        },
-        {
-          "from": "z560_2",
-          "to": "z660_2",
-          "color": "#3a4468",
-          "width": 0.7,
-          "head": 0
-        },
-        {
-          "from": "z560_3",
-          "to": "z660_0",
-          "color": "#3a4468",
-          "width": 0.7,
-          "head": 0
-        },
-        {
-          "from": "z560_3",
-          "to": "z660_1",
-          "color": "#3a4468",
-          "width": 0.7,
-          "head": 0
-        },
-        {
-          "from": "z560_3",
-          "to": "z660_2",
-          "color": "#3a4468",
-          "width": 0.7,
-          "head": 0
-        },
-        {
-          "from": "z560_4",
-          "to": "z660_0",
-          "color": "#3a4468",
-          "width": 0.7,
-          "head": 0
-        },
-        {
-          "from": "z560_4",
-          "to": "z660_1",
-          "color": "#3a4468",
-          "width": 0.7,
-          "head": 0
-        },
-        {
-          "from": "z560_4",
-          "to": "z660_2",
-          "color": "#3a4468",
-          "width": 0.7,
-          "head": 0
-        },
-        {
-          "from": "z660_0",
-          "to": "z760_0",
-          "color": "#3a4468",
-          "width": 0.7,
-          "head": 0
-        },
-        {
-          "from": "z660_0",
-          "to": "z760_1",
-          "color": "#3a4468",
-          "width": 0.7,
-          "head": 0
-        },
-        {
-          "from": "z660_1",
-          "to": "z760_0",
-          "color": "#3a4468",
-          "width": 0.7,
-          "head": 0
-        },
-        {
-          "from": "z660_1",
-          "to": "z760_1",
-          "color": "#3a4468",
-          "width": 0.7,
-          "head": 0
-        },
-        {
-          "from": "z660_2",
-          "to": "z760_0",
-          "color": "#3a4468",
-          "width": 0.7,
-          "head": 0
-        },
-        {
-          "from": "z660_2",
-          "to": "z760_1",
-          "color": "#3a4468",
-          "width": 0.7,
-          "head": 0
-        },
-        {
-          "from": "z760_0",
-          "to": "z850_0",
-          "color": "#3a4468",
-          "width": 0.7,
-          "head": 0
-        },
-        {
-          "from": "z760_1",
-          "to": "z850_0",
-          "color": "#3a4468",
-          "width": 0.7,
-          "head": 0
-        }
-      ]
+      "type": "column",
+      "id": "col3",
+      "x": 835,
+      "y": 568,
+      "scale": 5,
+      "alpha": 0.45,
+      "z": -2
     }
   ],
   "meters": [
     {
       "id": "suma",
-      "label": "suma",
-      "x": 560,
-      "y": 556,
-      "w": 340,
-      "h": 22,
+      "label": "suma ponderada",
+      "x": 455,
+      "y": 490,
+      "w": 280,
+      "h": 20,
       "max": 6,
       "value": 0,
       "color": [
@@ -790,53 +199,15 @@
     {
       "id": "fsuma",
       "tex": "2\\cdot 1 + 2\\cdot 1 + 0\\cdot 1 = 4",
-      "x": 250,
-      "y": 512,
-      "px": 21,
-      "color": "#f4e8c6",
-      "align": "left",
-      "valign": "middle",
-      "alpha": 0,
-      "panel": {
-        "title": "la suma ponderada",
-        "titleColor": "#F4AC1D"
-      }
-    },
-    {
-      "id": "fregla",
-      "tex": "peso \\leftarrow peso + error \\cdot entrada",
-      "x": 250,
-      "y": 512,
+      "x": 575,
+      "y": 150,
       "px": 18,
       "color": "#f4e8c6",
       "align": "left",
       "valign": "middle",
       "alpha": 0,
       "panel": {
-        "title": "aprender",
-        "titleColor": "#F4AC1D"
-      }
-    },
-    {
-      "id": "frecalc",
-      "tex": [
-        {
-          "tex": "1 + 1 + (-1) = 1",
-          "color": "#f4e8c6"
-        },
-        {
-          "tex": "\\;<\\; 3",
-          "color": "#c44a3e"
-        }
-      ],
-      "x": 250,
-      "y": 512,
-      "px": 21,
-      "align": "left",
-      "valign": "middle",
-      "alpha": 0,
-      "panel": {
-        "title": "la nueva suma",
+        "title": "la suma de Nora",
         "titleColor": "#F4AC1D"
       }
     },
@@ -848,9 +219,9 @@
           "color": "#4f8a5e"
         }
       ],
-      "x": 588,
-      "y": 512,
-      "px": 20,
+      "x": 600,
+      "y": 252,
+      "px": 18,
       "align": "left",
       "valign": "middle",
       "alpha": 0,
@@ -858,30 +229,64 @@
         "title": "pasa el umbral",
         "titleColor": "#4f8a5e"
       }
+    },
+    {
+      "id": "fregla",
+      "tex": "peso \\leftarrow peso + error \\cdot entrada",
+      "x": 560,
+      "y": 150,
+      "px": 17,
+      "color": "#f4e8c6",
+      "align": "left",
+      "valign": "middle",
+      "alpha": 0,
+      "panel": {
+        "title": "aprender: corregir el peso",
+        "titleColor": "#F4AC1D"
+      }
     }
   ],
   "annotations": [
     {
-      "id": "aent",
-      "target": [
-        250,
-        148
-      ],
-      "text": "entrada:\nun número, 1 o 0",
-      "dx": -120,
-      "dy": -14,
-      "alpha": 0,
-      "color": "#5b8def"
-    },
-    {
       "id": "apeso",
       "target": [
-        384,
-        242
+        300,
+        190
       ],
-      "text": "peso: cuánto importa\nesa entrada\n(como una sinapsis)",
-      "dx": 40,
-      "dy": -84,
+      "text": "peso: cuánto importa\nesa entrada",
+      "dx": 44,
+      "dy": -96,
+      "align": "left",
+      "alpha": 0
+    },
+    {
+      "id": "anora",
+      "target": "nora",
+      "text": "el día invita",
+      "dx": 0,
+      "dy": -66,
+      "align": "center",
+      "color": "#F4AC1D",
+      "alpha": 0
+    },
+    {
+      "id": "ateo",
+      "target": "teo",
+      "text": "el cuerpo se resiste",
+      "dx": 0,
+      "dy": 66,
+      "align": "center",
+      "color": "#5b8def",
+      "alpha": 0
+    },
+    {
+      "id": "axdalia",
+      "target": "dalia",
+      "text": "error: dijo sí",
+      "dx": 96,
+      "dy": -44,
+      "align": "left",
+      "color": "#c44a3e",
       "alpha": 0
     }
   ],
@@ -891,120 +296,129 @@
       "style": "title"
     },
     {
-      "wait": 1.6
+      "weather": "snow",
+      "intensity": 0.4
     },
     {
-      "caption": "Lucía decide lo mismo cada mañana: ¿sale a correr?"
+      "focus": "lucia",
+      "color": "#F4AC1D",
+      "radius": 54
+    },
+    {
+      "wait": 2.2
+    },
+    {
+      "caption": "Cada mañana, Lucía decide una sola cosa: si sale a correr."
     },
     {
       "think": "lucia",
-      "text": "Hace sol, tengo tiempo... pero hace frío.",
-      "duration": 3.6
-    },
-    {
-      "wait": 4.2
-    },
-    {
-      "caption": "Cada señal es un número: 1 o 0. Hoy las tres son 1."
-    },
-    {
-      "diagram": "red",
-      "show": true,
-      "duration": 0.4
-    },
-    {
-      "diagram": "red",
-      "reveal": 0.32,
-      "duration": 1.8,
-      "easing": "easeInOut"
-    },
-    {
-      "annotation": "aent",
-      "show": true,
-      "duration": 0.5
-    },
-    {
-      "wait": 5.0
-    },
-    {
-      "annotation": "aent",
-      "hide": true,
-      "duration": 0.4
-    },
-    {
-      "caption": "Cada conexión tiene un peso: cuánto importa esa entrada. El frío pesa 0."
-    },
-    {
-      "diagram": "red",
-      "reveal": 1,
-      "duration": 2.4,
-      "easing": "easeInOut"
-    },
-    {
-      "annotation": "apeso",
-      "show": true,
-      "duration": 0.5
-    },
-    {
-      "wait": 5.0
-    },
-    {
-      "annotation": "apeso",
-      "hide": true,
-      "duration": 0.4
-    },
-    {
-      "caption": "Multiplica cada entrada por su peso y suma: 2 + 2 + 0 = 4."
-    },
-    {
-      "formula": "fsuma",
-      "show": true,
-      "duration": 0.6
-    },
-    {
-      "wait": 5.4
-    },
-    {
-      "caption": "La suma pasa el umbral de 3: la neurona se enciende y predice que sale."
-    },
-    {
-      "meter": "suma",
-      "to": 4,
-      "duration": 1.0
-    },
-    {
-      "formula": "fumbral",
-      "show": true,
-      "duration": 0.5
-    },
-    {
-      "focus": [
-        548,
-        250
-      ],
-      "color": "#4f8a5e",
-      "radius": 46
-    },
-    {
-      "music": "stinger"
+      "text": "Hay sol. Tengo tiempo. Pero hace frío. ¿Salgo?",
+      "duration": 4.4
     },
     {
       "wait": 5.6
     },
     {
-      "caption": "Pero Lucía no sale: hace mucho frío. Predijo sí; la respuesta era no."
+      "caption": "La decide una sala, fila por fila. Tobías la entrena para adivinar."
     },
     {
-      "focus": [
-        548,
-        250
-      ],
+      "focus": "lucia",
       "off": true
     },
     {
-      "formula": "fumbral",
+      "tween": "tobias._alpha",
+      "to": 1,
+      "duration": 1.2
+    },
+    {
+      "wait": 6.6
+    },
+    {
+      "caption": "Miren a una. Nora recibe tres señales del día: sol, tiempo y frío."
+    },
+    {
+      "tween": "nora._alpha",
+      "to": 1,
+      "duration": 0.8
+    },
+    {
+      "tween": "aRow1",
+      "to": 1,
+      "duration": 1.6,
+      "easing": "easeInOut"
+    },
+    {
+      "focus": "nora",
+      "color": "#F4AC1D",
+      "radius": 46
+    },
+    {
+      "wait": 7
+    },
+    {
+      "caption": "Cada cuerda tiene un grosor: su peso, cuánto le importa esa señal a Nora."
+    },
+    {
+      "annotation": "apeso",
+      "show": true,
+      "duration": 0.5
+    },
+    {
+      "wait": 7
+    },
+    {
+      "annotation": "apeso",
       "hide": true,
-      "duration": 0.3
+      "duration": 0.4
+    },
+    {
+      "caption": "Nora multiplica cada señal por su peso y las suma: 2 + 2 + 0 = 4."
+    },
+    {
+      "formula": "fsuma",
+      "show": true,
+      "duration": 0.6
+    },
+    {
+      "meter": "suma",
+      "to": 4,
+      "duration": 1.4
+    },
+    {
+      "wait": 6.6
+    },
+    {
+      "caption": "Cuatro pasa el umbral de tres. Nora se enciende: hoy, el día invita."
+    },
+    {
+      "focus": "nora",
+      "color": "#4f8a5e",
+      "radius": 50
+    },
+    {
+      "jump": "nora"
+    },
+    {
+      "formula": "fumbral",
+      "show": true,
+      "duration": 0.5
+    },
+    {
+      "annotation": "anora",
+      "show": true,
+      "duration": 0.5
+    },
+    {
+      "music": "stinger"
+    },
+    {
+      "wait": 6.8
+    },
+    {
+      "caption": "Esta pieza mínima es el perceptrón (Rosenblatt, 1958). Sola, alcanza para poco."
+    },
+    {
+      "wait": 6.6
     },
     {
       "formula": "fsuma",
@@ -1012,82 +426,18 @@
       "duration": 0.3
     },
     {
-      "weather": "snow",
-      "intensity": 0.7
-    },
-    {
-      "mood": "lucia",
-      "value": "sad",
-      "duration": 7
-    },
-    {
-      "wait": 4.4
-    },
-    {
-      "caption": "El error corrige los pesos. El del frío se vuelve negativo: ahora pesa en contra."
-    },
-    {
-      "formula": "fregla",
-      "show": true,
-      "duration": 0.6
-    },
-    {
-      "diagram": "red",
-      "hide": true,
-      "duration": 1.2
-    },
-    {
-      "diagram": "red2",
-      "show": true,
-      "duration": 1.2
-    },
-    {
-      "wait": 5.2
-    },
-    {
-      "caption": "Mismos datos, nuevos pesos: 1 + 1 − 1 = 1. No pasa el umbral: ahora acierta."
-    },
-    {
-      "formula": "fregla",
+      "formula": "fumbral",
       "hide": true,
       "duration": 0.3
     },
     {
-      "formula": "frecalc",
-      "show": true,
-      "duration": 0.6
-    },
-    {
-      "meter": "suma",
-      "to": 1,
-      "duration": 1.2
-    },
-    {
-      "mood": "lucia",
-      "value": "happy",
-      "duration": 7
-    },
-    {
-      "music": "stinger"
-    },
-    {
-      "wait": 5.8
-    },
-    {
-      "caption": "Una red es esto repetido: muchas neuronas en capas, cada flecha un peso."
-    },
-    {
-      "weather": "none"
-    },
-    {
-      "diagram": "red2",
+      "annotation": "anora",
       "hide": true,
-      "duration": 0.8
+      "duration": 0.3
     },
     {
-      "formula": "frecalc",
-      "hide": true,
-      "duration": 0.5
+      "focus": "nora",
+      "off": true
     },
     {
       "meter": "suma",
@@ -1095,28 +445,560 @@
       "duration": 0.6
     },
     {
-      "diagram": "redbig",
+      "caption": "Por eso no trabaja sola. Llegan Teo y Dalia y arman una segunda fila."
+    },
+    {
+      "tween": "teo._alpha",
+      "to": 1,
+      "duration": 0.5
+    },
+    {
+      "tween": "dalia._alpha",
+      "to": 1,
+      "duration": 0.5
+    },
+    {
+      "walk": "teo",
+      "to": [
+        430,
+        398
+      ],
+      "speed": 85
+    },
+    {
+      "walk": "dalia",
+      "to": [
+        680,
+        300
+      ],
+      "speed": 85
+    },
+    {
+      "waitFor": "arrive:dalia"
+    },
+    {
+      "tween": "aRow2",
+      "to": 1,
+      "duration": 1.2
+    },
+    {
+      "lookAt": "teo",
+      "to": [
+        175,
+        425
+      ]
+    },
+    {
+      "lookAt": "dalia",
+      "to": [
+        430,
+        300
+      ]
+    },
+    {
+      "wait": 3
+    },
+    {
+      "caption": "La primera fila arma ideas: el día invita, el cuerpo se resiste. La segunda las pesa."
+    },
+    {
+      "wait": 7
+    },
+    {
+      "caption": "Entra la mañana de hoy. La señal cruza fila por fila."
+    },
+    {
+      "focus": "nora",
+      "color": "#4f8a5e",
+      "radius": 46
+    },
+    {
+      "annotation": "anora",
       "show": true,
-      "duration": 1.6
+      "duration": 0.4
     },
     {
-      "wait": 5.2
+      "particles": {
+        "preset": "dataflow",
+        "x": 300,
+        "y": 240,
+        "count": 16,
+        "color": "#F4AC1D"
+      }
     },
     {
-      "caption": "Su límite honesto: ajustar pesos para fallar menos no es entender."
+      "wait": 2.4
     },
     {
-      "wait": 4.4
+      "meter": "suma",
+      "to": 4,
+      "duration": 1.2
+    },
+    {
+      "particles": {
+        "preset": "dataflow",
+        "x": 560,
+        "y": 250,
+        "count": 14,
+        "color": "#F4AC1D"
+      }
+    },
+    {
+      "focus": "dalia",
+      "color": "#4f8a5e",
+      "radius": 50
+    },
+    {
+      "jump": "dalia"
+    },
+    {
+      "wait": 2.6
     },
     {
       "caption": ""
     },
     {
-      "caption": "",
-      "style": "title"
+      "say": "dalia",
+      "text": "Hoy, Lucía sale a correr.",
+      "duration": 3.0
+    },
+    {
+      "wait": 3.2
+    },
+    {
+      "music": {
+        "volume": 0,
+        "duration": 0.2
+      }
+    },
+    {
+      "focus": "dalia",
+      "off": true
+    },
+    {
+      "focus": "nora",
+      "off": true
+    },
+    {
+      "annotation": "anora",
+      "hide": true,
+      "duration": 0.3
+    },
+    {
+      "focus": "lucia",
+      "color": "#5b8def",
+      "radius": 54
+    },
+    {
+      "caption": "Pero Lucía no salió: hacía demasiado frío."
+    },
+    {
+      "wait": 4.4
+    },
+    {
+      "say": "tobias",
+      "text": "No. La respuesta era no.",
+      "duration": 2.6
+    },
+    {
+      "annotation": "axdalia",
+      "show": true,
+      "duration": 0.4
+    },
+    {
+      "mood": "dalia",
+      "value": "sad",
+      "duration": 2.4
+    },
+    {
+      "music": {
+        "volume": 1,
+        "duration": 1.0
+      }
+    },
+    {
+      "wait": 3.6
+    },
+    {
+      "focus": "lucia",
+      "off": true
+    },
+    {
+      "caption": "Con estos pesos, la sala se equivocó. Dijo sí; la respuesta era no."
+    },
+    {
+      "meter": "suma",
+      "to": 0,
+      "duration": 0.6
+    },
+    {
+      "wait": 6.6
+    },
+    {
+      "caption": "El error viaja hacia atrás y corrige cada peso un paso pequeño."
+    },
+    {
+      "annotation": "axdalia",
+      "hide": true,
+      "duration": 0.3
+    },
+    {
+      "formula": "fregla",
+      "show": true,
+      "duration": 0.5
+    },
+    {
+      "set": {
+        "backT": 1
+      }
+    },
+    {
+      "set": {
+        "backOn": 1
+      }
+    },
+    {
+      "tween": "backT",
+      "to": 0,
+      "duration": 2.4,
+      "easing": "easeInOut"
+    },
+    {
+      "wait": 2.6
+    },
+    {
+      "set": {
+        "backOn": 0
+      }
+    },
+    {
+      "tween": "wFrioTeo",
+      "to": 6,
+      "duration": 1.2
+    },
+    {
+      "tween": "wTeoDalia",
+      "to": 6,
+      "duration": 1.2
+    },
+    {
+      "tween": "wNoraDalia",
+      "to": 5,
+      "duration": 1.0
     },
     {
       "wait": 1.6
+    },
+    {
+      "caption": "Ahora el frío pesa en Teo, y Teo empuja en contra. La misma mañana, otra vez."
+    },
+    {
+      "formula": "fregla",
+      "hide": true,
+      "duration": 0.3
+    },
+    {
+      "focus": "nora",
+      "color": "#4f8a5e",
+      "radius": 46
+    },
+    {
+      "wait": 1.6
+    },
+    {
+      "focus": "teo",
+      "color": "#5b8def",
+      "radius": 46
+    },
+    {
+      "jump": "teo"
+    },
+    {
+      "annotation": "ateo",
+      "show": true,
+      "duration": 0.4
+    },
+    {
+      "mood": "dalia",
+      "value": "neutral"
+    },
+    {
+      "meter": "suma",
+      "to": 2,
+      "duration": 1.2
+    },
+    {
+      "wait": 2.2
+    },
+    {
+      "say": "dalia",
+      "text": "Hoy, Lucía no sale.",
+      "duration": 2.8
+    },
+    {
+      "wait": 3.0
+    },
+    {
+      "focus": "nora",
+      "off": true
+    },
+    {
+      "focus": "teo",
+      "off": true
+    },
+    {
+      "focus": "lucia",
+      "color": "#4f8a5e",
+      "radius": 52
+    },
+    {
+      "say": "tobias",
+      "text": "Bien. Coincide.",
+      "duration": 2.4
+    },
+    {
+      "wait": 3.0
+    },
+    {
+      "focus": "lucia",
+      "off": true
+    },
+    {
+      "annotation": "ateo",
+      "hide": true,
+      "duration": 0.3
+    },
+    {
+      "caption": "Un solo arreglo no basta. Miles de mañanas, miles de correcciones diminutas."
+    },
+    {
+      "meter": "suma",
+      "to": 0,
+      "duration": 0.5
+    },
+    {
+      "tween": "ambient.saturation",
+      "to": 0.15,
+      "duration": 1.5
+    },
+    {
+      "music": {
+        "mood": "electronic",
+        "duration": 1.5
+      }
+    },
+    {
+      "tween": "accA",
+      "to": 1,
+      "duration": 0.8
+    },
+    {
+      "wait": 1.4
+    },
+    {
+      "weather": "rain",
+      "intensity": 0.5
+    },
+    {
+      "tween": "accR",
+      "to": 0.5,
+      "duration": 2.6
+    },
+    {
+      "tween": "ambient.saturation",
+      "to": 0.6,
+      "duration": 2.6
+    },
+    {
+      "wait": 2.7
+    },
+    {
+      "weather": "snow",
+      "intensity": 0.5
+    },
+    {
+      "tween": "accR",
+      "to": 1,
+      "duration": 2.6
+    },
+    {
+      "tween": "ambient.saturation",
+      "to": 1,
+      "duration": 2.6
+    },
+    {
+      "wait": 2.7
+    },
+    {
+      "caption": "No hay un chispazo de comprensión. Hay corrección tras corrección, un peso por vez."
+    },
+    {
+      "wait": 6.8
+    },
+    {
+      "music": {
+        "mood": "pedagogical",
+        "duration": 1.5
+      }
+    },
+    {
+      "tween": "accA",
+      "to": 0,
+      "duration": 1.0
+    },
+    {
+      "weather": "snow",
+      "intensity": 0.4
+    },
+    {
+      "caption": "La sala ya casi no falla."
+    },
+    {
+      "focus": "dalia",
+      "color": "#4f8a5e",
+      "radius": 46
+    },
+    {
+      "wait": 3.6
+    },
+    {
+      "focus": "dalia",
+      "off": true
+    },
+    {
+      "focus": "lucia",
+      "color": "#5b8def",
+      "radius": 54
+    },
+    {
+      "mood": "lucia",
+      "value": "sad",
+      "duration": 5
+    },
+    {
+      "caption": "Afuera, Lucía siente el frío en las manos y en la cara."
+    },
+    {
+      "wait": 5.4
+    },
+    {
+      "focus": "lucia",
+      "off": true
+    },
+    {
+      "focus": "dalia",
+      "color": "#F4AC1D",
+      "radius": 44
+    },
+    {
+      "music": {
+        "volume": 0.35,
+        "duration": 1.0
+      }
+    },
+    {
+      "say": "tobias",
+      "text": "Ya casi no fallas. ¿Qué es el frío?",
+      "duration": 3.4
+    },
+    {
+      "wait": 3.8
+    },
+    {
+      "music": {
+        "volume": 0,
+        "duration": 0.3
+      }
+    },
+    {
+      "think": "dalia",
+      "text": "Un número. Un peso que empuja hacia abajo.",
+      "duration": 3.6
+    },
+    {
+      "wait": 4.0
+    },
+    {
+      "caption": "Dalia aprendió cuánto pesa el frío. No sabe qué es el frío, ni por qué alguien corre."
+    },
+    {
+      "music": {
+        "volume": 1,
+        "duration": 1.5
+      }
+    },
+    {
+      "wait": 7
+    },
+    {
+      "caption": "Repartir esa corrección hacia atrás, millones de veces, es la retropropagación (Rumelhart, Hinton y Williams, 1986)."
+    },
+    {
+      "wait": 7.2
+    },
+    {
+      "focus": "dalia",
+      "off": true
+    },
+    {
+      "caption": ""
+    },
+    {
+      "do": "if (world._meters) world._meters.length = 0;"
+    },
+    {
+      "tween": "nora._alpha",
+      "to": 0,
+      "duration": 2.2
+    },
+    {
+      "tween": "teo._alpha",
+      "to": 0,
+      "duration": 2.2
+    },
+    {
+      "tween": "dalia._alpha",
+      "to": 0,
+      "duration": 2.2
+    },
+    {
+      "tween": "tobias._alpha",
+      "to": 0,
+      "duration": 2.2
+    },
+    {
+      "tween": "lucia._alpha",
+      "to": 0,
+      "duration": 2.2
+    },
+    {
+      "tween": "aRow1",
+      "to": 0,
+      "duration": 2.2
+    },
+    {
+      "tween": "aRow2",
+      "to": 0,
+      "duration": 2.2
+    },
+    {
+      "tween": "ambient.darkness",
+      "to": 1,
+      "duration": 3.0
+    },
+    {
+      "wait": 3.2
+    },
+    {
+      "caption": "PESA, SE ENCIENDE, SE CORRIGE. NO COMPRENDE.",
+      "style": "title"
+    },
+    {
+      "wait": 4.2
     }
-  ]
+  ],
+  "hooks": {
+    "onInit": "const s = world.state;\ns.wSolNora = 6; s.wTiempoNora = 6; s.wFrioNora = 1.2;\ns.wSolTeo = 1.2; s.wTiempoTeo = 1.2; s.wFrioTeo = 1.5;\ns.wNoraDalia = 6; s.wTeoDalia = 1.2;\ns.aRow1 = 0; s.aRow2 = 0;\ns.backOn = 0; s.backT = 0;\ns.accA = 0; s.accR = 0;\ns.accCurve = [[0,50],[0.15,63],[0.3,74],[0.5,84],[0.7,90],[0.85,94],[1,96]];\nfor (const id of ['nora','teo','dalia','tobias']) { const e = world.byId(id); if (e) e._alpha = 0; }\nconst lu = world.byId('lucia'); if (lu) lu._alpha = 1;",
+    "onDraw": "const s = world.state;\nconst B = (id) => world.byId(id);\nconst nora = B('nora'), teo = B('teo'), dalia = B('dalia');\nconst UI = '\"Plus Jakarta Sans\", ui-sans-serif, system-ui, sans-serif';\nconst SRC = {\n  sol:    { x: 175, y: 175, c: '#F4AC1D', label: 'sol' },\n  tiempo: { x: 175, y: 300, c: '#5b8def', label: 'tiempo' },\n  frio:   { x: 175, y: 425, c: '#22c4f8', label: 'frío' },\n};\nfunction cord(from, to, w, kind, a) {\n  if (!from || !to || a <= 0.01 || w <= 0.05) return;\n  ctx.save();\n  ctx.lineCap = 'round';\n  ctx.globalAlpha = Math.min(1, a) * 0.8;\n  ctx.lineWidth = w;\n  ctx.strokeStyle = kind === 'neg' ? '#3f6ea8' : '#c98a2e';\n  ctx.beginPath(); ctx.moveTo(from.x, from.y); ctx.lineTo(to.x, to.y); ctx.stroke();\n  if ((s.backOn || 0) > 0.5) {\n    const p = s.backT || 0;\n    const px = from.x + (to.x - from.x) * p, py = from.y + (to.y - from.y) * p;\n    ctx.globalAlpha = Math.min(1, a);\n    ctx.fillStyle = '#e0533e';\n    ctx.beginPath(); ctx.arc(px, py, Math.max(4, w * 0.9), 0, Math.PI * 2); ctx.fill();\n  }\n  ctx.restore();\n}\ncord(SRC.sol, nora, s.wSolNora, 'pos', s.aRow1);\ncord(SRC.tiempo, nora, s.wTiempoNora, 'pos', s.aRow1);\ncord(SRC.frio, nora, s.wFrioNora, 'neg', s.aRow1);\ncord(SRC.sol, teo, s.wSolTeo, 'pos', s.aRow1);\ncord(SRC.tiempo, teo, s.wTiempoTeo, 'pos', s.aRow1);\ncord(SRC.frio, teo, s.wFrioTeo, 'neg', s.aRow1);\ncord(nora, dalia, s.wNoraDalia, 'pos', s.aRow2);\ncord(teo, dalia, s.wTeoDalia, 'neg', s.aRow2);\nconst aS = s.aRow1 || 0;\nif (aS > 0.01) {\n  for (const k in SRC) {\n    const p = SRC[k];\n    ctx.save();\n    ctx.globalAlpha = aS;\n    ctx.beginPath(); ctx.arc(p.x, p.y, 21, 0, Math.PI * 2);\n    ctx.fillStyle = '#141a34'; ctx.fill();\n    ctx.lineWidth = 2.5; ctx.strokeStyle = p.c; ctx.stroke();\n    ctx.fillStyle = '#FBFAF6'; ctx.font = '700 17px ' + UI;\n    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';\n    ctx.fillText('1', p.x, p.y);\n    ctx.fillStyle = p.c; ctx.font = '600 13px ' + UI; ctx.textBaseline = 'alphabetic';\n    ctx.fillText(p.label, p.x, p.y - 30);\n    ctx.restore();\n  }\n}\nif ((s.accA || 0) > 0.01 && s.accCurve) {\n  ctx.save();\n  ctx.globalAlpha = s.accA;\n  const f = world.draw.axes(648, 74, 250, 148, { xDomain: [0, 1], yDomain: [40, 100],\n    xTicks: [], yTicks: [50, 75, 100], yFormat: function (v) { return v + '%'; },\n    color: 'rgba(232,226,210,0.4)', labelColor: '#9aa3bd' });\n  world.draw.plot(f, s.accCurve, { color: '#4f8a5e', width: 2.5, reveal: s.accR || 0 });\n  ctx.fillStyle = '#9aa3bd'; ctx.font = '600 12px ' + UI;\n  ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';\n  ctx.fillText('aciertos', 648, 62);\n  ctx.restore();\n}\nfor (const e of world.entities) { if (e.type === 'learner') world.draw.learner(e); }"
+  }
 }
